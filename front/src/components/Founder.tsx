@@ -67,7 +67,7 @@ export default function Founder() {
                 }}
               />
               <img
-                src="assets/babek.jpeg"
+                src="/assets/babek.jpeg"
                 alt="Babək Allahverdizadə"
                 loading="lazy"
                 decoding="async"
@@ -133,7 +133,7 @@ export default function Founder() {
               className="hv-9"
             >
               <img
-                src="https://api.accredible.com/v1/credentials/eovtn74o/artifact/certificate?artifact_format=png&amp;variant=medium"
+                src="/assets/wharton-sertifikat.png"
                 alt="Wharton sertifikatı"
                 width="112"
                 height="79"

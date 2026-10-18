@@ -35,6 +35,21 @@ describe('App', () => {
     for (const img of container.querySelectorAll('img')) expect(img).toHaveAttribute('alt');
   });
 
+  it('loads every image, script and frame from its own origin (SEC-F-03)', () => {
+    const { container } = render(<App />);
+    const sources = Array.from(
+      container.querySelectorAll('[src], image[href]'),
+      (element) => element.getAttribute('src') ?? element.getAttribute('href') ?? '',
+    );
+    expect(sources.length).toBeGreaterThan(0);
+    // `data:` and `blob:` URLs have the origin "null", so they fail here too.
+    for (const source of sources) {
+      expect(new URL(source, window.location.href).origin, `${source} leaves the own origin`).toBe(
+        window.location.origin,
+      );
+    }
+  });
+
   it('never uses dangerouslySetInnerHTML or inline event-handler attributes', () => {
     const { container } = render(<App />);
     expect(container.innerHTML).not.toMatch(/\son[a-z]+="/i);

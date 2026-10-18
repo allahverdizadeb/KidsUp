@@ -16,13 +16,14 @@ Tool: **pytest** + **pytest-cov** + `httpx` (FastAPI `TestClient`), against a **
 | **Unit** | One function/class in isolation, pure logic, injected clock/randomness (`RateLimiter`, validators, settings) | pytest | many, milliseconds |
 | **Integration (the default for this API)** | A request through router → service → **real PostgreSQL** → response, asserting both the HTTP result and the stored rows | `TestClient` + real DB | the main body |
 | **Security** | One test per control in [`security-standards.md`](security-standards.md): headers, host check, CORS, limits, rate limit, docs off in production | `TestClient` | every control, no exceptions |
+| **Container / config (static)** | Files outside `app/` that can break a deploy, read as text: the Dockerfile start command must quote every shell expansion (`FORWARDED_ALLOW_IPS=*` would otherwise become file names) | `test_container.py` |
 | **Migration** | The suite builds the schema by running all Alembic migrations (`tests/conftest.py`), so a broken migration fails every test | alembic | implicit |
 
 Do not mock what you own. **The database is never mocked or replaced with SQLite**: the schema uses PostgreSQL arrays, timezone-aware timestamps and constraints that SQLite would silently ignore.
 
 ## 3. Structure and naming
 
-- `tests/` mirrors `app/` by topic: `test_applications.py`, `test_rate_limiter.py`, `test_security.py`, `test_config.py`. One test module per unit or concern, never a catch-all.
+- `tests/` mirrors `app/` by topic: `test_applications.py`, `test_rate_limiter.py`, `test_security.py`, `test_config.py`, and `test_container.py` (files outside `app/`, see §2). One test module per unit or concern, never a catch-all.
 - **Test names state the behaviour in plain words**: `test_rejects_unknown_host`, `test_window_slides`, `test_invalid_requests_also_count_towards_the_limit`. Not `test_1`, `test_host`, `test_works`.
 - **Arrange – Act – Assert**, visibly separated; **one behaviour per test**. A test that needs "and" in its name is two tests.
 - Use `pytest.mark.parametrize` for the same rule over many inputs, with readable ids; never loops that hide which case failed.

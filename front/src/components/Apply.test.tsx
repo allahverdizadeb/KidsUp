@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { submitApplication } from '../api/applications';
@@ -147,7 +147,8 @@ describe('Apply form', () => {
       expect(screen.getByRole('group', { name: '2-ci uşaq' })).toBeInTheDocument();
       expect(screen.getByText(/Ailə endirimi/)).toHaveTextContent('1 150 AZN');
       expect(screen.queryByRole('button', { name: /İkinci uşağı əlavə et/ })).not.toBeInTheDocument();
-      await vi.waitFor(() => expect(document.getElementById('kn1')).toHaveFocus());
+      const secondChild = within(screen.getByRole('group', { name: '2-ci uşaq' }));
+      await vi.waitFor(() => expect(secondChild.getByLabelText('Uşağın adı və soyadı')).toHaveFocus());
 
       await user.click(screen.getByRole('button', { name: '2-ci uşağı sil' }));
       expect(screen.queryByRole('group', { name: '2-ci uşaq' })).not.toBeInTheDocument();
@@ -187,8 +188,9 @@ describe('Apply form', () => {
       render(<Apply />);
       await fillValidForm();
       await user.click(screen.getByRole('button', { name: /İkinci uşağı əlavə et/ }));
-      await user.type(document.getElementById('kn1') as HTMLElement, 'Tural');
-      fireEvent.change(document.getElementById('kd1') as HTMLElement, { target: { value: '2014-02-02' } });
+      const secondChild = within(screen.getByRole('group', { name: '2-ci uşaq' }));
+      await user.type(secondChild.getByLabelText('Uşağın adı və soyadı'), 'Tural');
+      fireEvent.change(secondChild.getByLabelText('Doğum tarixi'), { target: { value: '2014-02-02' } });
       await user.click(sendButton());
 
       expect(submit.mock.calls[0][0].children).toEqual([
@@ -220,21 +222,36 @@ describe('Apply form', () => {
       expect(submit).toHaveBeenCalledTimes(1);
     });
 
-    it('offers a pre-filled WhatsApp message when the API is unreachable', async () => {
+    it('offers WhatsApp as a fallback when the API is unreachable, with a plain greeting only', async () => {
       submit.mockRejectedValue(new Error('network'));
       render(<Apply />);
       await fillValidForm();
       await user.click(sendButton());
 
       expect(await screen.findByRole('alert')).toHaveTextContent('Müraciət göndərilmədi.');
-      const link = screen.getByRole('link', { name: 'WhatsApp ilə göndər' });
-      const href = new URL(link.getAttribute('href') as string);
+      const link = screen.getByRole('link', { name: 'WhatsApp ilə bizə yaz' });
+      const href = new URL(link.getAttribute('href') ?? '');
       expect(href.origin + href.pathname).toBe('https://wa.me/994509988707');
-      const text = href.searchParams.get('text') as string;
-      expect(text).toContain('Valideyn:   Aysel Məmmədova ');
-      expect(text).toContain('1-ci uşaq: Leyla Məmmədova, doğum tarixi: 2016-05-20');
-      expect(text).toContain('Təlim dili: Azərbaycan');
+      expect(href.searchParams.get('text')).toBe('Salam! KidsUp proqramına müraciət etmək istəyirəm.');
       expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+
+    it('never puts parent or child details into any link, even after they were typed (SEC-F-06)', async () => {
+      submit.mockRejectedValue(new Error('network'));
+      const { container } = render(<Apply />);
+      await fillValidForm();
+      await user.click(sendButton());
+      await screen.findByRole('alert');
+
+      const links = Array.from(container.querySelectorAll('a[href]'), (anchor) =>
+        decodeURIComponent(anchor.getAttribute('href') ?? ''),
+      );
+      expect(links.length).toBeGreaterThan(0);
+      for (const link of links) {
+        for (const detail of ['Aysel', 'Məmmədova', 'Leyla', '501234567', '50 123 45 67', '2016-05-20']) {
+          expect(link, `a link contains "${detail}"`).not.toContain(detail);
+        }
+      }
     });
 
     it('lets the parent fix the form and retry after a failure', async () => {
@@ -245,7 +262,7 @@ describe('Apply form', () => {
       await screen.findByText('Müraciət göndərilmədi.');
 
       await user.type(parentInput(), 'x');
-      expect(screen.queryByRole('link', { name: 'WhatsApp ilə göndər' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'WhatsApp ilə bizə yaz' })).not.toBeInTheDocument();
       await user.click(sendButton());
       expect(await screen.findByText(/Müraciətiniz qəbul olundu/)).toBeInTheDocument();
       expect(submit).toHaveBeenCalledTimes(2);

@@ -100,7 +100,7 @@ export default function Brochure() {
               }}
             >
               <a
-                href="assets/KidsUp-Brosura.pdf"
+                href="/assets/KidsUp-Brosura.pdf"
                 download="KidsUp-Brosura.pdf"
                 style={{
                   display: 'flex',

@@ -29,6 +29,11 @@ check(
   !/unsafe-inline|unsafe-eval|\s\*[\s;]|\s\*$/.test(csp),
   csp,
 );
+check(
+  "CSP allows images from 'self' only (no third-party origin)",
+  /(^|;\s*)img-src 'self'\s*(;|$)/.test(csp),
+  csp,
+);
 check('X-Content-Type-Options: nosniff', header('x-content-type-options') === 'nosniff');
 check('X-Frame-Options: DENY', header('x-frame-options') === 'DENY');
 check('Referrer-Policy: no-referrer', header('referrer-policy') === 'no-referrer');
@@ -74,10 +79,10 @@ check(
   brochureBytes.subarray(0, 5).toString('latin1') === '%PDF-' &&
     brochureBytes.subarray(-1024).toString('latin1').includes('%%EOF'),
 );
+check('brochure carries nosniff', brochure.headers.get('x-content-type-options') === 'nosniff');
 check(
-  'brochure carries nosniff and the CSP',
-  brochure.headers.get('x-content-type-options') === 'nosniff' &&
-    (brochure.headers.get('content-security-policy') ?? '').includes("default-src 'self'"),
+  'brochure carries the CSP',
+  (brochure.headers.get('content-security-policy') ?? '').includes("default-src 'self'"),
 );
 check(
   'brochure is not cached as immutable (its name is not fingerprinted)',
@@ -85,12 +90,17 @@ check(
 );
 const certificate = await fetch(base + '/assets/sertifikat-full-name.png');
 const certificateBytes = Buffer.from(await certificate.arrayBuffer());
+check('certificate image answers 200', certificate.status === 200, String(certificate.status));
 check(
-  'certificate image is served complete (ends with the PNG IEND chunk)',
-  certificate.status === 200 &&
-    certificateBytes.subarray(-12).equals(Buffer.from('0000000049454e44ae426082', 'hex')),
-  String(certificate.status),
+  'certificate image is served as image/png',
+  (certificate.headers.get('content-type') ?? '').startsWith('image/png'),
+  certificate.headers.get('content-type') ?? '',
 );
+check(
+  'certificate image is complete (ends with the PNG IEND chunk)',
+  certificateBytes.subarray(-12).equals(Buffer.from('0000000049454e44ae426082', 'hex')),
+);
+check('certificate image carries nosniff', certificate.headers.get('x-content-type-options') === 'nosniff');
 check('a missing asset is a 404, not the page', (await status('/assets/missing.pdf')) === 404);
 
 check('POST / is refused', [403, 405].includes(await status('/', { method: 'POST', body: 'x' })));

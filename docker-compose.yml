@@ -1,74 +1,142 @@
 # KidsUp production-like stack: nginx (front) -> API (back) -> PostgreSQL (db).
-# Only the front is reachable from outside; the API and the database have no published ports.
+# Only the front is reachable from outside, and only on the loopback address by default.
 #
-#   cp .env.example .env     # then set POSTGRES_PASSWORD
+#   cp .env.example .env     # then set the three passwords
 #   docker compose up --build
 #   open http://localhost:8080
+#
+# Startup order: db -> bootstrap (accounts, migrations, grants; exits) -> back -> front. retention runs beside them.
+# Networks: `edge` (nginx only, the one with a route out), `app` (nginx <-> API, internal) and `data`
+# (API, jobs and database, internal). The API therefore cannot reach the internet and the database cannot be reached
+# from anywhere but the API and the jobs.
 
 name: kidsup
 
+x-logging: &default-logging
+  # Log files are capped by size, so nothing is kept for long (SEC-B-10).
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-hardening: &hardening
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt:
+    - no-new-privileges:true
+  pids_limit: 256
+  logging: *default-logging
+
 services:
   db:
+    <<: *hardening
     image: postgres:17-alpine
     restart: unless-stopped
+    # Not root: the data directory is owned by uid 70, so the image's root-only ownership fix is not needed.
+    user: "70:70"
     environment:
+      # The superuser. Only the bootstrap job and the operator use it; the API never does (SEC-B-07).
       POSTGRES_USER: kidsup
       POSTGRES_DB: kidsup
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - db-data:/var/lib/postgresql/data
+    tmpfs: [/tmp, /var/run/postgresql]
+    pids_limit: 300
+    mem_limit: 512m
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kidsup -d kidsup"]
       interval: 5s
       timeout: 3s
       retries: 10
-    security_opt:
-      - no-new-privileges:true
-    networks: [backend]
+    networks: [data]
+
+  # One-off: creates/updates the owner and app accounts, runs the migrations as the owner and grants the app account
+  # SELECT/INSERT/UPDATE/DELETE. Safe to run on every start, and it upgrades a database created before the split.
+  bootstrap:
+    <<: *hardening
+    image: kidsup-back
+    pull_policy: never
+    command: ["python", "-m", "app.bootstrap"]
+    restart: "no"
+    environment:
+      KIDSUP_ADMIN_DATABASE_URL: postgresql://kidsup:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/kidsup
+      KIDSUP_MIGRATION_DATABASE_URL: postgresql://kidsup_owner:${POSTGRES_OWNER_PASSWORD:?Set POSTGRES_OWNER_PASSWORD in .env}@db:5432/kidsup
+      KIDSUP_DATABASE_URL: postgresql://kidsup_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}@db:5432/kidsup
+    mem_limit: 256m
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [data]
 
   back:
+    <<: *hardening
     build: ./back
+    image: kidsup-back
     restart: unless-stopped
     environment:
       KIDSUP_ENVIRONMENT: production
-      KIDSUP_DATABASE_URL: postgresql://kidsup:${POSTGRES_PASSWORD}@db:5432/kidsup
+      # The API's account can only read and write rows. It never gets the owner or superuser passwords.
+      KIDSUP_DATABASE_URL: postgresql://kidsup_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}@db:5432/kidsup
       # Requests arrive from nginx without the browser's Host header, so the API's own name is what must be allowed.
       KIDSUP_ALLOWED_HOSTS: '["back","localhost","127.0.0.1"]'
       # The browser only talks to nginx (same origin), so no cross-origin access is granted at all.
       KIDSUP_CORS_ORIGINS: "[]"
-      # Only nginx can reach this container (no published port), so its X-Forwarded-For is trusted.
-      FORWARDED_ALLOW_IPS: "*"
+      # X-Forwarded-For is believed only from this range: the private nginx <-> API network, which holds nginx and
+      # nothing else. Never "*" (uvicorn then trusts any peer and the left-most, client-supplied, address).
+      FORWARDED_ALLOW_IPS: ${APP_SUBNET:-172.29.250.0/28}
+    mem_limit: 256m
     depends_on:
       db:
         condition: service_healthy
-    read_only: true
-    tmpfs: [/tmp]
-    cap_drop: [ALL]
-    security_opt:
-      - no-new-privileges:true
-    networks: [backend, frontend]
+      bootstrap:
+        condition: service_completed_successfully
+    networks: [data, app]
+
+  # Deletes applications that never led to enrolment once they are older than RETENTION_DAYS (SEC-B-09), once a day.
+  # An operator erases one family's data on request with `docker compose exec back python -m app.cli --help`.
+  retention:
+    <<: *hardening
+    image: kidsup-back
+    pull_policy: never
+    init: true
+    command: ["sh", "-c", "while true; do python -m app.cli purge-expired; sleep 86400; done"]
+    restart: unless-stopped
+    environment:
+      KIDSUP_DATABASE_URL: postgresql://kidsup_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}@db:5432/kidsup
+      KIDSUP_RETENTION_DAYS: ${RETENTION_DAYS:-365}
+    mem_limit: 256m
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    networks: [data]
 
   front:
+    <<: *hardening
     build: ./front
     restart: unless-stopped
     ports:
       # Loopback by default. Put a TLS-terminating proxy in front for real traffic (see docs/docker.md).
       - "${FRONT_BIND:-127.0.0.1}:${FRONT_PORT:-8080}:8080"
+    mem_limit: 128m
     depends_on:
       back:
         condition: service_healthy
-    read_only: true
-    tmpfs: [/tmp]
-    cap_drop: [ALL]
-    security_opt:
-      - no-new-privileges:true
-    networks: [frontend]
+    networks: [edge, app]
 
 networks:
-  # db <-> back only; internal means no route to the outside world.
-  backend:
+  # The only network with a route to the outside; only nginx joins it.
+  edge: {}
+  # nginx <-> API. Internal (no route out) with a fixed range, so uvicorn can trust exactly this range.
+  app:
     internal: true
-  frontend:
+    ipam:
+      config:
+        - subnet: ${APP_SUBNET:-172.29.250.0/28}
+  # API, jobs <-> database. Internal.
+  data:
+    internal: true
 
 volumes:
   db-data:

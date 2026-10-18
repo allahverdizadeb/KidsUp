@@ -41,7 +41,7 @@ front/
 ├─ public/                 static files served as-is (assets/, favicon)
 ├─ nginx/                  production web server + security headers
 ├─ scripts/                dependency-free tooling (check-security-headers.mjs)
-├─ design-source/          read-only design export; never edited, never imported
+├─ design-source/          read-only design export (one exception, see root CLAUDE.md); never imported
 └─ docs/  .claude/
 ```
 

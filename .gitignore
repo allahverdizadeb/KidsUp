@@ -3,6 +3,13 @@
 .env.*
 !.env.example
 
+# Database dumps contain personal data of children and parents; keep them out of the repo
+*.sql
+*.dump
+
+# Scratch output of browser automation
+.playwright-mcp/
+
 # Dependencies and build output
 node_modules/
 .venv/

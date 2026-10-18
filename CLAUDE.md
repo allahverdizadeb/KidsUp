@@ -6,8 +6,8 @@ This repo has three independent projects. This file only covers what is shared a
 
 | Folder   | What it is                                       | Status                                                          |
 |----------|--------------------------------------------------|-----------------------------------------------------------------|
-| `front/` | Public landing page, React + TypeScript (Vite)   | Ported, pixel-identical to the design; 107 tests, ~99% coverage |
-| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` live; 21 tests, 100% coverage          |
+| `front/` | Public landing page, React + TypeScript (Vite)   | Ported, pixel-identical to the design; 109 tests, ~99% coverage |
+| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` live; 25 tests, 100% coverage          |
 | `admin/` | Admin panel                                      | **Blocked: design not ready**                                   |
 
 Each project has `docs/` (standards) and `.claude/` (skills + agents); the repo root has `.claude/` (cross-project
@@ -68,12 +68,11 @@ Cross-project conventions (language, naming, git, deploy, security baseline) →
 
 `front/design-source/` holds the original Claude Design export (`KidsUp Landing Page.dc.html`,
 `support.js`, `assets/`). It is read-only reference material, not production code. The React port in
-`front/src/` matches it pixel for pixel; if the design changes, diff against it.
-
-The two files the first export could not hand over (`sertifikat-full-name.png`, which arrived truncated by a download cap, and
-`KidsUp-Brosura.pdf`) were added by hand on 2026-10-18 from the full project export, in `front/public/assets/` and
-`front/design-source/assets/`. `front/src/publicAssets.test.tsx` fails if a file the page references is missing or cut off.
+`front/src/` matches it pixel for pixel; if the design changes, diff against it. The one permitted change is restoring a file
+the export failed to deliver, so that the HTML renders as designed (`sertifikat-full-name.png` arrived truncated and
+`KidsUp-Brosura.pdf` was missing; both restored on 2026-10-18 from the full project export, also into `front/public/assets/`).
 
 Open owner decisions: use `#D6006E` for small pink text (brand pink fails WCAG AA contrast, see
-`front/docs/styling-and-accessibility-standards.md` A11Y-1); notification channel for new applications; privacy notice wording
+`front/docs/styling-and-accessibility-standards.md` A11Y-1); notification channel for new applications; a text-based export of
+the brochure PDF (it is two images, A11Y-4); privacy notice wording
 (**the form currently collects children's data without one: a launch blocker**, `SEC-F-16`).

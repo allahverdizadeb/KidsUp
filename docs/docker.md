@@ -29,7 +29,7 @@ docker compose up --build            # add -d to run in the background
 
 Open http://localhost:8080. Check everything is healthy: `docker compose ps` (all `healthy`).
 
-Verify the security posture of the running stack (28 checks):
+Verify the security posture of the running stack (every check must pass; it also covers the brochure and certificate being served complete with the security headers):
 
 ```powershell
 cd front; npm run check:headers      # defaults to http://localhost:8080
@@ -50,8 +50,8 @@ cd front; npm run check:headers      # defaults to http://localhost:8080
 
 | Measure | Where | Standard |
 |---|---|---|
-| Containers run as **non-root** | `back/Dockerfile` (uid 10001), `nginx-unprivileged` | `SEC-B-15`, `SEC-F-12` |
-| **Read-only root filesystem**, `cap_drop: ALL`, `no-new-privileges` | `docker-compose.yml` | `SEC-B-15` |
+| `back` and `front` run as **non-root** | `back/Dockerfile` (uid 10001), `nginx-unprivileged` | `SEC-B-15`, `SEC-F-12` |
+| **Read-only root filesystem**, `cap_drop: ALL`, `no-new-privileges` | `docker-compose.yml` for `back` and `front`; `db` keeps the stock Postgres image defaults and only has `no-new-privileges` | `SEC-B-15` |
 | API and DB **not published**; DB network is `internal` | `docker-compose.yml` | `SEC-B-07`, `SEC-B-15` |
 | Hash-pinned Python dependencies (`--require-hashes`), `npm ci` with lockfile | Dockerfiles | `SEC-B-13`, `SEC-F-04` |
 | Strict CSP + Trusted Types, HSTS, `nosniff`, frame/CORP/COOP headers | `front/nginx/security-headers.conf` | `SEC-F-02`, `SEC-F-11` |
@@ -76,7 +76,10 @@ PostgreSQL on `localhost:5432`, `uvicorn app.main:app --reload` on :8000, `npm r
 
 ## Status
 
-The compose file and both Dockerfiles are written and their parts were verified separately: the nginx configuration was tested with the real
-nginx binary (28 header/behaviour checks plus in-browser CSP/Trusted Types tests), the API was tested in production mode, and both dependency locks install
-with hash enforcement. **The images themselves have not yet been built or run** because Docker was not installed on the development machine when this was written.
-Run `docker compose up --build` and `npm run check:headers` to close that gap.
+The stack was built and run for the first time on 2026-10-18 (Docker Desktop 29.8, Compose 5.5): all three containers `healthy`, `npm run check:headers`
+40/40, and a form submitted in a real browser (browser → nginx → API → PostgreSQL) was stored and then deleted, with zero CSP/Trusted Types violations in the console.
+
+That first run found and fixed one bug: an unquoted `${FORWARDED_ALLOW_IPS}` in the start command of `back/Dockerfile` was expanded by the shell (`*` became the
+names of the files in the working directory), so uvicorn refused to start and the API restarted in a loop. `back/tests/test_container.py` guards against it.
+
+Still open: scanning the images (Trivy/Grype), the OWASP ZAP baseline and CI (see the "Required before public launch" lists).

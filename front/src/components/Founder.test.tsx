@@ -8,7 +8,7 @@ describe('Founder', () => {
     expect(screen.getByRole('heading', { name: 'Babək Allahverdizadə' })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Babək Allahverdizadə' })).toHaveAttribute(
       'src',
-      'assets/babek.jpeg',
+      '/assets/babek.jpeg',
     );
     expect(screen.getByText(/Wharton məktəbinin/)).toBeInTheDocument();
   });

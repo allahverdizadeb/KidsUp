@@ -20,6 +20,7 @@ Tools: **Vitest** (runner, `jsdom`), **@testing-library/react** + **user-event**
 | **Accessibility** | axe-core over the full page at desktop and mobile widths | `App.a11y.test.tsx` (zero violations) |
 | **Security** | One check per control in [`security-standards.md`](security-standards.md) | `rel="noopener noreferrer"`, input `maxlength`, request timeout, `ErrorBoundary` leaks nothing, lint rules, `npm run check:headers` |
 | **Contract** | The call to the API sends exactly the documented payload | `api/applications.test.ts`, `Apply.test.tsx` |
+| **Assets** | Every local file the page references exists and is complete (not cut off), and what the page says about a file (image size, PDF pages and size) is true | `publicAssets.test.tsx` |
 | **Visual parity** | The page is compared pixel-for-pixel with the approved design (`design-source/`) at 390 px and 1440 px with reduced motion | manual, before changing markup or styles; target 0% difference |
 
 Not tested: React internals, CSS values that restate the source, snapshots of large DOM trees (SVG illustrations in particular). **Do not write snapshot tests of components.**
@@ -29,7 +30,7 @@ Not tested: React internals, CSS values that restate the source, snapshots of la
 **Test what a user can see and do, not how the code is built.**
 
 - **Query by accessibility first**: `getByRole(name)` → `getByLabelText` → `getByText` → (last resort) `getByTestId`. If a role/label query cannot find it, a real user cannot either, so fix the component, not the query.
-- **Use `userEvent`** for interactions (it fires realistic event sequences); `fireEvent` only for events `userEvent` cannot produce (`change` on `type="date"`, `pointer*`, `submit`, `scroll`).
+- **Use `userEvent`** for interactions (it fires realistic event sequences); `fireEvent` only for events `userEvent` cannot produce (`change` on `type="date"`, `pointer*`, `submit`, `scroll`). Tests that type or interact many times (the form) create the instance per test with `userEvent.setup({ delay: null })`: by default it waits a timer tick after every keystroke (about 15 ms on Windows), which made the form tests time out when the suite ran in parallel. A lone click may use the direct API.
 - **One behaviour per test**, arranged Arrange – Act – Assert. Use `it.each` for the same rule over many inputs.
 - **Names are behaviour sentences**: `'closes with Escape, restores scroll and returns focus to what opened it'`. Not `'works'`, `'test 1'`, `'handles click'`. Group with `describe('<Component>')`.
 - **Mock only at the boundary** you own: `vi.mock('../api/applications')`. Never mock React, hooks under test, or the component's own children. Do not mock the DOM; jsdom stubs for missing browser APIs live in `src/test/setup.ts` only.

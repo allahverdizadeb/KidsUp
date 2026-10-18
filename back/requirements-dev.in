@@ -7,3 +7,4 @@ mypy>=1.11
 pip-audit>=2.7
 bandit>=1.7
 uv>=0.5
+pyyaml>=6

@@ -75,7 +75,7 @@ Fluid type uses `clamp()`: hero `clamp(46px, 8.2vw, 120px)`, section headings `c
 | Screen reader + keyboard pass | NVDA/VoiceOver walk-through of header → form submit; keyboard-only tab order | before each release |
 | Zoom/reflow | 200% zoom and 320 px viewport, no loss, no horizontal scroll | before each release |
 
-## 6. Known gaps (verified 2026-10-12)
+## 6. Known gaps (A11Y-1 to A11Y-3 verified 2026-10-12, A11Y-4 on 2026-10-18)
 
 | ID | Gap | Detail | Owner decision needed |
 |---|---|---|---|

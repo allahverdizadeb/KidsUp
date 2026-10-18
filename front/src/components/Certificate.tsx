@@ -144,7 +144,7 @@ export default function Certificate() {
             className="hv-6 fc-1"
           >
             <img
-              src="assets/sertifikat-full-name.png"
+              src="/assets/sertifikat-full-name.png"
               alt="KidsUp proqramı tamamlama sertifikatının nümunəsi"
               width="2246"
               height="1588"
@@ -224,7 +224,7 @@ export default function Certificate() {
               }}
             >
               <img
-                src="assets/sertifikat-full-name.png"
+                src="/assets/sertifikat-full-name.png"
                 alt="KidsUp proqramı tamamlama sertifikatının nümunəsi, böyüdülmüş"
                 width="2246"
                 height="1588"

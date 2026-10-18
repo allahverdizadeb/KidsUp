@@ -43,7 +43,7 @@ extensions (out of scope to prevent, in scope not to make worse), network attack
 
 ### SEC-F-03 Third-party code and resources
 - **No third-party scripts, styles, fonts, frames or tags at runtime.** Fonts are self-hosted (`@fontsource-variable/manrope`). No CDN-hosted libraries. No analytics, A/B, chat, tag-manager, advertising or social widgets. (Leaking visitors' IP addresses to third parties is a privacy harm, especially for a site about children.)
-- Allowed exceptions are listed in §5 with owner and reason. Today: one image from `api.accredible.com` (the founder's Wharton credential).
+- Allowed exceptions are listed in §5 with owner and reason. Today: **none**. `App.test.tsx` fails if any `src` leaves the own origin, and `npm run check:headers` fails if `img-src` allows anything but `'self'`. History: §4 and §5.
 - If an external script/style is ever unavoidable it MUST use Subresource Integrity (`integrity` + `crossorigin`), a pinned version and a CSP entry for that exact origin.
 - Outbound **navigation** (WhatsApp, LinkedIn, credential page) is not a resource load, but see SEC-F-09.
 
@@ -115,27 +115,27 @@ extensions (out of scope to prevent, in scope not to make worse), network attack
 - Collect the minimum; no profiling, no marketing to children, no sale or sharing of data, no dark patterns. Children never interact with the form themselves (parents do).
 - Applicable law (Azerbaijani personal-data law; GDPR/children's-data rules where relevant) MUST be confirmed with counsel and reflected in the notice and in `SEC-B-09`.
 
-## 3. Compliance status (verified 2026-10-12)
+## 3. Compliance status (verified 2026-10-12; SEC-F-02, 03 and 12 re-verified 2026-10-18)
 
 ✅ implemented and verified · 🟡 partial / defined but not yet verified · ❌ gap (must close) · ⬜ not applicable yet
 
 | ID | Status | Evidence / what is missing |
 |---|---|---|
 | SEC-F-01 | ✅ | Lint rules proven active; `App.test.tsx` forbids inline handlers/scripts; Trusted Types enforced and verified in Edge with zero violations; injected inline `<script>` blocked |
-| SEC-F-02 | ✅ | `nginx/security-headers.conf`; verified by `npm run check:headers` (28/28) and in-browser tests against nginx 1.29.8. Docker image itself not yet built |
-| SEC-F-03 | ✅ | Browser network log: only `api.accredible.com` besides own origin; font self-hosted |
+| SEC-F-02 | ✅ | `nginx/security-headers.conf`; verified by `npm run check:headers` (40/40 against the built Docker image, 2026-10-18) and in a real browser against it: zero CSP/Trusted Types violations in the console |
+| SEC-F-03 | ✅ | Browser network log against the Docker image (2026-10-18): every request stays on the own origin; the font and the Wharton credential image are self-hosted; `App.test.tsx` and `check:headers` (`img-src 'self'`) guard it |
 | SEC-F-04 | 🟡 | `package-lock.json` ✅, `npm audit` = 0 ✅. **No CI, no Dependabot/Renovate yet** |
 | SEC-F-05 | ✅ | No secrets in bundle; zero source maps; `no-console` |
-| SEC-F-06 | ✅ | No storage/cookie/URL usage (searched `src/`) |
+| SEC-F-06 | ✅ | No storage or cookies. The WhatsApp fallback link (`Apply.tsx`, `WHATSAPP_FALLBACK_URL`) carries a fixed greeting and never the parent's or children's details; `Apply.test.tsx` fails if any link contains typed details. (It did carry them until 2026-10-18.) |
 | SEC-F-07 | 🟡 | Validation mirrors API, `maxLength` set, double-submit blocked ✅. **No bot defence yet** |
 | SEC-F-08 | ✅ | Same-origin, 10 s timeout, tested. Response shape is trivial (`{id}`) and unused beyond success |
-| SEC-F-09 | ✅ | Lint `jsx-no-target-blank`; tests assert `noopener noreferrer` |
+| SEC-F-09 | ✅ | Lint `jsx-no-target-blank` enforces `noopener noreferrer` on every `target="_blank"` link; component tests cover some of them |
 | SEC-F-10 | ⬜ | No authentication in the frontend yet. **Blocker for the admin panel** |
-| SEC-F-11 | ✅ | `check:headers` + nginx config; TLS/HSTS preload is the deployer's job |
-| SEC-F-12 | 🟡 | Build output ✅ (no maps, hashed assets). Image defined but **not yet built and run** |
+| SEC-F-11 | 🟡 | `check:headers` + nginx config ✅ for the static locations. **The `/api/` and dotfile locations do not include the header snippet, so nginx's own 429/413/403 responses carry none of the headers** (`nginx/default.conf`); TLS/HSTS preload is the deployer's job |
+| SEC-F-12 | 🟡 | Build output ✅ (no maps, hashed assets). Images built and run 2026-10-18 ✅: non-root (nginx uid 101, API uid 10001), read-only root filesystem, `cap_drop: ALL`, `no-new-privileges`, no host mounts, only `front` published (on 127.0.0.1), the image holds only `dist/` and its config. **Not yet scanned (Trivy/Grype); no CI** |
 | SEC-F-13 | ✅ | `frame-ancestors 'none'` + `X-Frame-Options` verified |
 | SEC-F-14 | ✅ | `no-console` lint; generic messages; `ErrorBoundary` wraps the app (`src/components/ErrorBoundary.tsx`, tested to leak nothing) |
-| SEC-F-15 | 🟡 | Component tests, axe, lint, `check:headers` ✅. **No CI, no ZAP run, in-browser CSP test is a manual procedure, not yet a repo test** |
+| SEC-F-15 | 🟡 | Component tests, axe, lint, `check:headers` ✅. **No CI, no ZAP run, in-browser CSP test is a manual procedure, not yet a repo test.** `check:headers` matches CSP directives by substring: only `img-src` is anchored, `connect-src` and `font-src` are not checked exactly |
 | SEC-F-16 | ❌ | **No privacy notice or consent on the form.** The site collects children's data without one |
 
 ## 4. Required before public launch
@@ -143,15 +143,18 @@ extensions (out of scope to prevent, in scope not to make worse), network attack
 1. **Privacy notice and (if required) parental consent** on the form, approved by counsel. (SEC-F-16)
 2. Bot defence on the form, in compliance with the CSP. (SEC-F-07)
 3. CI running `npm run verify`, `npm run check:headers` against a built stack, and dependency update PRs. (SEC-F-04/15)
-4. Docker image built, scanned (Trivy/Grype) and run; OWASP ZAP baseline clean. (SEC-F-12/15)
+4. Docker image scanned (Trivy/Grype); OWASP ZAP baseline clean. (Built and run: done 2026-10-18.) (SEC-F-12/15)
 5. TLS in front with HSTS; consider HSTS preload only after every sub-domain is HTTPS. (SEC-F-11)
-6. Replace the accredible.com hot-linked image with a self-hosted copy (with the owner's permission) to remove the last third party. (SEC-F-03)
+6. ~~Replace the accredible.com hot-linked image with a self-hosted copy~~ Done 2026-10-18 with the owner's approval. The issuer's URL redirected to a second host (`artifacts.credential.net`), so the CSP blocked the image; the CSP now has no third-party origin. (SEC-F-03)
+7. ~~Decide what the WhatsApp fallback may carry~~ Done 2026-10-18 with the owner's decision: no personal data in the `wa.me` link. (SEC-F-06/16)
 
 ## 5. Accepted risks and exceptions
 
 | Date | Exception | Why accepted | Compensating control | Owner / review by |
 |---|---|---|---|---|
-| 2026-10-12 | `img-src https://api.accredible.com` (Wharton credential image on the founder section) | Verifiable proof of the founder's credential, hosted by the issuer | Image-only allowance; no cookies, referrer stripped (`no-referrer`), CSP blocks everything else | Project owner / before launch (§4.6) |
+| none | No active exceptions | | | |
+
+Closed: the `img-src https://api.accredible.com` exception (Wharton credential image, accepted 2026-10-12) ended on 2026-10-18, when the image was self-hosted with the owner's approval.
 
 An undated or unowned exception is invalid.
 

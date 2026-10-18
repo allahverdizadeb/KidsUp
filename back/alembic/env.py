@@ -14,14 +14,21 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+def migration_url() -> str:
+    """Who migrates: an explicit URL (the bootstrap job), else the schema owner, else the API's account."""
+    return (
+        config.get_main_option("sqlalchemy.url") or settings.migration_database_url or settings.database_url
+    )
+
+
 def run_migrations_offline() -> None:
-    context.configure(url=settings.database_url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(url=migration_url(), target_metadata=target_metadata, literal_binds=True)
     with context.begin_transaction():
         context.run_migrations()
 
 
 def run_migrations_online() -> None:
-    engine = create_engine(settings.database_url)
+    engine = create_engine(migration_url())
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():

@@ -19,12 +19,15 @@ COPY app ./app
 RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
 USER 10001
 
-ENV PORT=8000
 EXPOSE 8000
 
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
 
-# Apply migrations, then serve. Needs KIDSUP_DATABASE_URL (a postgres:// URL is fine).
-# --forwarded-allow-ips: only trust X-Forwarded-For from the reverse proxy in front (set it to its address).
-CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --no-server-header --proxy-headers --forwarded-allow-ips ${FORWARDED_ALLOW_IPS:-127.0.0.1}"]
+# The API does not migrate: its database account may not change the schema (SEC-B-07). The one-off `bootstrap`
+# service runs `python -m app.bootstrap` first (docker-compose.yml). Needs KIDSUP_DATABASE_URL.
+#
+# Exec form, no shell, so nothing in an environment value is expanded or globbed. uvicorn reads
+# FORWARDED_ALLOW_IPS itself (default: loopback only): the address range of the reverse proxy, nothing wider.
+# --no-access-log: uvicorn's access log would record visitors' IP addresses (SEC-B-10).
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-server-header", "--no-access-log", "--proxy-headers"]

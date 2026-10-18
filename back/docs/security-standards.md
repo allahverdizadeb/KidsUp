@@ -127,7 +127,7 @@ Trust boundary: **everything that arrives over HTTP is hostile**, including head
 - The API makes no outbound requests today. If one is added it MUST use an allow-list of hosts, block private/link-local addresses (SSRF), set timeouts, and never forward user-supplied URLs or credentials.
 - No personal data is sent to any third-party service without a documented purpose, a data-processing agreement and an entry in §5.
 
-## 3. Compliance status (verified 2026-10-12)
+## 3. Compliance status (verified 2026-10-12; SEC-B-10 and SEC-B-15 updated 2026-10-18)
 
 ✅ implemented and tested · 🟡 partial / defined but not yet verified · ❌ gap (must close; owner decides date) · ⬜ not applicable yet
 
@@ -142,12 +142,12 @@ Trust boundary: **everything that arrives over HTTP is hostile**, including head
 | SEC-B-07 | ❌ | Compose uses one `kidsup` owner role for migrations **and** runtime. Split roles before launch |
 | SEC-B-08 | 🟡 | Rate limit + body limit ✅ (`tests/test_security.py`). **No CAPTCHA/bot defence; limiter is per instance** |
 | SEC-B-09 | ❌ | Minimisation ✅. **No retention job, no erasure procedure, at-rest encryption/backups not verified** |
-| SEC-B-10 | 🟡 | No personal data logged ✅. **No structured logging, request id or audit log yet** |
+| SEC-B-10 | 🟡 | No form data logged ✅. **Client IPs are logged** (uvicorn access log; with `--proxy-headers` working they are the real visitor IPs) with no rotation or retention limit; no structured logging, request id or audit log yet |
 | SEC-B-11 | ✅ | `app/middleware.py`, `app/main.py`; `tests/test_security.py` |
 | SEC-B-12 | ✅ | Framework 500s are generic; no handlers that echo internals |
 | SEC-B-13 | 🟡 | Hash-pinned locks ✅, `pip-audit` clean ✅. **No CI, no Dependabot, base images not digest-pinned** |
 | SEC-B-14 | ✅ | `tests/test_security.py::test_docs_available_in_development_but_not_in_production`, wildcard test |
-| SEC-B-15 | 🟡 | Defined in `Dockerfile` / `docker-compose.yml`; **not yet built and run** (Docker not yet available on the dev machine) |
+| SEC-B-15 | 🟡 | Built and run 2026-10-18: `back` and `front` are non-root, read-only, `cap_drop: ALL`, `no-new-privileges`, no host mounts; only `front` is published. **Gaps:** `db` keeps the stock image defaults (no `read_only`, no `cap_drop`); `FORWARDED_ALLOW_IPS` is `*`, which trusts any peer and is safe only while nginx overwrites `X-Forwarded-For`, with no §5 entry; images not scanned; only the start-command quoting is tested (`tests/test_container.py`) |
 | SEC-B-16 | 🟡 | Control tests + SAST ✅. **No DAST run, no CI** |
 | SEC-B-17 | ❌ | No `SECURITY.md` / contact |
 | SEC-B-18 | ✅ | No outbound requests |

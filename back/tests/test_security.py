@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -11,6 +13,7 @@ def production(**overrides):
         environment="production",
         cors_origins=["https://kidsup.az"],
         allowed_hosts=["kidsup.az", "testserver"],
+        database_url="postgresql://kidsup_app:throw-away@db:5432/kidsup",  # production refuses the superuser
         **overrides,
     )
 
@@ -75,6 +78,16 @@ def test_rate_limit_returns_429_with_retry_after(app):
     blocked = limited.post("/api/applications", json=VALID)
     assert blocked.headers["Retry-After"] == "60"
     assert limited.get("/health").status_code == 200  # only the API is limited
+
+
+def test_rate_limit_hits_are_logged_as_events_without_the_address(caplog):
+    limited = TestClient(create_app(make_settings(rate_limit_per_minute=1)))
+    with caplog.at_level(logging.WARNING, logger="app.rate_limit"):
+        limited.post("/api/applications", json=VALID)
+        limited.post("/api/applications", json=VALID)
+
+    assert [record.getMessage() for record in caplog.records] == ["rate limit exceeded"]
+    assert "testclient" not in caplog.text  # the TestClient's "address": an IP is personal data (SEC-B-10)
 
 
 def test_invalid_requests_also_count_towards_the_limit():

@@ -32,7 +32,7 @@ Skills/agents: [`.claude/`](.claude/) (`verify-frontend`, `new-component`, `add-
 - `src/styles/hover.css`: pseudo-state rules (was generated from the design; **now hand-maintained**). `!important` is deliberate.
 - `src/api/`: the only place that talks to `back/` (10 s timeout, same origin).
 - `nginx/`: production server config and the security headers (CSP incl. Trusted Types). `scripts/`: dependency-free tooling.
-- `public/assets/`: images. `design-source/`: the original design export. Read-only, never built or imported.
+- `public/assets/`: images and the brochure PDF. `design-source/`: the original design export. Read-only (see `../CLAUDE.md`), never built or imported.
 
 ## Application form (`components/Apply.tsx`)
 
@@ -40,15 +40,15 @@ Fields: parent name, phone, one or two children (name, birth date), preferred tr
 Validation mirrors `back/` (phone characters + 9–12 digits, names required, **`maxLength` 120/32 = API limits**, at least one language).
 A child's age on the program start date (2026-12-05) outside 8–13 only shows a warning, as designed; it does not block submission.
 Submit calls `POST /api/applications` (`src/api/applications.ts`). On success a confirmation replaces the form action; on failure the
-pre-filled WhatsApp message fallback (`+994 50 998 87 07`) is shown.
+a WhatsApp link (`+994 50 998 87 07`) with a plain greeting is shown as the fallback. It never carries parent or child details (`SEC-F-06`; a test covers it).
 
 ## Rules (the short list; the documents above are authoritative)
 
-- No third-party resources: the font is self-hosted, the CSP is `'self'` only (one documented image exception). Do not add a CDN, tracker or frame.
+- No third-party resources and no CSP exceptions: the font and the founder's Wharton credential image are self-hosted, the CSP is `'self'` only. Do not add a CDN, tracker or frame. (The Wharton image is the one deliberate difference from `design-source/`, which hot-links it.)
 - Never use `dangerouslySetInnerHTML`, `innerHTML`, `eval`, `console.*`; external links need `rel="noopener noreferrer"` (lint enforces all of these).
 - Never store personal data (storage, cookies, URL, console). Never put a secret in the bundle: every `VITE_*` value is public.
 - API base URL comes from `VITE_API_URL`, never hard-coded. Keep API types next to the call in `src/api/`.
 - New names follow `docs/coding-standards.md` §4. The terse names from the design runtime (`ls0`, `qz_`, `eParentB`, `h1box`) are **legacy debt**: never add more, rename when you touch them.
 - Accessibility: labelled inputs, visible focus, keyboard paths, ARIA state props, `prefers-reduced-motion`. The axe test must stay at zero violations.
-- Known open items: brand pink fails AA for small text (A11Y-1); the form has no privacy notice yet (`SEC-F-16`); no bot defence yet. See the documents.
+- Known open items: brand pink fails AA for small text (A11Y-1); the brochure PDF has no text layer (A11Y-4); the form has no privacy notice yet (`SEC-F-16`); no bot defence yet. See the documents.
 - `style` objects mixing `textDecoration` with `textDecorationColor`/`Thickness` trigger React warnings: use `textDecorationLine`.

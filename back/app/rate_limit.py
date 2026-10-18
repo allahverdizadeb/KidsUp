@@ -1,8 +1,11 @@
+import logging
 import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 
 from fastapi import HTTPException, Request, status
+
+logger = logging.getLogger(__name__)
 
 WINDOW_SECONDS = 60
 
@@ -43,6 +46,8 @@ def enforce_rate_limit(request: Request) -> None:
     limiter: RateLimiter = request.app.state.rate_limiter
     caller = request.client.host if request.client else "unknown"
     if not limiter.allow(caller):
+        # No address in the log: an IP is personal data, and the event is what an operator needs (SEC-B-10).
+        logger.warning("rate limit exceeded")
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
             "Too many requests.",

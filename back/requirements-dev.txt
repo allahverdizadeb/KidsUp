@@ -1425,6 +1425,7 @@ pyyaml==6.0.3 \
     --hash=sha256:fc09d0aa354569bc501d4e787133afc08552722d3ab34836a80547331bb5d4a0
     # via
     #   -c requirements.txt
+    #   -r requirements-dev.in
     #   bandit
     #   uvicorn
 requests==2.34.2 \

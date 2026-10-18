@@ -71,7 +71,7 @@ describe('Brochure', () => {
   it('offers the PDF brochure as a download', () => {
     render(<Brochure />);
     const link = screen.getByRole('link', { name: /Broşuranı yüklə/ });
-    expect(link).toHaveAttribute('href', 'assets/KidsUp-Brosura.pdf');
+    expect(link).toHaveAttribute('href', '/assets/KidsUp-Brosura.pdf');
     expect(link).toHaveAttribute('download', 'KidsUp-Brosura.pdf');
   });
 

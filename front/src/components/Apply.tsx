@@ -6,6 +6,11 @@ import { useHover } from '../hooks/useHover';
 const PROGRAM_START = new Date('2026-12-05');
 const LANGUAGES = ['Azərbaycan', 'Rus', 'İngilis'];
 const WHATSAPP = 'https://wa.me/994509988707';
+// Fallback if the API is unreachable. The link carries a plain greeting and never any parent or child details
+// (SEC-F-06): a URL ends up in browser history and in WhatsApp's own systems.
+const WHATSAPP_FALLBACK_URL = `${WHATSAPP}?text=${encodeURIComponent(
+  'Salam! KidsUp proqramına müraciət etmək istəyirəm.',
+)}`;
 const ERROR_COLOR = '#B00060';
 const FIELD_COLOR = '#1A1A1A';
 
@@ -215,13 +220,6 @@ export default function Apply() {
   const submitBg = sending || sent ? '#6B6B6B' : '#FF0083';
   const submitCur = sending || sent ? 'default' : 'pointer';
 
-  // Fallback if the API is unreachable: the same details, pre-filled into a WhatsApp message.
-  const message =
-    'Salam! KidsUp proqramına müraciət etmək istəyirəm.\n' +
-    `Valideyn: ${parent}\nTelefon: ${phone}\n` +
-    kidList.map((k, i) => `${i + 1}-ci uşaq: ${k.name}, doğum tarixi: ${k.dob}`).join('\n') +
-    `\nTəlim dili: ${selectedLangs.join(', ')}`;
-  const waHref = `${WHATSAPP}?text=${encodeURIComponent(message)}`;
   return (
     <section id="muraciet" style={{ background: '#FFFFFF' }}>
       <div
@@ -909,11 +907,11 @@ export default function Apply() {
                 }}
               >
                 <div style={{ fontSize: '15px', lineHeight: '1.55', color: '#1A1A1A' }}>
-                  Müraciətiniz hələ göndərilməyib. Bir az sonra yenidən cəhd edin və ya məlumatlarınızı
-                  WhatsApp ilə göndərin.
+                  Müraciətiniz hələ göndərilməyib. Bir az sonra yenidən cəhd edin və ya WhatsApp ilə bizə
+                  yazın.
                 </div>
                 <a
-                  href={waHref}
+                  href={WHATSAPP_FALLBACK_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -930,7 +928,7 @@ export default function Apply() {
                   }}
                   className="hv-11"
                 >
-                  WhatsApp ilə göndər
+                  WhatsApp ilə bizə yaz
                 </a>
               </div>
             </>
