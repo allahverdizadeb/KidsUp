@@ -1,0 +1,45 @@
+[tool.ruff]
+line-length = 110
+target-version = "py313"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W",  # pycodestyle
+  "F",       # pyflakes
+  "I",       # isort
+  "N",       # pep8-naming
+  "UP",      # pyupgrade
+  "B",       # bugbear
+  "S",       # bandit (security)
+  "C4",      # comprehensions
+  "SIM",     # simplifications
+  "DTZ",     # naive datetimes
+  "PT",      # pytest style
+  "RUF",
+]
+ignore = [
+  "B008",                       # FastAPI's Depends() in argument defaults is the framework idiom
+  "RUF001", "RUF002", "RUF003", # Azerbaijani text contains ı, ə, ş ... legitimately
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]  # asserts and throw-away credentials are fine in tests
+"tests/conftest.py" = ["E402", "I001"]  # imports must follow the DATABASE_URL override
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["app", "tests"]
+exclude = ["alembic"]
+
+[[tool.mypy.overrides]]
+# Strict typing is mandatory for application code; tests only need to be correct, not annotated.
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]

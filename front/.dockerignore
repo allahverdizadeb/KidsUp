@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+design-source
+.env
+.env.*
+!.env.example
+docs
+.claude
+CLAUDE.md
+Dockerfile

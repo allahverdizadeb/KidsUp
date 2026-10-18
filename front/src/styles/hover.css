@@ -1,0 +1,52 @@
+/* Generated from the design's style-hover / style-focus attributes. */
+.hv-1:hover {
+  color: #ff0083 !important;
+}
+.hv-2:hover {
+  background: #e00073 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+.hv-3:hover {
+  background: #e00073 !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+}
+.hv-4:hover {
+  background: #f6f6f6 !important;
+}
+.hv-5:hover {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+}
+.hv-6:hover {
+  border-color: #ff0083 !important;
+}
+.hv-7:hover {
+  background: #ff0083 !important;
+  color: #ffffff !important;
+}
+.hv-8:hover {
+  transform: translate(-2px, -2px) !important;
+  box-shadow: 6px 6px 0 #1a1a1a !important;
+  color: #ffffff !important;
+}
+.hv-9:hover {
+  transform: translateY(-2px) !important;
+  color: #1a1a1a !important;
+}
+.hv-10:hover {
+  background: #e00073 !important;
+  color: #ffffff !important;
+}
+.hv-11:hover {
+  background: #333333 !important;
+  color: #ffffff !important;
+}
+.fc-1:focus {
+  border-color: #ff0083 !important;
+}
+.fc-2:focus {
+  border-color: #ff0083 !important;
+  box-shadow: 0 0 0 3px #ffd1e8 !important;
+}

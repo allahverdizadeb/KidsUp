@@ -1,0 +1,10 @@
+dist
+coverage
+design-source
+node_modules
+
+# hand-written docs and Claude configuration are not reformatted
+docs
+.claude
+CLAUDE.md
+*.md

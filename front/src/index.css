@@ -1,0 +1,82 @@
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+body {
+  margin: 0;
+  background: #ffffff;
+  font-family: 'Manrope Variable', sans-serif;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: #ff0083;
+  text-decoration: none;
+}
+a:hover {
+  color: #d6006e;
+}
+input,
+button {
+  font-family: inherit;
+}
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+img {
+  max-width: 100%;
+}
+:focus-visible {
+  outline: 3px solid #ff0083;
+  outline-offset: 3px;
+}
+
+@keyframes kuFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes kuConfetti {
+  0% {
+    transform: translateY(-14px) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(70px) rotate(160deg);
+    opacity: 0;
+  }
+}
+@keyframes kuTwinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes kuBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
