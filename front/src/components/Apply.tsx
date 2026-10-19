@@ -4,7 +4,7 @@ import { submitApplication } from '../api/applications';
 import { PRIVACY_NOTICE_VERSION } from '../content/privacyNotice';
 import { useHover } from '../hooks/useHover';
 import FieldError from './FieldError';
-import PrivacyConsent from './PrivacyConsent';
+import PrivacyConsent, { CONSENT_BOX_ID } from './PrivacyConsent';
 
 const PROGRAM_START = new Date('2026-12-05');
 const LANGUAGES = ['Azərbaycan', 'Rus', 'İngilis'];
@@ -58,7 +58,7 @@ function validate(parent: string, phone: string, kids: Kid[], langs: string[], i
       else if (e.kids[i].dob) firstId = 'kd' + i;
     }
     if (!firstId && e.langs) firstId = 'f-lang-l';
-    if (!firstId && e.consent) firstId = 'f-consent';
+    if (!firstId && e.consent) firstId = CONSENT_BOX_ID;
   }
   return { errors: e, firstId };
 }
@@ -118,6 +118,8 @@ export default function Apply() {
       removeLabel: `${i + 1}-ci uşağı sil`,
       nameId: 'kn' + i,
       dobId: 'kd' + i,
+      nameErrorId: `kn${i}-err`,
+      dobErrorId: `kd${i}-err`,
       eName: ke.name ?? '',
       eNameOn: !!ke.name,
       nameInv: !!ke.name,
@@ -393,7 +395,7 @@ export default function Apply() {
               onChange={onParent}
               autoComplete="name"
               aria-invalid={eParentInv}
-              aria-describedby="f-parent-err"
+              aria-describedby={eParentOn ? 'f-parent-err' : undefined}
               style={{
                 height: '56px',
                 borderRadius: '6px',
@@ -425,7 +427,7 @@ export default function Apply() {
               placeholder="+994 50 123 45 67"
               autoComplete="tel"
               aria-invalid={ePhoneInv}
-              aria-describedby="f-phone-err"
+              aria-describedby={ePhoneOn ? 'f-phone-err' : undefined}
               style={{
                 height: '56px',
                 borderRadius: '6px',
@@ -516,6 +518,7 @@ export default function Apply() {
                     onChange={k.onName}
                     autoComplete="off"
                     aria-invalid={k.nameInv}
+                    aria-describedby={k.eNameOn ? k.nameErrorId : undefined}
                     style={{
                       height: '56px',
                       borderRadius: '6px',
@@ -531,7 +534,7 @@ export default function Apply() {
                     }}
                     className="fc-2"
                   />
-                  {k.eNameOn && <FieldError id="kn-err" message={k.eName} />}
+                  {k.eNameOn && <FieldError id={k.nameErrorId} message={k.eName} />}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label htmlFor={k.dobId} style={{ fontWeight: '700', fontSize: '15px' }}>
@@ -546,6 +549,7 @@ export default function Apply() {
                     max="2020-12-31"
                     autoComplete="off"
                     aria-invalid={k.dobInv}
+                    aria-describedby={k.eDobOn ? k.dobErrorId : undefined}
                     style={{
                       height: '56px',
                       borderRadius: '6px',
@@ -567,7 +571,7 @@ export default function Apply() {
                     }}
                     className="fc-2"
                   />
-                  {k.eDobOn && <FieldError id="kd-err" message={k.eDob} />}
+                  {k.eDobOn && <FieldError id={k.dobErrorId} message={k.eDob} />}
                   {k.hasAge && (
                     <>
                       <div style={{ fontSize: '14px', fontWeight: '600', color: k.ageColor }}>

@@ -21,6 +21,10 @@ from app.services import retention
 
 logger = logging.getLogger(__name__)
 
+# More applications than this falling due on one day means something is wrong (the host's clock jumped,
+# say): the job stops and asks a person instead of deleting them (`--force` after checking).
+MAX_EXPIRED_PER_RUN = 50
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m app.cli", description=__doc__)
@@ -30,6 +34,12 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"delete applications that never led to enrolment after {settings.retention_days} days",
     )
     purge.add_argument("--dry-run", action="store_true", help="only count what would be deleted")
+    purge.add_argument(
+        "--force",
+        action="store_true",
+        help=f"delete even if more than {MAX_EXPIRED_PER_RUN} applications are due "
+        "(check with --dry-run first)",
+    )
     enrolled = commands.add_parser(
         "mark-enrolled", help="keep a family's application out of purge-expired once the child is enrolled"
     )
@@ -45,14 +55,24 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def purge_expired(db: Session, dry_run: bool) -> int:
+def purge_expired(db: Session, dry_run: bool, force: bool) -> int:
     now = datetime.now(UTC)
+    due = retention.count_expired_applications(db, now, settings.retention_days)
     if dry_run:
-        count = retention.count_expired_applications(db, now, settings.retention_days)
-        logger.info("applications that would be deleted: %d", count)
-    else:
-        count = retention.delete_expired_applications(db, now, settings.retention_days)
-        logger.info("expired applications deleted: %d", count)
+        logger.info("applications that would be deleted: %d", due)
+        return 0
+    if due > MAX_EXPIRED_PER_RUN and not force:
+        logger.error(
+            "%d applications are due, more than the %d one run deletes by itself: nothing was deleted. "
+            "Check the host's clock and `purge-expired --dry-run`, then run again with --force.",
+            due,
+            MAX_EXPIRED_PER_RUN,
+        )
+        return 1
+    logger.info(
+        "expired applications deleted: %d",
+        retention.delete_expired_applications(db, now, settings.retention_days),
+    )
     return 0
 
 
@@ -80,6 +100,9 @@ def erase_by_phone(db: Session) -> int:
     except ValueError as error:
         logger.error("%s", error)
         return 1
+    # End the read: the operator may take minutes to look at the list, and the database closes a session that
+    # sits in an open transaction for longer than a minute (it would kill the erasure that follows).
+    db.rollback()
     if not matches:
         logger.warning("no application with that phone number")
         return 1
@@ -101,7 +124,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     with SessionLocal() as db:
         match args.command:
             case "purge-expired":
-                return purge_expired(db, args.dry_run)
+                return purge_expired(db, args.dry_run, args.force)
             case "mark-enrolled":
                 return mark_enrolled(db, args.application_id)
             case "erase-application":

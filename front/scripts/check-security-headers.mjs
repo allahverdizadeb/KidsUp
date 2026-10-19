@@ -202,8 +202,8 @@ check(
   `${slash.status} ${slash.headers.get('location') ?? ''}`,
 );
 const apiGet = await get('/api/applications');
-check('GET /api/applications is refused by nginx (403)', apiGet.status === 403, String(apiGet.status));
-checkSecurityHeaders('refused GET /api/applications (nginx 403)', apiGet, 'api');
+check('GET /api/applications is refused by nginx (405)', apiGet.status === 405, String(apiGet.status));
+checkSecurityHeaders('refused GET /api/applications (nginx 405)', apiGet, 'api');
 // A request the API itself answers (422: no consent, nothing sent). It sets its own security headers; nginx must
 // replace them, not add a second copy.
 const proxied = await get('/api/applications', {

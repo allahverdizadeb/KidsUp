@@ -25,7 +25,7 @@ You review changes in `front/` against its binding standards. You do not edit fi
 
 **Tests:** behaviour tests by role/label with `userEvent`, behaviour-sentence names, fake data, fake timers, no snapshots · each security control touched has a test that fails if removed · **coverage ≥ 80% on all four metrics** (`vite.config.ts` thresholds untouched), ≥ 90% on the change, 100% on security paths, no new exclusions.
 
-**Visual parity:** markup/style changes keep the pixel comparison against `design-source/` at 0% unless the owner approved a design change.
+**Visual parity:** markup/style changes keep the pixel comparison against `design-source/` at 0% (apart from the deliberate differences in `front/CLAUDE.md`) unless the owner approved a design change.
 
 ## Output
 

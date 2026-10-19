@@ -56,11 +56,13 @@ cd front; npm run check:headers      # defaults to http://localhost:8080
 | Count what the purge would delete / delete it (also runs daily by itself) | `docker compose exec retention python -m app.cli purge-expired --dry-run` / `… purge-expired` |
 | Keep an enrolled family's application out of the purge | `docker compose exec retention python -m app.cli mark-enrolled <id>` |
 | **Erase one family's data on request** (`SEC-B-09`) | `docker compose exec retention python -m app.cli erase-by-phone`: it asks for the number (so it stays out of the shell history), lists the matches (ids and dates, no names) and deletes only after you type back how many there are. Or `… erase-application <id>`. Write the request down in your own register: the system keeps none (`back/docs/security-standards.md` §5, entry 6) |
-| Look at the data (superuser; do not paste what you see anywhere) | `docker compose exec db psql -U kidsup -d kidsup` |
+| Look at the data, e.g. to contact a family (superuser: **there is no named account and no audit trail**, so do not copy what you see anywhere; write down who looked and why; accepted risk §7) | `docker compose exec db psql -U kidsup -d kidsup` |
 | Rotate a password | see "Rotating a password" below |
 | **Delete all data** (destructive) | `docker compose down -v` |
 
 The operator commands run in the `retention` container, not in `back`: only its account may read what they match on and delete.
+
+The daily purge deletes at most 50 applications by itself. If more are due (a wrong clock on the host would cause that), it deletes nothing and ends its container, which then shows as restarting. Check the host's clock and `docker compose run --rm retention python -m app.cli purge-expired --dry-run`; if the number is right, delete with `docker compose run --rm retention python -m app.cli purge-expired --force`.
 
 **Backups** contain personal data of children. Write them outside the repository **and outside OneDrive** (this folder syncs to the cloud),
 to an encrypted drive, and test a restore before relying on them. `*.sql` and `*.dump` are git-ignored, but that does not stop a cloud sync:
@@ -77,7 +79,7 @@ After a parent's deletion request, the deleted data stays in older backups until
 |---|---|---|
 | `kidsup` (PostgreSQL superuser) | the one-off `bootstrap` job; an operator for maintenance. No long-running service | everything |
 | `kidsup_owner` | `bootstrap`, to run the Alembic migrations | owns the tables; not a superuser |
-| `kidsup_app` | `back` only | `INSERT` into the two application tables. It cannot read any column back (not even a count), change a row or delete one, and has no access to `alembic_version`. The API refuses to start in production if it finds more than this |
+| `kidsup_app` | `back` only | `INSERT` into the two application tables. It cannot read any column back (not even a count), change a row or delete one, and has no access to `alembic_version`. The API refuses to start in production if it finds more than this: any right on any table, membership of another role, the right to create anything, or no `INSERT` |
 | `kidsup_retention` | `retention` and the operator's commands | read `id`, `created_at`, `status` and `phone` of applications; `DELETE` them (the children go with them through the foreign key); set `status`. It cannot read names or birth dates |
 
 `bootstrap` is safe to run on every start. It also upgrades a database created before the split (the tables change owner, earlier wider grants are
@@ -103,8 +105,9 @@ KidsUp's. A table added later (the admin panel's users, say) is closed to the AP
 ## What is logged (`SEC-B-10`)
 
 - The API's access log is off (`--no-access-log`): it would record every visitor's IP address. A rate-limit hit is logged as an event without the address.
-- A database error carries no bound parameters (names and phone numbers) in its text, and PostgreSQL itself prints neither the failing row nor the
-  statement (`log_error_verbosity=terse`, `log_min_error_statement=panic`). The operator commands log counts, ids and dates only.
+- A database error carries no bound parameters (names and phone numbers) in its text, and PostgreSQL itself prints neither the failing row nor any
+  statement or bound value (`log_error_verbosity=terse`, `log_min_error_statement=panic`, `log_statement=none`, `log_min_duration_statement=-1`,
+  `log_parameter_max_length=0`, `log_parameter_max_length_on_error=0`). The operator commands log counts, ids and dates only.
 - nginx's access log keeps the address **shortened** (IPv4: last number zeroed) and the path **without its query string**. nginx's error log (which always
   records the full address) is limited to critical failures; refused or failed requests still show up in the access log as 413/429/502/504.
 - Docker rotates every service's log by **size** (10 MB × 3), not by age, so how long a line survives depends on traffic. Nothing in them is personal data.
@@ -123,8 +126,8 @@ KidsUp's. A table added later (the admin panel's users, say) is closed to the AP
 | Hash-pinned Python dependencies (`--require-hashes`), `npm ci` with lockfile; `pip` removed from the API image; the unused `gosu` removed from the database image | Dockerfiles | `SEC-B-13`, `SEC-F-04` |
 | Strict CSP + Trusted Types, HSTS, `nosniff`, frame/CORP/COOP/COEP headers on **every** nginx answer, errors included (the API's JSON gets its own strict CSP) | `front/nginx/` | `SEC-F-02`, `SEC-F-11` |
 | nginx passes on `POST /api/applications` and nothing else, looks the API up by name again as its address changes, and ignores the API's `X-Accel-*` headers | `front/nginx/default.conf` | `SEC-F-11` |
-| nginx rate limit + body cap; API rate limit + body cap + host allow-list; a trailing slash is a 404, not a redirect to an internal name | `front/nginx/default.conf`, `back/app` | `SEC-B-08`, `SEC-B-11` |
-| Production mode: no `/docs`, HSTS, wildcards and the `postgres` superuser refused | `KIDSUP_ENVIRONMENT=production` | `SEC-B-14` |
+| nginx rate limit + body cap (other methods are refused with 405 before the limiter, so they do not use up a visitor's budget); API rate limit + body cap + host allow-list; a trailing slash is a 404, not a redirect to an internal name | `front/nginx/default.conf`, `back/app` | `SEC-B-08`, `SEC-B-11` |
+| Production mode (also the default of the API image): no `/docs`, HSTS, wildcards and the `postgres` superuser refused | `KIDSUP_ENVIRONMENT=production`, `back/Dockerfile` | `SEC-B-14` |
 | Secrets only via `.env` (git-ignored); compose refuses an empty password | `.env.example`, `docker-compose.yml` | `SEC-B-05` |
 | Retention job (a failing run ends its container instead of passing unnoticed) and erasure commands | `back/app/services/retention.py`, `back/app/cli.py` | `SEC-B-09` |
 
@@ -157,7 +160,9 @@ are meant to be cached; `index.html` is `no-cache`, and none of it is personal d
    junk requests a minute lock every family out), and test it through the proxy.
 2. Use a **managed or separately secured PostgreSQL** with TLS (`sslmode=verify-full` in the URLs: `bootstrap` and the API both honour it) and encrypted
    storage and backups. Between the containers the traffic is unencrypted on the host-internal network: that is an accepted risk in
-   `back/docs/security-standards.md` §5 and ends with the managed database.
+   `back/docs/security-standards.md` §5 and ends with the managed database. **Give the managed database the log settings of the `db` service in
+   `docker-compose.yml`** (the six `-c` options): providers log slow queries and statements with their values by default. Then force an error
+   (for example submit an application as the API account with a missing column) and read the database log: it must show no row, statement or value.
 3. Run `bootstrap` as a job that an operator starts, and take `POSTGRES_PASSWORD` (the superuser) out of the environment of everything that starts by itself.
    Consider a `pg_hba.conf` that lets each role in only from its own container (accepted risk §5, entry 1).
 4. Set `KIDSUP_ALLOWED_HOSTS` / `KIDSUP_CORS_ORIGINS` to the real host names; the API refuses wildcards in production.
@@ -184,6 +189,6 @@ The 2026-10-18 work found and fixed: an unquoted `${FORWARDED_ALLOW_IPS}` that t
 blocked a hot-linked image, nginx's own error answers without security headers, IP addresses in the API's and nginx's logs, and an API that ran as the database
 superuser. The 2026-10-19 work (after two independent reviews) found and fixed: SQL parameters (names, phone numbers) in the text of database errors, an API account
 that could read and delete everything, a bootstrap that could be pointed at the wrong account or database, an erase-by-phone that missed `050…` for `+994 50…`,
-a notice link that opened only once, and nginx caching the API's address.
+a notice link that opened only once, nginx caching the API's address, and an erase command whose open transaction the database would have killed after a minute.
 
 Still open: CI, base-image digests, the unfixed Debian findings above, and everything under "Before exposing it to the internet".

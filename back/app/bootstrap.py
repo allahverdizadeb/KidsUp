@@ -18,6 +18,7 @@ import sys
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Self
 
 import psycopg
 from alembic.config import Config
@@ -39,6 +40,7 @@ MIGRATION_TABLE = "alembic_version"
 ROLE_OPTIONS = sql.SQL("LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS")
 MIN_PASSWORD_LENGTH = 24
 CONNECT_TIMEOUT_SECONDS = 10
+LOCAL_HOSTS = frozenset({None, "localhost", "127.0.0.1", "::1"})
 
 
 class UnsafeSetupError(ValueError):
@@ -94,7 +96,7 @@ class Setup:
     retention: Account
 
     @classmethod
-    def validated(cls, admin_url: URL, owner_url: URL, app_url: URL, retention_url: URL) -> "Setup":
+    def validated(cls, admin_url: URL, owner_url: URL, app_url: URL, retention_url: URL) -> Self:
         """Refuse anything that could change an account or database that is not ours. Makes no connection."""
         if admin_url.database is None:
             raise UnsafeSetupError("The admin database URL needs a database name.")
@@ -120,6 +122,12 @@ class Setup:
             if account.role == "postgres" or account.role.startswith("pg_"):
                 # CREATE/ALTER ROLE would rewrite a built-in account (or fail half-way through).
                 raise UnsafeSetupError(f"{account.role!r} is a reserved role name; choose another.")
+        # The other containers can reach the superuser over the internal network, so its password matters as
+        # much as the others'. The one exception is the throw-away superuser of a development PostgreSQL on
+        # this machine.
+        is_development_superuser = admin.role == "postgres" and admin_url.host in LOCAL_HOSTS
+        needing_a_long_password = (owner, app, retention) if is_development_superuser else accounts
+        for account in needing_a_long_password:
             if len(account.password) < MIN_PASSWORD_LENGTH:
                 raise UnsafeSetupError(
                     f"The password of {account.role!r} must be at least {MIN_PASSWORD_LENGTH} characters."
@@ -173,6 +181,8 @@ def ensure_role(conn: psycopg.Connection[TupleRow], account: Account, limits: Ma
             verifier=sql.Literal(password_verifier(conn, account)),
         )
     )
+    # Whatever was set on the role by hand (a search_path, an hour-long timeout ...) goes before ours go in.
+    conn.execute(sql.SQL("ALTER ROLE {} RESET ALL").format(role))
     for setting, value in limits.items():
         conn.execute(
             sql.SQL("ALTER ROLE {} SET {} = {}").format(role, sql.Identifier(setting), sql.Literal(value))

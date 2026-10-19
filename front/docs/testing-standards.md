@@ -7,7 +7,7 @@ Tools: **Vitest** (runner, `jsdom`), **@testing-library/react** + **user-event**
 - **Project-level coverage MUST be at least 80% on all four metrics: statements, branches, functions and lines.**
 - It is enforced automatically: `vite.config.ts` sets `coverage.thresholds` to 80 and `npm run test:coverage` (part of `npm run verify`) **fails** below it. Lowering a threshold, widening `coverage.exclude`, or adding ignore comments to pass the gate is forbidden without an entry in the *Accepted risks* table of [`security-standards.md`](security-standards.md).
 - Only `src/main.tsx` (the entry that mounts React) and the test helpers are excluded. Everything else in `src/` counts.
-- 80% is a **floor**. Current coverage: statements 98.7%, branches 95.5%, functions 98.8%, lines 99.3%. New or changed code SHOULD be ≥ 90% covered; **security-relevant code (forms, links, `api/`, `ErrorBoundary`, anything touching user data) MUST be covered 100% including failure paths.**
+- 80% is a **floor**. Current coverage: statements 98.7%, branches 95.6%, functions 98.8%, lines 99.3%. New or changed code SHOULD be ≥ 90% covered; **security-relevant code (forms, links, `api/`, `ErrorBoundary`, anything touching user data) MUST be covered 100% including failure paths.**
 - Coverage shows code *ran*, not that it is *right*. A test without a meaningful assertion does not count; reviewers reject it.
 
 ## 2. What to test

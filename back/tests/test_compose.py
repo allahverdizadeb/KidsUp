@@ -75,10 +75,19 @@ def test_postgres_runs_as_the_postgres_user_not_root(compose):
     assert compose["services"]["db"]["user"] == "70:70"
 
 
-def test_the_database_log_never_holds_a_failing_row_or_statement(compose):
-    command = compose["services"]["db"]["command"]
-    assert "log_error_verbosity=terse" in command  # no DETAIL line with the whole failing row
-    assert "log_min_error_statement=panic" in command  # no statement text, whatever its literals
+@pytest.mark.parametrize(
+    "setting",
+    [
+        "log_error_verbosity=terse",  # no DETAIL line with the whole failing row
+        "log_min_error_statement=panic",  # no text of a failing statement, whatever its literals
+        "log_statement=none",
+        "log_min_duration_statement=-1",  # no slow-query log, which prints statements
+        "log_parameter_max_length=0",  # and if one is ever logged, without its bound values
+        "log_parameter_max_length_on_error=0",
+    ],
+)
+def test_the_database_log_never_holds_a_failing_row_or_a_statement_with_its_values(compose, setting):
+    assert setting in compose["services"]["db"]["command"]
 
 
 def test_only_the_front_publishes_a_port_and_only_on_loopback_by_default(compose):

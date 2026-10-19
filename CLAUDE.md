@@ -6,8 +6,8 @@ This repo has three independent projects. This file only covers what is shared a
 
 | Folder   | What it is                                       | Status                                                          |
 |----------|--------------------------------------------------|-----------------------------------------------------------------|
-| `front/` | Public landing page, React + TypeScript (Vite)   | Ported from the design (deliberate differences: `front/CLAUDE.md`); 169 tests, ~99% coverage |
-| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` live; 272 tests, 100% coverage  |
+| `front/` | Public landing page, React + TypeScript (Vite)   | Ported from the design (deliberate differences: `front/CLAUDE.md`); 177 tests, ~99% coverage |
+| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` live; 320 tests, 100% coverage  |
 | `admin/` | Admin panel                                      | **Blocked: design not ready**                                   |
 
 Each project has `docs/` (standards) and `.claude/` (skills + agents); the repo root has `.claude/` (cross-project
@@ -73,5 +73,5 @@ Cross-project conventions (language, naming, git, deploy, security baseline) →
 Open owner decisions: use `#D6006E` for small pink text (brand pink fails WCAG AA contrast, see
 `front/docs/styling-and-accessibility-standards.md` A11Y-1); notification channel for new applications; a text-based export of
 the brochure PDF (it is two images, A11Y-4); **the privacy notice and consent wording, built as a draft: a launch blocker until counsel
-approves it** (`SEC-F-16`, the points to confirm are in `front/docs/privacy-notice-review.md`); the owner's signature on the six accepted risks in
-`back/docs/security-standards.md` section 5; the contact and response times in `SECURITY.md`.
+approves it** (`SEC-F-16`, the points to confirm are in `front/docs/privacy-notice-review.md`); the owner's signature on the accepted risks in
+`back/docs/security-standards.md` section 5 (nine) and `front/docs/security-standards.md` section 5 (one); the contact and response times in `SECURITY.md`.

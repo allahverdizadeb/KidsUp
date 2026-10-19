@@ -13,7 +13,8 @@ personal data** of anyone, and do not look at, copy or change other people's dat
 We aim to acknowledge a report within **3 working days** and to say what we will do within **10 working days**. We will not
 take action against anyone who reports in good faith and follows the points above.
 
-<!-- Owner, before launch: add an e-mail address here and serve it at /.well-known/security.txt (nginx already allows that path);
+<!-- Owner, before launch: add an e-mail address here and serve it at /.well-known/security.txt (nginx already allows that path;
+     front/src/publicAssets.test.tsx allows only images and PDFs under public/, so extend it in the same change);
      have counsel confirm the "good faith" promise and the legal notification deadlines in step 3 below. -->
 
 ## What is covered

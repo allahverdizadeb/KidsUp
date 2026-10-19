@@ -113,6 +113,31 @@ describe('Apply form', () => {
       expect(screen.queryByText('Ən azı bir təlim dili seçin.')).not.toBeInTheDocument();
     });
 
+    it('ties every error to its own field, with ids that stay unique when there are two children', async () => {
+      render(<Apply />);
+      await user.click(screen.getByRole('button', { name: /İkinci uşağı əlavə et/ }));
+      await user.click(sendButton());
+
+      expect(parentInput()).toHaveAccessibleDescription('Adınızı qeyd edin.');
+      expect(phoneInput()).toHaveAccessibleDescription('Əlaqə nömrənizi qeyd edin.');
+      for (const name of ['1-ci uşaq', '2-ci uşaq']) {
+        const child = within(screen.getByRole('group', { name }));
+        expect(child.getByLabelText('Uşağın adı və soyadı')).toHaveAccessibleDescription(
+          'Uşağın adını və soyadını qeyd edin.',
+        );
+        expect(child.getByLabelText('Doğum tarixi')).toHaveAccessibleDescription('Doğum tarixini seçin.');
+      }
+      const ids = Array.from(document.querySelectorAll('[id]'), (element) => element.id);
+      expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
+    });
+
+    it('does not point a field at an error that is not there', () => {
+      render(<Apply />);
+      for (const field of [parentInput(), phoneInput(), screen.getByLabelText('Uşağın adı və soyadı')]) {
+        expect(field).not.toHaveAttribute('aria-describedby');
+      }
+    });
+
     it('clears a field error as soon as the field is corrected', async () => {
       render(<Apply />);
       await user.click(sendButton());

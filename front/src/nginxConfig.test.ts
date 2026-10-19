@@ -107,13 +107,40 @@ describe('nginx configuration', () => {
 
   it('passes on exactly one API endpoint, and only POST to it', () => {
     const endpoint = locations.find(({ header }) => header === 'location = /api/applications');
-    expect(endpoint?.body).toMatch(/limit_except POST \{\s*deny all;\s*\}/);
+    expect(endpoint?.body).toMatch(/if \(\$request_method != POST\) \{\s*return 405;\s*\}/);
     expect(endpoint?.body).toMatch(/proxy_pass \$api_upstream;/);
 
     const rest = locations.find(({ header }) => header === 'location /api/');
     expect(rest?.body).toContain('return 404;');
     expect(rest?.body).not.toContain('proxy_pass');
     expect(defaultConf.match(/proxy_pass/g)).toHaveLength(1);
+  });
+
+  it('refuses any other method before the rate limiter, so refused requests do not use up the budget', () => {
+    const endpoint = locations.find(({ header }) => header === 'location = /api/applications')?.body ?? '';
+    const refusal = endpoint.indexOf('if ($request_method != POST)');
+    expect(refusal, 'the method check is missing').toBeGreaterThanOrEqual(0);
+    expect(endpoint.slice(refusal)).toMatch(/^if \(\$request_method != POST\) \{\s*return 405;\s*\}/);
+    expect(refusal).toBeLessThan(endpoint.indexOf('limit_req zone=api'));
+    // limit_except would give the request its own empty rewrite rules, so the check above would never run for GET.
+    expect(endpoint).not.toMatch(/^\s*limit_except\s/m);
+  });
+
+  it('rate-limits the one API endpoint per visitor address (SEC-B-08)', () => {
+    expect(defaultConf).toMatch(/^limit_req_zone \$binary_remote_addr zone=api:\d+m rate=\d+r\/m;$/m);
+    const endpoint = locations.find(({ header }) => header === 'location = /api/applications')?.body ?? '';
+    expect(endpoint).toMatch(/limit_req zone=api burst=\d+ nodelay;/);
+    expect(endpoint).toContain('limit_req_status 429;');
+  });
+
+  it('tells the API who the visitor is by overwriting X-Forwarded-For, never by appending to it', () => {
+    expect(defaultConf).toContain('proxy_set_header X-Forwarded-For $remote_addr;');
+    // $proxy_add_x_forwarded_for keeps whatever the visitor sent, which would let them choose their own address.
+    expect(defaultConf).not.toContain('$proxy_add_x_forwarded_for');
+  });
+
+  it('caps the request body at what the form needs', () => {
+    expect(defaultConf).toMatch(/^\s*client_max_body_size 16k;$/m);
   });
 
   it('looks the API up again as it changes instead of keeping the address seen at start-up', () => {

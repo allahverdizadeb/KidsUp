@@ -35,12 +35,12 @@ Fluid type uses `clamp()`: hero `clamp(46px, 8.2vw, 120px)`, section headings `c
 
 ## 3. How styles are written
 
-- Components use **inline style objects** exactly as ported from the design (this is what makes the result pixel-identical to it). Static values stay literal; computed values come from state or props.
+- Components use **inline style objects** exactly as ported from the design (this is what keeps the result identical to it apart from the deliberate differences listed in `../CLAUDE.md`). Static values stay literal; computed values come from state or props.
 - Pseudo-state styles (`:hover`, `:focus`) live in `src/styles/hover.css`. It was generated once from the design and is **now hand-maintained source**. Rules carry `!important` because inline styles would otherwise win. Prefer meaningful class names for new rules; the generated `hv-N` / `fc-N` names are legacy debt (see [`coding-standards.md` §4](coding-standards.md#legacy-names-debt-do-not-copy)).
 - Global CSS is limited to `src/index.css`: reset, body, focus ring, keyframes, reduced-motion. Do not add component styling there.
 - **Do not mix a shorthand with its longhands in one style object** (`textDecoration` + `textDecorationColor`): React warns and updates break. Use the longhand set (`textDecorationLine`, …).
 - Styling that can be a layout (flex/grid/`clamp`) MUST NOT be a pixel-perfect hack. No `!important` outside `hover.css`.
-- A future refactor to CSS custom properties or CSS modules is welcome if the pixel comparison against the design stays at 0% difference.
+- A future refactor to CSS custom properties or CSS modules is welcome if the pixel comparison against the design stays at 0% difference (outside the deliberate differences).
 
 ## 4. Accessibility requirements (WCAG 2.2 AA, all mandatory)
 

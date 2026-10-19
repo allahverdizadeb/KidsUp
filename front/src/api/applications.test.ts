@@ -11,7 +11,10 @@ const payload: ApplicationPayload = {
 };
 
 describe('submitApplication', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
 
   it('posts the payload as JSON to the API', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
@@ -35,10 +38,14 @@ describe('submitApplication', () => {
     expect(json).not.toHaveBeenCalled();
   });
 
-  it('gives up after a timeout instead of waiting forever', async () => {
+  it('gives up after ten seconds instead of waiting forever', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', fetchMock);
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+
     await submitApplication(payload);
+
+    expect(timeout).toHaveBeenCalledExactlyOnceWith(10_000);
     const signal: AbortSignal = fetchMock.mock.calls[0][1].signal;
     expect(signal).toBeInstanceOf(AbortSignal);
     expect(signal.aborted).toBe(false);

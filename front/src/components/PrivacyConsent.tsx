@@ -4,8 +4,11 @@ import { CONSENT_LABEL, PRIVACY_NOTICE, PRIVACY_NOTICE_ANCHOR } from '../content
 import FieldError from './FieldError';
 
 const NOTICE_HASH = `#${PRIVACY_NOTICE_ANCHOR}`;
+/** The id the form focuses when the consent is missing. */
+export const CONSENT_BOX_ID = 'f-consent';
+const CONSENT_ERROR_ID = `${CONSENT_BOX_ID}-err`;
 
-type Props = {
+type PrivacyConsentProps = {
   isChecked: boolean;
   /** The message shown under the box; empty when there is nothing to fix. */
   error: string;
@@ -13,7 +16,7 @@ type Props = {
 };
 
 /** The consent box (never pre-ticked) and the privacy notice it refers to (SEC-F-16). */
-export default function PrivacyConsent({ isChecked, error, onChange }: Props) {
+export default function PrivacyConsent({ isChecked, error, onChange }: PrivacyConsentProps) {
   const [isNoticeOpen, setIsNoticeOpen] = useState(() => window.location.hash === NOTICE_HASH);
   const hasError = error !== '';
 
@@ -42,12 +45,12 @@ export default function PrivacyConsent({ isChecked, error, onChange }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
         <input
-          id="f-consent"
+          id={CONSENT_BOX_ID}
           type="checkbox"
           checked={isChecked}
           onChange={handleCheckedChange}
           aria-invalid={hasError}
-          aria-describedby={hasError ? 'f-consent-err' : undefined}
+          aria-describedby={hasError ? CONSENT_ERROR_ID : undefined}
           style={{
             flexShrink: '0',
             width: '24px',
@@ -58,13 +61,13 @@ export default function PrivacyConsent({ isChecked, error, onChange }: Props) {
           }}
         />
         <label
-          htmlFor="f-consent"
+          htmlFor={CONSENT_BOX_ID}
           style={{ fontWeight: '600', fontSize: '15px', lineHeight: '1.5', cursor: 'pointer' }}
         >
           {CONSENT_LABEL}
         </label>
       </div>
-      {hasError && <FieldError id="f-consent-err" message={error} />}
+      {hasError && <FieldError id={CONSENT_ERROR_ID} message={error} />}
       <details
         id={PRIVACY_NOTICE_ANCHOR}
         open={isNoticeOpen}

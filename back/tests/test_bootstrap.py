@@ -40,7 +40,10 @@ INSERT_CHILD = (
     "INSERT INTO application_children (id, application_id, position, name, birth_date) "
     "VALUES (%s, %s, 0, 'Leyla', '2016-03-14')"
 )
-ADMINISTRATIVE_FLAGS = "rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls"
+ADMINISTRATIVE_FLAGS_OF_A_ROLE = (
+    "SELECT rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls "
+    "FROM pg_roles WHERE rolname = %s"
+)
 
 
 def application_table_owners(url: URL) -> list[tuple[str]]:
@@ -72,6 +75,25 @@ def application_table_owners(url: URL) -> list[tuple[str]]:
 def test_the_api_account_is_refused_everything_but_adding_an_application(provisioned, statement):
     with connect(provisioned.app) as conn, pytest.raises(psycopg.errors.InsufficientPrivilege):
         conn.execute(statement)
+
+
+@pytest.mark.parametrize("role", [OWNER_ROLE, APP_ROLE, RETENTION_ROLE])
+def test_settings_made_on_an_existing_account_by_hand_are_cleared(
+    scratch_database, owner_url, app_url, retention_url, role
+):
+    with connect(SERVER) as conn:
+        for name in (OWNER_ROLE, APP_ROLE, RETENTION_ROLE):
+            conn.execute(sql.SQL("CREATE ROLE {} LOGIN").format(sql.Identifier(name)))
+            conn.execute(sql.SQL("ALTER ROLE {} SET search_path = pg_temp").format(sql.Identifier(name)))
+            conn.execute(sql.SQL("ALTER ROLE {} SET statement_timeout = '1h'").format(sql.Identifier(name)))
+
+    bootstrap(scratch_database, owner_url, app_url, retention_url)
+
+    with connect(scratch_database) as conn:
+        row = conn.execute("SELECT rolconfig FROM pg_roles WHERE rolname = %s", (role,)).fetchone()
+    settings_of_role = (row[0] if row else None) or []
+    assert not any(setting.startswith("search_path") for setting in settings_of_role)
+    assert "statement_timeout=1h" not in settings_of_role
 
 
 def test_the_api_account_can_add_an_application_and_its_children(provisioned):
@@ -126,7 +148,7 @@ def test_the_retention_account_can_find_mark_and_delete_applications_with_their_
 def test_the_accounts_have_no_administrative_attributes(provisioned, role):
     with connect(provisioned.admin) as conn:
         flags = conn.execute(
-            f"SELECT {ADMINISTRATIVE_FLAGS} FROM pg_roles WHERE rolname = %s",  # noqa: S608 (constant text)
+            ADMINISTRATIVE_FLAGS_OF_A_ROLE,
             (role,),
         ).fetchone()
     assert flags == (False, False, False, False, False)
@@ -152,7 +174,7 @@ def test_an_existing_account_with_wider_rights_is_cut_back(
 
     with connect(scratch_database) as conn:
         flags = conn.execute(
-            f"SELECT {ADMINISTRATIVE_FLAGS} FROM pg_roles WHERE rolname = %s",  # noqa: S608 (constant text)
+            ADMINISTRATIVE_FLAGS_OF_A_ROLE,
             (role,),
         ).fetchone()
     assert flags == (False, False, False, False, False)
@@ -430,6 +452,25 @@ def test_a_short_password_is_refused(who):
 def test_the_four_accounts_need_four_different_passwords(changes):
     with pytest.raises(UnsafeSetupError, match="four different passwords"):
         Setup.validated(*urls(**changes))
+
+
+def test_a_short_superuser_password_is_refused():
+    # The API's container can reach the superuser over the internal network, so its password matters too.
+    with pytest.raises(UnsafeSetupError, match="'kidsup' must be at least 24 characters"):
+        Setup.validated(*urls(admin_password="short-superuser-pw"))
+
+
+def test_the_throw_away_superuser_of_a_development_postgres_on_this_machine_may_keep_a_short_password():
+    setup = Setup.validated(*urls(admin_role="postgres", admin_password="postgres"))
+
+    assert setup.admin_url.username == "postgres"
+
+
+def test_the_postgres_superuser_with_a_short_password_is_refused_on_any_other_machine():
+    admin, owner, app, retention = urls(admin_role="postgres", admin_password="postgres")
+
+    with pytest.raises(UnsafeSetupError, match="'postgres' must be at least 24 characters"):
+        Setup.validated(*(url.set(host="10.0.0.5") for url in (admin, owner, app, retention)))
 
 
 def test_a_url_without_a_password_is_refused():

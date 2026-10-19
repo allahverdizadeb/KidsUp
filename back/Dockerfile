@@ -5,6 +5,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# Whoever starts this image gets the strict mode (no /docs, HSTS, no wildcards, the INSERT-only account check)
+# unless they say otherwise; development runs natively, not from the image.
+ENV KIDSUP_ENVIRONMENT=production
+
 WORKDIR /srv
 
 # requirements.txt is a hash-pinned lock (see docs/coding-standards.md); pip refuses anything not in it.

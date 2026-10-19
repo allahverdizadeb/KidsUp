@@ -1,10 +1,10 @@
-type Props = {
+type FieldErrorProps = {
   id: string;
   message: string;
 };
 
 /** The red "!" badge and message under an invalid field. The message is text, never colour alone (WCAG 1.4.1). */
-export default function FieldError({ id, message }: Props) {
+export default function FieldError({ id, message }: FieldErrorProps) {
   return (
     <div
       id={id}

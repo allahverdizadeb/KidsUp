@@ -5,10 +5,10 @@ import logging
 import runpy
 import sys
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker
 
 from app import cli
@@ -48,6 +48,53 @@ def test_a_dry_run_only_counts(caplog):
 
     assert stored_application_ids() == {expired}
     assert "would be deleted: 1" in caplog.text
+
+
+def add_expired_applications(count: int) -> None:
+    long_ago = datetime.now(UTC) - timedelta(days=RETENTION_DAYS + 30)
+    with SessionLocal() as db:
+        db.add_all(
+            Application(parent_name="Aysel", phone=PHONE, languages=["Rus"], created_at=long_ago)
+            for _ in range(count)
+        )
+        db.commit()
+
+
+def test_the_daily_job_deletes_up_to_the_limit_by_itself():
+    add_expired_applications(cli.MAX_EXPIRED_PER_RUN)
+
+    assert cli.main(["purge-expired"]) == 0
+
+    assert stored_application_ids() == set()
+
+
+def test_more_due_applications_than_the_limit_are_not_deleted_without_a_person_looking(caplog):
+    # A wrong clock on the host would make every application look a year old.
+    add_expired_applications(cli.MAX_EXPIRED_PER_RUN + 1)
+
+    with caplog.at_level(logging.ERROR, logger="app.cli"):
+        assert cli.main(["purge-expired"]) == 1
+
+    assert len(stored_application_ids()) == cli.MAX_EXPIRED_PER_RUN + 1
+    assert "nothing was deleted" in caplog.text
+
+
+def test_a_person_who_has_looked_can_force_the_purge_of_more_than_the_limit():
+    add_expired_applications(cli.MAX_EXPIRED_PER_RUN + 1)
+
+    assert cli.main(["purge-expired", "--force"]) == 0
+
+    assert stored_application_ids() == set()
+
+
+def test_a_dry_run_reports_more_than_the_limit_instead_of_refusing(caplog):
+    add_expired_applications(cli.MAX_EXPIRED_PER_RUN + 1)
+
+    with caplog.at_level(logging.INFO, logger="app.cli"):
+        assert cli.main(["purge-expired", "--dry-run"]) == 0
+
+    assert f"would be deleted: {cli.MAX_EXPIRED_PER_RUN + 1}" in caplog.text
+    assert len(stored_application_ids()) == cli.MAX_EXPIRED_PER_RUN + 1
 
 
 def test_marking_an_application_as_enrolled_keeps_it_out_of_the_purge():
@@ -93,6 +140,32 @@ def test_erasing_by_phone_deletes_nothing_unless_the_exact_count_is_typed_back(m
     assert cli.main(["erase-by-phone"]) == 1
 
     assert len(stored_application_ids()) == 2
+
+
+def test_no_transaction_is_left_open_while_the_operator_reads_the_list(monkeypatch):
+    # The database closes a session that sits in a transaction for more than a minute: if the operator is
+    # slow to confirm, the erasure that follows would fail.
+    add_application(age_days=1, phone=PHONE)
+    answers = iter([PHONE, "1"])
+    open_transactions: list[int] = []
+
+    def ask(_prompt: str) -> str:
+        with SessionLocal() as other:
+            open_transactions.append(
+                other.execute(
+                    text(
+                        "SELECT count(*) FROM pg_stat_activity "
+                        "WHERE datname = current_database() AND state = 'idle in transaction'"
+                    )
+                ).scalar_one()
+            )
+        return next(answers)
+
+    monkeypatch.setattr("builtins.input", ask)
+
+    assert cli.main(["erase-by-phone"]) == 0
+
+    assert open_transactions == [0, 0]  # at the question for the number, and at the question for the count
 
 
 def test_erasing_by_a_phone_nobody_gave_reports_failure(monkeypatch):

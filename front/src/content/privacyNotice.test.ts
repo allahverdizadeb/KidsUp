@@ -10,9 +10,9 @@ import {
 // SHA-256 of the wording each version of the notice was shown with. A new wording needs a new version (and a new
 // line here, and the version added to PUBLISHED_NOTICE_VERSIONS in back/app/schemas/application.py): the version is
 // stored with every application, so it must always say which text the parent agreed to.
-const SHOWN_WORDING = {
+const SHOWN_WORDING: Readonly<Record<string, string>> = {
   '2026-10-19-draft': '310bd39e1f665903efc98b6b2299796483ff688193efd28b84ffc045893ea5ae',
-} as const satisfies Record<string, string>;
+};
 
 function fingerprintOfWording(): string {
   return createHash('sha256')
@@ -21,8 +21,9 @@ function fingerprintOfWording(): string {
 }
 
 describe('privacy notice content (SEC-F-16)', () => {
-  it('has a version the API accepts', () => {
-    // The pattern of NoticeVersion in back/app/schemas/application.py.
+  it('has a version of the shape the API requires', () => {
+    // The pattern of NoticeVersion in back/app/schemas/application.py. (That the API also knows this very version
+    // is checked on its side: back/tests/test_applications.py.)
     expect(PRIVACY_NOTICE_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}(-[a-z0-9]{1,16})?$/);
     expect(PRIVACY_NOTICE_VERSION.length).toBeLessThanOrEqual(32);
   });
@@ -33,11 +34,15 @@ describe('privacy notice content (SEC-F-16)', () => {
   });
 
   it('shows, under the current version, exactly the wording that was recorded for it', () => {
-    const recorded = (SHOWN_WORDING as Record<string, string>)[PRIVACY_NOTICE_VERSION];
-    expect(recorded, `no wording recorded for ${PRIVACY_NOTICE_VERSION}`).toBeDefined();
+    const fingerprint = fingerprintOfWording();
+    const recorded = SHOWN_WORDING[PRIVACY_NOTICE_VERSION];
     expect(
-      fingerprintOfWording(),
-      'The notice or the consent label changed: bump PRIVACY_NOTICE_VERSION, add it to the API, record the new fingerprint',
+      recorded,
+      `No wording is recorded for ${PRIVACY_NOTICE_VERSION}. A new version needs it in PUBLISHED_NOTICE_VERSIONS (back/app/schemas/application.py) and this line in SHOWN_WORDING: '${PRIVACY_NOTICE_VERSION}': '${fingerprint}'`,
+    ).toBeDefined();
+    expect(
+      fingerprint,
+      `The notice or the consent label changed under ${PRIVACY_NOTICE_VERSION}. Bump PRIVACY_NOTICE_VERSION instead of editing the old line (new fingerprint: ${fingerprint})`,
     ).toBe(recorded);
   });
 
@@ -54,7 +59,7 @@ describe('privacy notice content (SEC-F-16)', () => {
     expect(retention?.text).toContain('ən geci 12 ay');
   });
 
-  it('has an address fragment that is a valid, unique element id', () => {
+  it('has an address fragment that is a valid element id', () => {
     expect(PRIVACY_NOTICE_ANCHOR).toMatch(/^[a-z][a-z0-9-]*$/);
   });
 

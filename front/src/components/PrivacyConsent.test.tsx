@@ -1,13 +1,17 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CONSENT_LABEL, PRIVACY_NOTICE } from '../content/privacyNotice';
 import PrivacyConsent from './PrivacyConsent';
 
 const consentBox = () => screen.getByRole('checkbox', { name: CONSENT_LABEL });
 const summary = () => screen.getByText('Məxfilik bildirişini oxu');
-const notice = () => summary().closest('details') as HTMLDetailsElement;
+const notice = (): HTMLDetailsElement => {
+  const details = summary().closest('details');
+  if (!details) throw new Error('the privacy notice is not on the page');
+  return details;
+};
 
 function renderConsent(props: Partial<ComponentProps<typeof PrivacyConsent>> = {}) {
   const onChange = vi.fn();
@@ -16,6 +20,8 @@ function renderConsent(props: Partial<ComponentProps<typeof PrivacyConsent>> = {
 }
 
 describe('PrivacyConsent (SEC-F-16)', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   beforeEach(() => {
     window.location.hash = '';
   });
@@ -60,7 +66,7 @@ describe('PrivacyConsent (SEC-F-16)', () => {
       renderConsent();
       expect(consentBox()).toHaveAttribute('aria-invalid', 'false');
       expect(consentBox()).not.toHaveAttribute('aria-describedby');
-      expect(document.getElementById('f-consent-err')).toBeNull();
+      expect(consentBox()).not.toHaveAccessibleDescription();
     });
   });
 
@@ -90,9 +96,9 @@ describe('PrivacyConsent (SEC-F-16)', () => {
       );
     });
 
-    it('is set in text no smaller than the 15px of the rest of the form copy', () => {
+    it('is set in text of at least 15px, the smallest body text the styling standard allows', () => {
       renderConsent();
-      expect(notice()).toHaveStyle({ fontSize: '15px' });
+      expect(Number.parseFloat(getComputedStyle(notice()).fontSize)).toBeGreaterThanOrEqual(15);
     });
 
     it('opens when the page is opened at its link', () => {
@@ -133,10 +139,14 @@ describe('PrivacyConsent (SEC-F-16)', () => {
       expect(window.location.hash).toBe('#muraciet');
     });
 
-    it('does not react to other addresses', async () => {
+    it('does not react to other addresses', () => {
       renderConsent();
-      window.location.hash = '#proqram';
-      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      act(() => {
+        window.location.hash = '#proqram';
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      });
+
       expect(notice()).not.toHaveAttribute('open');
     });
 
@@ -145,7 +155,6 @@ describe('PrivacyConsent (SEC-F-16)', () => {
       const { unmount } = render(<PrivacyConsent isChecked={false} error="" onChange={() => {}} />);
       unmount();
       expect(removed).toHaveBeenCalledWith('hashchange', expect.any(Function));
-      removed.mockRestore();
     });
   });
 });

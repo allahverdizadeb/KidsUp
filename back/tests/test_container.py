@@ -37,6 +37,12 @@ def test_api_does_not_migrate_the_schema():
     )  # SEC-B-07: the API's account may not change the schema
 
 
+def test_image_starts_in_production_mode_unless_told_otherwise():
+    # Started by hand from the image, without compose's environment, it must not run in development mode
+    # (interactive docs, no HSTS, no check of the database account).
+    assert any("KIDSUP_ENVIRONMENT=production" in line for line in read_instructions("ENV"))
+
+
 @pytest.mark.parametrize("dockerfile", ["back", "db"])
 def test_image_runs_as_a_non_root_user(dockerfile):
     # The last USER decides: an earlier non-root one followed by a USER root would still end as root.

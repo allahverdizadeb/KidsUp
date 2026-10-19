@@ -72,7 +72,7 @@ def test_body_without_content_length_is_rejected(client):
     assert client.post("/api/applications", content=chunks()).status_code == 411
 
 
-def test_rate_limit_returns_429_with_retry_after(app):
+def test_rate_limit_returns_429_with_retry_after():
     limited = TestClient(create_app(make_settings(rate_limit_per_minute=3)))
     statuses = [limited.post("/api/applications", json=VALID).status_code for _ in range(5)]
     assert statuses == [201, 201, 201, 429, 429]
@@ -99,7 +99,10 @@ def test_invalid_requests_also_count_towards_the_limit():
 
 def test_in_production_the_api_refuses_to_start_as_a_superuser():
     # The URL the settings hold passes the name check; what the database says about the account does not.
-    with pytest.raises(RuntimeError, match="administrative attributes"), TestClient(create_app(production())):
+    with (
+        pytest.raises(RuntimeError, match="administrative attribute rolsuper"),
+        TestClient(create_app(production())),
+    ):
         pass
 
 

@@ -27,14 +27,14 @@ Skills/agents: [`.claude/`](.claude/) (`verify-backend`, `new-endpoint`, `new-mi
   `uv pip compile … --universal --generate-hashes` (exact commands in `docs/coding-standards.md` §8). Never hand-edit a lock.
 - New migration after a model change: `alembic revision -m "what changed"`, then edit by hand and review (`docs/api-and-database-standards.md` §4).
 - Docker: `docker compose up --build` from the repo root. A one-off `bootstrap` job (`python -m app.bootstrap`) creates the four database accounts (superuser, owner, API, retention), runs `alembic upgrade head` as the schema owner and grants the API and retention accounts exactly their rights, then `back` starts. The API never migrates and refuses to start with a wider account than INSERT-only. See `../docs/docker.md`.
-- Operator commands, inside the **retention** container (its account may delete; the API's may not): `docker compose exec retention python -m app.cli purge-expired [--dry-run] | mark-enrolled <id> | erase-application <id> | erase-by-phone`. They log counts, application ids and dates, never names or phone numbers.
+- Operator commands, inside the **retention** container (its account may delete; the API's may not): `docker compose exec retention python -m app.cli purge-expired [--dry-run] [--force] | mark-enrolled <id> | erase-application <id> | erase-by-phone` (the purge stops by itself at more than 50 applications due, see `../docs/docker.md`). They log counts, application ids and dates, never names or phone numbers.
 
 ## Layout (request flows router → service → database, each layer hands the rest on)
 
 - `app/main.py`: `create_app(config)`: wiring only (middleware, routers, docs on/off). No business logic.
 - `app/config.py`: `Settings` from `KIDSUP_*` env vars (see `.env.example`); accepts `postgres://` URLs; refuses wildcard hosts/origins in production.
 - `app/middleware.py`: security headers, body-size limit. `app/rate_limit.py`: per-client limiter (`enforce_rate_limit` dependency).
-- `app/db.py`: engine (parameters hidden from error text), session, `Base`. `app/models.py`: tables and `ApplicationStatus`. `app/privileges.py`: the start-up check that the API's database account can only insert.
+- `app/db.py`: engine (parameters hidden from error text), session, `Base`. `app/models.py`: tables and `ApplicationStatus`. `app/privileges.py`: the start-up check that the API's database account can insert into the application tables and do nothing else (no right on any table, no role membership, no creating).
 - `app/bootstrap.py`: the one-off job that sets up the four database accounts, migrates and grants (`SEC-B-07`); it talks to the database itself, the one exception to "only services touch the database" (it creates the accounts the services run as). `app/cli.py` + `app/services/retention.py`: retention and erasure (`SEC-B-09`). `app/logging_config.py`: the log format of the commands.
 - `app/routers/`: HTTP only. `app/schemas/`: `…Create` / `…Created` models and validation. `app/services/`: logic.
 - `alembic/versions/`: migrations. `tests/`: pytest, mirrors topics of `app/`.

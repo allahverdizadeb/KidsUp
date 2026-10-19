@@ -59,7 +59,7 @@ python -m pytest tests/test_security.py -q
 python -m pytest --cov-report=html    # open htmlcov/index.html to see uncovered branches
 ```
 
-Local PostgreSQL: `localhost:5432` (user/password `postgres`, a superuser: the suite creates `kidsup_test`, the scratch database `kidsup_bootstrap_test` and the `kidsup_*_test` roles, and drops the scratch ones again). Override with `KIDSUP_TEST_DATABASE_URL`, which must name a **local** database whose name ends in `_test`; the suite refuses anything else, because it truncates tables and creates and drops databases and roles. `test_compose.py` and `test_container.py` read `../docker-compose.yml` and `../db/Dockerfile`, so `back/` is not testable completely on its own. In CI use a throw-away PostgreSQL service container.
+Local PostgreSQL: `localhost:5432` (user/password `postgres`, a superuser: the suite creates `kidsup_test`, the scratch database `kidsup_bootstrap_test` and the `kidsup_*_test` roles, and drops the scratch ones again). Override with `KIDSUP_TEST_DATABASE_URL`, which must name a **local** database whose name ends in `_test`; the suite refuses anything else, because it truncates tables and creates and drops databases and roles. `test_compose.py` and `test_container.py` read `../docker-compose.yml` and `../db/Dockerfile`, and `test_applications.py` reads `../front/src/content/privacyNotice.ts` (the API must know the notice version the page sends), so `back/` is not testable completely on its own. In CI use a throw-away PostgreSQL service container.
 
 ## 7. Review checklist for tests
 

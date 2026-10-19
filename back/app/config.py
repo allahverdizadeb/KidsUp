@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     # Host header allow-list. In production list every public host name explicitly.
     allowed_hosts: list[str] = ["localhost", "127.0.0.1", "testserver"]
 
-    # The account this process connects as: for the API, one that can only INSERT (SEC-B-07); the retention job's
-    # container puts its own account in the same variable.
+    # The account this process connects as: for the API, one that can only INSERT (SEC-B-07); the retention
+    # job's container puts its own account in the same variable.
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/kidsup"
     # The schema owner (runs migrations), the superuser (creates the accounts) and the account of the
     # retention job and the operator's commands. Only the one-off `app.bootstrap` job gets these three.

@@ -1,4 +1,6 @@
+import re
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -8,9 +10,12 @@ from sqlalchemy.exc import DBAPIError, IntegrityError
 
 from app.db import SessionLocal
 from app.main import create_app
-from app.models import Application
+from app.models import Application, ApplicationStatus
 from app.schemas.application import PUBLISHED_NOTICE_VERSIONS
 from tests.conftest import make_settings
+
+# The page's notice and its version. This module reads it, like test_compose.py reads docker-compose.yml.
+FRONT_NOTICE_FILE = Path(__file__).resolve().parents[2] / "front" / "src" / "content" / "privacyNotice.ts"
 
 VALID: dict[str, Any] = {
     "parent_name": "Aysel Məmmədova",
@@ -87,6 +92,40 @@ def test_trims_and_deduplicates(client):
 def test_rejects_invalid_input(client, body):
     assert client.post("/api/applications", json=body).status_code == 422
     assert stored_applications() == []
+
+
+def child(name: str = "Leyla", birth_date: str = "2016-03-14") -> dict[str, str]:
+    return {"name": name, "birth_date": birth_date}
+
+
+# --- the limits of the contract (SEC-B-01): accepted at the edge, refused one past it
+
+
+@pytest.mark.parametrize(
+    ("body", "status"),
+    [
+        pytest.param(with_(parent_name="A" * 120), 201, id="parent name of 120 characters"),
+        pytest.param(with_(parent_name="A" * 121), 422, id="parent name of 121 characters"),
+        pytest.param(with_(children=[child(name="B" * 120)]), 201, id="child name of 120 characters"),
+        pytest.param(with_(children=[child(name="B" * 121)]), 422, id="child name of 121 characters"),
+        pytest.param(with_(phone="501234567"), 201, id="phone with 9 digits"),
+        pytest.param(with_(phone="50123456"), 422, id="phone with 8 digits"),
+        pytest.param(with_(phone="+994 50 123 45 67"), 201, id="phone with 12 digits"),
+        pytest.param(with_(phone="+994 50 123 45 678"), 422, id="phone with 13 digits"),
+        pytest.param(with_(phone="+994" + " " * 19 + "501234567"), 201, id="phone of 32 characters"),
+        pytest.param(with_(phone="+994" + " " * 20 + "501234567"), 422, id="phone of 33 characters"),
+        pytest.param(with_(children=[child(), child("Tural", "2014-11-02")]), 201, id="two children"),
+        pytest.param(with_(children=[child(), child(), child()]), 422, id="three children"),
+        pytest.param(with_(languages=["Azərbaycan", "Rus", "İngilis"]), 201, id="three languages"),
+        pytest.param(with_(languages=["Azərbaycan", "Rus", "İngilis", "Rus"]), 422, id="four languages"),
+        pytest.param(with_(children=[child(birth_date="2009-12-31")]), 422, id="born the day before 2010"),
+        pytest.param(with_(children=[child(birth_date="2010-01-01")]), 201, id="born on 2010-01-01"),
+        pytest.param(with_(children=[child(birth_date="2020-12-31")]), 201, id="born on 2020-12-31"),
+        pytest.param(with_(children=[child(birth_date="2021-01-01")]), 422, id="born the day after 2020"),
+    ],
+)
+def test_the_limits_of_the_contract_hold_at_their_edges(client, body, status):
+    assert client.post("/api/applications", json=body).status_code == status
 
 
 def test_health(client):
@@ -212,6 +251,15 @@ def test_accepts_a_published_notice_version(client, version):
     assert stored_applications()[0].privacy_notice_version == version
 
 
+def test_the_api_knows_the_notice_version_the_page_sends():
+    # A version changed on one side only would make every submission a 422: families would see the fallback.
+    source = FRONT_NOTICE_FILE.read_text(encoding="utf-8")
+    version = re.search(r"PRIVACY_NOTICE_VERSION = '([^']+)'", source)
+
+    assert version is not None
+    assert version.group(1) in PUBLISHED_NOTICE_VERSIONS
+
+
 @pytest.mark.parametrize(
     "columns",
     [
@@ -226,6 +274,16 @@ def test_the_database_keeps_the_consent_time_and_the_notice_version_together(col
         db.add(Application(parent_name="Aysel", phone="+994 50 123 45 67", languages=["Rus"], **columns))
         with pytest.raises(IntegrityError, match="ck_applications_consent_recorded_together"):
             db.commit()
+
+
+@pytest.mark.parametrize("status", list(ApplicationStatus))
+def test_every_status_the_code_knows_can_be_stored(status):
+    # A status added to the code without a migration would be refused by the database's CHECK.
+    with SessionLocal() as db:
+        db.add(Application(parent_name="Aysel", phone=VALID["phone"], languages=["Rus"], status=status.value))
+        db.commit()
+
+    assert [stored.status for stored in stored_applications()] == [status.value]
 
 
 def test_the_database_refuses_a_status_the_code_does_not_know():

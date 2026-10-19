@@ -31,7 +31,7 @@ If you touched nginx config, headers, assets, fonts, `index.html`, Dockerfile or
 
 - Never lower a coverage threshold, add `coverage.exclude` entries, disable a lint rule without a reason, or delete a failing test to get green. Fix the code or the test.
 - A flaky test is a bug: fix it the same day.
-- Markup/style changes: keep the pixel comparison against `design-source/` at 0% unless the owner approved a design change.
+- Markup/style changes: keep the pixel comparison against `design-source/` at 0% (apart from the deliberate differences in `front/CLAUDE.md`) unless the owner approved a design change.
 
 ## Report
 
