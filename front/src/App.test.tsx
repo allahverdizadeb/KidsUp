@@ -50,6 +50,15 @@ describe('App', () => {
     }
   });
 
+  it('has a target for every link that points inside the page', () => {
+    const { container } = render(<App />);
+    const links = Array.from(container.querySelectorAll('a[href^="#"]'), (a) => a.getAttribute('href') ?? '');
+    expect(links).toContain('#mexfilik'); // the footer's link to the privacy notice
+    for (const link of links.filter((href) => href !== '#')) {
+      expect(document.getElementById(link.slice(1)), `${link} points at nothing`).not.toBeNull();
+    }
+  });
+
   it('never uses dangerouslySetInnerHTML or inline event-handler attributes', () => {
     const { container } = render(<App />);
     expect(container.innerHTML).not.toMatch(/\son[a-z]+="/i);

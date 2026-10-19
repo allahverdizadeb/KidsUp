@@ -19,7 +19,9 @@ describe('Founder', () => {
     expect(external).toHaveLength(2);
     for (const link of external) {
       expect(link.getAttribute('href')).toMatch(/^https:\/\//);
-      expect(link.getAttribute('rel')).toContain('noopener');
+      expect(link.getAttribute('rel')?.split(' ')).toEqual(
+        expect.arrayContaining(['noopener', 'noreferrer']),
+      );
     }
   });
 });

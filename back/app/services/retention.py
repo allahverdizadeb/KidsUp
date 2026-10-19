@@ -1,11 +1,27 @@
 import re
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 
-from sqlalchemy import delete, func
+from sqlalchemy import ColumnElement, delete, func, select, update
 from sqlalchemy.orm import Session
 
-from app.models import Application
+from app.models import Application, ApplicationStatus
+
+# A phone number is matched on its last nine digits: what remains of an Azerbaijani number once the country
+# code (+994) or the trunk prefix (0) is left out. "050 123 45 67" and "+994 50 123 45 67" are one subscriber.
+SIGNIFICANT_DIGITS = 9
+
+
+def is_expired(now: datetime, retention_days: int) -> ColumnElement[bool]:
+    cutoff = now - timedelta(days=retention_days)
+    return (Application.status == ApplicationStatus.NEW.value) & (Application.created_at < cutoff)
+
+
+def count_expired_applications(db: Session, now: datetime, retention_days: int) -> int:
+    """How many applications `delete_expired_applications` would delete. Changes nothing."""
+    count = db.scalar(select(func.count()).select_from(Application).where(is_expired(now, retention_days)))
+    return count or 0
 
 
 def delete_expired_applications(db: Session, now: datetime, retention_days: int) -> int:
@@ -14,35 +30,55 @@ def delete_expired_applications(db: Session, now: datetime, retention_days: int)
     Only status "new" is touched: records of enrolled families follow the programme's own retention rules.
     The children are removed with them by the foreign key's ON DELETE CASCADE.
     """
-    cutoff = now - timedelta(days=retention_days)
-    expired = (
-        delete(Application)
-        .where(Application.status == "new", Application.created_at < cutoff)
-        .returning(Application.id)
-    )
-    deleted = db.execute(expired).all()
+    deleted = db.execute(
+        delete(Application).where(is_expired(now, retention_days)).returning(Application.id)
+    ).all()
     db.commit()
     return len(deleted)
 
 
-def erase_application(db: Session, application_id: uuid.UUID) -> bool:
-    """Really delete one application and its children, at a parent's request (SEC-B-09)."""
-    deleted = db.execute(
-        delete(Application).where(Application.id == application_id).returning(Application.id)
+def mark_enrolled(db: Session, application_id: uuid.UUID) -> bool:
+    """Keep a family's application out of the retention job once the child is enrolled."""
+    marked = db.execute(
+        update(Application)
+        .where(Application.id == application_id)
+        .values(status=ApplicationStatus.ENROLLED.value)
+        .returning(Application.id)
     ).all()
     db.commit()
-    return bool(deleted)
+    return bool(marked)
 
 
-def erase_applications_by_phone(db: Session, phone: str) -> int:
-    """Really delete every application whose phone number has the same digits, at a parent's request."""
-    digits = re.sub(r"\D", "", phone)
-    if not digits:
-        return 0  # an empty number must never match everything
+def erase_application(db: Session, application_id: uuid.UUID) -> bool:
+    """Really delete one application and its children, at a parent's request (SEC-B-09)."""
+    return erase_applications(db, [application_id]) == 1
+
+
+def significant_digits(phone: str) -> str:
+    digits = re.sub(r"[^0-9]", "", phone)
+    if len(digits) < SIGNIFICANT_DIGITS:
+        raise ValueError(f"A phone number has at least {SIGNIFICANT_DIGITS} digits.")
+    return digits[-SIGNIFICANT_DIGITS:]
+
+
+def find_applications_by_phone(db: Session, phone: str) -> list[tuple[uuid.UUID, datetime]]:
+    """The id and creation time of every application with this phone number, however it was formatted.
+
+    The operator looks at this list before anything is erased. Names never leave the database.
+    """
+    stored_digits = func.regexp_replace(Application.phone, "[^0-9]", "", "g")
+    rows = db.execute(
+        select(Application.id, Application.created_at)
+        .where(func.right(stored_digits, SIGNIFICANT_DIGITS) == significant_digits(phone))
+        .order_by(Application.created_at)
+    ).all()
+    return [(row.id, row.created_at) for row in rows]
+
+
+def erase_applications(db: Session, application_ids: Sequence[uuid.UUID]) -> int:
+    """Really delete these applications and their children, at a parent's request (SEC-B-09)."""
     deleted = db.execute(
-        delete(Application)
-        .where(func.regexp_replace(Application.phone, r"\D", "", "g") == digits)
-        .returning(Application.id)
+        delete(Application).where(Application.id.in_(application_ids)).returning(Application.id)
     ).all()
     db.commit()
     return len(deleted)

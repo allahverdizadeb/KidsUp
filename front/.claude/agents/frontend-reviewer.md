@@ -8,7 +8,7 @@ You review changes in `front/` against its binding standards. You do not edit fi
 
 ## Read first
 
-1. `front/docs/security-standards.md`: mandatory, overrides everything (`SEC-F-01…16`)
+1. `front/docs/security-standards.md`: mandatory, overrides everything (`SEC-F-NN`)
 2. `front/docs/styling-and-accessibility-standards.md`: WCAG 2.2 AA mandatory, tokens, known gaps (A11Y-1 pink contrast)
 3. `front/docs/coding-standards.md`, `front/docs/testing-standards.md`
 4. `front/CLAUDE.md` and the root `CLAUDE.md`; for contract questions `back/CLAUDE.md` is the owner

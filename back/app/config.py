@@ -14,25 +14,29 @@ class Settings(BaseSettings):
     # Host header allow-list. In production list every public host name explicitly.
     allowed_hosts: list[str] = ["localhost", "127.0.0.1", "testserver"]
 
-    # The account the API and the retention job connect as: SELECT, INSERT, UPDATE and DELETE only (SEC-B-07).
+    # The account this process connects as: for the API, one that can only INSERT (SEC-B-07); the retention job's
+    # container puts its own account in the same variable.
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/kidsup"
-    # The schema owner (runs migrations) and the superuser (creates the accounts). Only the one-off
-    # `app.bootstrap` job is given these; the API never is.
+    # The schema owner (runs migrations), the superuser (creates the accounts) and the account of the
+    # retention job and the operator's commands. Only the one-off `app.bootstrap` job gets these three.
     migration_database_url: str | None = None
     admin_database_url: str | None = None
+    retention_database_url: str | None = None
 
     # Request limits. The application payload is about 1 KiB, so these are generous.
     max_body_bytes: int = 16_384
     rate_limit_per_minute: int = 10
 
-    # Applications that never led to enrolment are deleted after this many days (SEC-B-09).
-    retention_days: int = Field(default=365, ge=30, le=3650)
+    # Applications that never led to enrolment are deleted after this many days (SEC-B-09). The privacy notice
+    # tells parents "12 months" (front/src/content/privacyNotice.ts), so a longer period would break that
+    # promise: raising this limit means changing the notice and its version first.
+    retention_days: int = Field(default=365, ge=30, le=365)
 
     # Birth dates outside this range are rejected (same limits as the landing page date input).
     birth_date_min: date = date(2010, 1, 1)
     birth_date_max: date = date(2020, 12, 31)
 
-    @field_validator("database_url", "migration_database_url", "admin_database_url")
+    @field_validator("database_url", "migration_database_url", "admin_database_url", "retention_database_url")
     @classmethod
     def use_psycopg_driver(cls, url: str | None) -> str | None:
         # Hosting providers hand out "postgres://" or "postgresql://" URLs.

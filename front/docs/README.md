@@ -10,6 +10,7 @@ Words follow RFC 2119: **MUST** / **MUST NOT** are mandatory, **SHOULD** needs a
 | [`styling-and-accessibility-standards.md`](styling-and-accessibility-standards.md) | Design tokens, responsive rules, motion, **WCAG 2.2 AA (mandatory)** |
 | [`security-standards.md`](security-standards.md) | **Mandatory, highest level.** Controls `SEC-F-01…`, privacy of children, compliance status |
 | [`testing-standards.md`](testing-standards.md) | Test design and the **80% project-level coverage gate** |
+| [`privacy-notice-review.md`](privacy-notice-review.md) | How the consent box and privacy notice work today, and every point the owner and counsel must confirm before launch (`SEC-F-16`) |
 
 ## Precedence
 

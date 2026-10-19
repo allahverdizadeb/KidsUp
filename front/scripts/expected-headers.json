@@ -1,0 +1,32 @@
+{
+  "comment": "The security headers nginx must send, exactly (SEC-F-02, SEC-F-11, SEC-B-11). Read by check-security-headers.mjs against a running stack and by src/nginxConfig.test.ts against the nginx files, so the two cannot drift apart.",
+  "headers": {
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "referrer-policy": "no-referrer",
+    "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    "cross-origin-opener-policy": "same-origin",
+    "cross-origin-resource-policy": "same-origin",
+    "cross-origin-embedder-policy": "require-corp",
+    "strict-transport-security": "max-age=63072000; includeSubDomains"
+  },
+  "csp": {
+    "page": {
+      "default-src": ["'self'"],
+      "script-src": ["'self'"],
+      "style-src": ["'self'"],
+      "font-src": ["'self'"],
+      "img-src": ["'self'"],
+      "connect-src": ["'self'"],
+      "object-src": ["'none'"],
+      "base-uri": ["'self'"],
+      "form-action": ["'self'"],
+      "frame-ancestors": ["'none'"],
+      "require-trusted-types-for": ["'script'"]
+    },
+    "api": {
+      "default-src": ["'none'"],
+      "frame-ancestors": ["'none'"]
+    }
+  }
+}

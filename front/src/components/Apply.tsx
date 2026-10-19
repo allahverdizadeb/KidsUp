@@ -1,7 +1,10 @@
 import { Fragment, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { submitApplication } from '../api/applications';
+import { PRIVACY_NOTICE_VERSION } from '../content/privacyNotice';
 import { useHover } from '../hooks/useHover';
+import FieldError from './FieldError';
+import PrivacyConsent from './PrivacyConsent';
 
 const PROGRAM_START = new Date('2026-12-05');
 const LANGUAGES = ['Azərbaycan', 'Rus', 'İngilis'];
@@ -16,7 +19,9 @@ const FIELD_COLOR = '#1A1A1A';
 
 type Kid = { name: string; dob: string };
 type KidErrors = { name?: string; dob?: string };
-type Errors = { parent?: string; phone?: string; langs?: string; kids: KidErrors[] };
+type Errors = { parent?: string; phone?: string; langs?: string; consent?: string; kids: KidErrors[] };
+type FieldName = 'parent' | 'phone' | 'langs' | 'consent';
+type KidFieldName = 'name' | 'dob';
 type Status = 'idle' | 'sending' | 'sent' | 'failed';
 
 /** Age of a child on the day the program starts. */
@@ -29,7 +34,7 @@ function ageAtStart(dob: string): number | null {
   return age;
 }
 
-function validate(parent: string, phone: string, kids: Kid[], langs: string[]) {
+function validate(parent: string, phone: string, kids: Kid[], langs: string[], isConsentGiven: boolean) {
   const e: Errors = { kids: kids.map(() => ({})) };
   if (!parent.trim()) e.parent = 'Adınızı qeyd edin.';
   const digits = phone.replace(/\D/g, '');
@@ -42,6 +47,7 @@ function validate(parent: string, phone: string, kids: Kid[], langs: string[]) {
     if (!k.dob) e.kids[i].dob = 'Doğum tarixini seçin.';
   });
   if (!langs.length) e.langs = 'Ən azı bir təlim dili seçin.';
+  if (!isConsentGiven) e.consent = 'Davam etmək üçün razılığınızı təsdiq edin.';
 
   let firstId: string | null = null;
   if (e.parent) firstId = 'f-parent';
@@ -52,20 +58,24 @@ function validate(parent: string, phone: string, kids: Kid[], langs: string[]) {
       else if (e.kids[i].dob) firstId = 'kd' + i;
     }
     if (!firstId && e.langs) firstId = 'f-lang-l';
+    if (!firstId && e.consent) firstId = 'f-consent';
   }
   return { errors: e, firstId };
 }
 
 /** Copy of the errors without one field's message (called as the user fixes that field). */
-function withoutError(
-  errors: Errors | null,
-  field: 'parent' | 'phone' | 'langs' | 'name' | 'dob',
-  kid?: number,
-) {
+function withoutFieldError(errors: Errors | null, field: FieldName): Errors | null {
   if (!errors) return null;
   const next: Errors = { ...errors, kids: errors.kids.map((k) => ({ ...k })) };
-  if (kid === undefined) delete next[field as 'parent' | 'phone' | 'langs'];
-  else if (next.kids[kid]) delete next.kids[kid][field as 'name' | 'dob'];
+  delete next[field];
+  return next;
+}
+
+/** Copy of the errors without one child field's message. */
+function withoutKidError(errors: Errors | null, kid: number, field: KidFieldName): Errors | null {
+  if (!errors) return null;
+  const next: Errors = { ...errors, kids: errors.kids.map((k) => ({ ...k })) };
+  if (next.kids[kid]) delete next.kids[kid][field];
   return next;
 }
 
@@ -75,6 +85,7 @@ export default function Apply() {
   const [phone, setPhone] = useState('');
   const [kidList, setKidList] = useState<Kid[]>([{ name: '', dob: '' }]);
   const [selectedLangs, setSelectedLangs] = useState<string[]>(['Azərbaycan']);
+  const [isConsentGiven, setIsConsentGiven] = useState(false);
   const [err, setErr] = useState<Errors | null>(null);
   const [error, setError] = useState('');
   const [status, setStatus] = useState<Status>('idle');
@@ -89,9 +100,9 @@ export default function Apply() {
   const er: Errors = err ?? { kids: [] };
   const border = (message?: string) => (message ? ERROR_COLOR : FIELD_COLOR);
 
-  const setKid = (i: number, patch: Partial<Kid>, field: 'name' | 'dob') => {
+  const setKid = (i: number, patch: Partial<Kid>, field: KidFieldName) => {
     setKidList((list) => list.map((k, j) => (j === i ? { ...k, ...patch } : k)));
-    setErr((e) => withoutError(e, field, i));
+    setErr((e) => withoutKidError(e, i, field));
     edited();
   };
 
@@ -150,7 +161,7 @@ export default function Apply() {
       border: isOn ? '#FF0083' : '#1A1A1A',
       pick: () => {
         setSelectedLangs((l) => (l.includes(v) ? l.filter((x) => x !== v) : [...l, v]));
-        setErr((e) => withoutError(e, 'langs'));
+        setErr((e) => withoutFieldError(e, 'langs'));
         edited();
       },
     };
@@ -166,21 +177,26 @@ export default function Apply() {
     setTimeout(() => document.getElementById('kn1')?.focus(), 0);
   };
 
+  const handleConsentChange = (isChecked: boolean) => {
+    setIsConsentGiven(isChecked);
+    setErr((x) => withoutFieldError(x, 'consent'));
+    edited();
+  };
   const onParent = (e: ChangeEvent<HTMLInputElement>) => {
     setParent(e.target.value);
-    setErr((x) => withoutError(x, 'parent'));
+    setErr((x) => withoutFieldError(x, 'parent'));
     edited();
   };
   const onPhone = (e: ChangeEvent<HTMLInputElement>) => {
     setPhone(e.target.value);
-    setErr((x) => withoutError(x, 'phone'));
+    setErr((x) => withoutFieldError(x, 'phone'));
     edited();
   };
 
   const submit = async (ev: FormEvent) => {
     ev.preventDefault();
     if (sending || sent) return;
-    const { errors, firstId } = validate(parent, phone, kidList, selectedLangs);
+    const { errors, firstId } = validate(parent, phone, kidList, selectedLangs, isConsentGiven);
     if (firstId) {
       setErr(errors);
       setError('Zəhmət olmasa qeyd olunan sahələri düzəldin.');
@@ -197,6 +213,8 @@ export default function Apply() {
         phone: phone.trim(),
         children: kidList.map((k) => ({ name: k.name.trim(), birth_date: k.dob })),
         languages: LANGUAGES.filter((l) => selectedLangs.includes(l)),
+        consent: true,
+        privacy_notice_version: PRIVACY_NOTICE_VERSION,
       });
       setStatus('sent');
     } catch {
@@ -215,6 +233,7 @@ export default function Apply() {
   const ePhoneB = border(er.phone);
   const eLangs = er.langs ?? '';
   const eLangsOn = !!er.langs;
+  const consentError = er.consent ?? '';
 
   const submitLabel = sending ? 'Göndərilir…' : sent ? '✓ Müraciət göndərildi' : 'Göndər';
   const submitBg = sending || sent ? '#6B6B6B' : '#FF0083';
@@ -252,7 +271,7 @@ export default function Apply() {
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '8px' }}>
             <a
-              href="https://wa.me/994509988707"
+              href={WHATSAPP}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -390,41 +409,7 @@ export default function Apply() {
               }}
               className="fc-2"
             />
-            {eParentOn && (
-              <>
-                <div
-                  id="f-parent-err"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '8px',
-                    fontSize: '14px',
-                    lineHeight: '1.4',
-                    fontWeight: '700',
-                    color: '#B00060',
-                  }}
-                >
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      flexShrink: '0',
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      background: '#B00060',
-                      color: '#FFFFFF',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    !
-                  </span>
-                  {eParent}
-                </div>
-              </>
-            )}
+            {eParentOn && <FieldError id="f-parent-err" message={eParent} />}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <label htmlFor="f-phone" style={{ fontWeight: '700', fontSize: '15px' }}>
@@ -456,41 +441,7 @@ export default function Apply() {
               }}
               className="fc-2"
             />
-            {ePhoneOn && (
-              <>
-                <div
-                  id="f-phone-err"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '8px',
-                    fontSize: '14px',
-                    lineHeight: '1.4',
-                    fontWeight: '700',
-                    color: '#B00060',
-                  }}
-                >
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      flexShrink: '0',
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      background: '#B00060',
-                      color: '#FFFFFF',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    !
-                  </span>
-                  {ePhone}
-                </div>
-              </>
-            )}
+            {ePhoneOn && <FieldError id="f-phone-err" message={ePhone} />}
           </div>
           {kids.map((k, __i) => (
             <Fragment key={__i}>
@@ -580,41 +531,7 @@ export default function Apply() {
                     }}
                     className="fc-2"
                   />
-                  {k.eNameOn && (
-                    <>
-                      <div
-                        id="kn-err"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '8px',
-                          fontSize: '14px',
-                          lineHeight: '1.4',
-                          fontWeight: '700',
-                          color: '#B00060',
-                        }}
-                      >
-                        <span
-                          aria-hidden="true"
-                          style={{
-                            flexShrink: '0',
-                            width: '18px',
-                            height: '18px',
-                            borderRadius: '50%',
-                            background: '#B00060',
-                            color: '#FFFFFF',
-                            fontSize: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          !
-                        </span>
-                        {k.eName}
-                      </div>
-                    </>
-                  )}
+                  {k.eNameOn && <FieldError id="kn-err" message={k.eName} />}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <label htmlFor={k.dobId} style={{ fontWeight: '700', fontSize: '15px' }}>
@@ -627,6 +544,7 @@ export default function Apply() {
                     onChange={k.onDob}
                     min="2010-01-01"
                     max="2020-12-31"
+                    autoComplete="off"
                     aria-invalid={k.dobInv}
                     style={{
                       height: '56px',
@@ -649,41 +567,7 @@ export default function Apply() {
                     }}
                     className="fc-2"
                   />
-                  {k.eDobOn && (
-                    <>
-                      <div
-                        id="kd-err"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '8px',
-                          fontSize: '14px',
-                          lineHeight: '1.4',
-                          fontWeight: '700',
-                          color: '#B00060',
-                        }}
-                      >
-                        <span
-                          aria-hidden="true"
-                          style={{
-                            flexShrink: '0',
-                            width: '18px',
-                            height: '18px',
-                            borderRadius: '50%',
-                            background: '#B00060',
-                            color: '#FFFFFF',
-                            fontSize: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          !
-                        </span>
-                        {k.eDob}
-                      </div>
-                    </>
-                  )}
+                  {k.eDobOn && <FieldError id="kd-err" message={k.eDob} />}
                   {k.hasAge && (
                     <>
                       <div style={{ fontSize: '14px', fontWeight: '600', color: k.ageColor }}>
@@ -806,42 +690,9 @@ export default function Apply() {
                 </Fragment>
               ))}
             </div>
-            {eLangsOn && (
-              <>
-                <div
-                  id="f-lang-err"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '8px',
-                    fontSize: '14px',
-                    lineHeight: '1.4',
-                    fontWeight: '700',
-                    color: '#B00060',
-                  }}
-                >
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      flexShrink: '0',
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      background: '#B00060',
-                      color: '#FFFFFF',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    !
-                  </span>
-                  {eLangs}
-                </div>
-              </>
-            )}
+            {eLangsOn && <FieldError id="f-lang-err" message={eLangs} />}
           </div>
+          <PrivacyConsent isChecked={isConsentGiven} error={consentError} onChange={handleConsentChange} />
           {hasError && (
             <>
               <div

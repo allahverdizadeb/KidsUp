@@ -26,6 +26,11 @@ describe('Footer', () => {
     );
   });
 
+  it('links to the privacy notice in the application form (SEC-F-16)', () => {
+    render(<Footer />);
+    expect(screen.getByRole('link', { name: 'Məxfilik bildirişi' })).toHaveAttribute('href', '#mexfilik');
+  });
+
   it('flies the rocket along its path while animations are on', () => {
     const { container } = render(<Footer />);
     expect(rocket(container).getAttribute('transform')).toBe('translate(-200 130)');

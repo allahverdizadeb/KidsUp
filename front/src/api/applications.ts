@@ -7,9 +7,13 @@ export type ApplicationPayload = {
   phone: string;
   children: { name: string; birth_date: string }[];
   languages: string[];
+  // The parent's explicit yes and the version of the privacy notice it was given for (SEC-F-16).
+  consent: true;
+  privacy_notice_version: string;
 };
 
-export async function submitApplication(payload: ApplicationPayload): Promise<{ id: string }> {
+/** Resolves once the API has stored the application (201). Nothing from the answer is used, so none of it is trusted. */
+export async function submitApplication(payload: ApplicationPayload): Promise<void> {
   const response = await fetch(`${API_URL}/api/applications`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -18,5 +22,4 @@ export async function submitApplication(payload: ApplicationPayload): Promise<{ 
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) throw new Error(`Application request failed: ${response.status}`);
-  return response.json();
 }

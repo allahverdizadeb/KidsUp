@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
+import { PRIVACY_NOTICE_ANCHOR } from '../content/privacyNotice';
 import { prefersReducedMotion } from '../lib/hover';
 import { useWidth } from '../hooks/useWidth';
 
@@ -331,6 +332,9 @@ export default function Footer() {
             </a>
             <a href="tel:+994509988707" style={{ color: '#FFFFFF' }} className="hv-1">
               +994 50 998 87 07
+            </a>
+            <a href={`#${PRIVACY_NOTICE_ANCHOR}`} style={{ color: '#FFFFFF' }} className="hv-1">
+              Məxfilik bildirişi
             </a>
             {canAnimate && (
               <>

@@ -33,18 +33,22 @@ back/
 │  ├─ config.py        Settings (env → typed). The only place that reads the environment.
 │  ├─ db.py            engine, session factory, Base, get_db dependency
 │  ├─ models.py        SQLAlchemy tables (split into models/ when it outgrows one file)
+│  ├─ privileges.py    start-up check that the API's database account can only insert
+│  ├─ bootstrap.py     one-off job: database accounts, migrations, grants (talks to the database itself, see below)
+│  ├─ cli.py           operator commands (retention, erasure)
+│  ├─ logging_config.py  log format of bootstrap and the operator commands
 │  ├─ middleware.py    cross-cutting ASGI behaviour (headers, body limits)
 │  ├─ rate_limit.py    abuse protection
 │  ├─ routers/         HTTP only: parse, call a service, shape the response
 │  ├─ schemas/         Pydantic request/response models and their validation
-│  └─ services/        business logic; the only layer that talks to the database
+│  └─ services/        business logic (applications, retention); the only layer the API's requests use to talk to the database
 ├─ alembic/            migrations
 ├─ tests/              mirrors app/ (see testing-standards.md)
 └─ docs/ .claude/
 ```
 
 **Dependency direction is one-way:** `routers → services → models/db`, and `schemas` is used by routers and services.
-A lower layer MUST NOT import a higher one. Routers MUST NOT touch the session or build queries; services MUST NOT
+`bootstrap.py` is the one exception: it runs before the API exists, creates the accounts the services run as, and so has to talk to PostgreSQL directly (with `psycopg.sql` composition, never string-built SQL). A lower layer MUST NOT import a higher one. Routers MUST NOT touch the session or build queries; services MUST NOT
 import `fastapi` (no `Request`, `HTTPException`); models MUST NOT be returned to clients, always map to a schema.
 
 ## 4. Naming

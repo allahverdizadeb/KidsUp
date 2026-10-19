@@ -16,14 +16,15 @@ Tool: **pytest** + **pytest-cov** + `httpx` (FastAPI `TestClient`), against a **
 | **Unit** | One function/class in isolation, pure logic, injected clock/randomness (`RateLimiter`, validators, settings) | pytest | many, milliseconds |
 | **Integration (the default for this API)** | A request through router → service → **real PostgreSQL** → response, asserting both the HTTP result and the stored rows | `TestClient` + real DB | the main body |
 | **Security** | One test per control in [`security-standards.md`](security-standards.md): headers, host check, CORS, limits, rate limit, docs off in production | `TestClient` | every control, no exceptions |
-| **Container / config (static)** | Files outside `app/` that can break a deploy, read as text: the Dockerfile start command must quote every shell expansion (`FORWARDED_ALLOW_IPS=*` would otherwise become file names) | `test_container.py` |
-| **Migration** | The suite builds the schema by running all Alembic migrations (`tests/conftest.py`), so a broken migration fails every test | alembic | implicit |
+| **Container / config (static)** | Files outside `app/` that can break or weaken a deploy, read as text: the Dockerfile start command (no shell: `FORWARDED_ALLOW_IPS=*` would otherwise become file names; the last `USER` is not root), `docker-compose.yml` (every service locked down, who gets which password, no route out, the retention job fails loudly) | `test_container.py`, `test_compose.py` |
+| **Database accounts** | The four PostgreSQL accounts against a real server: every refusal of the API and retention accounts, unsafe setups refused before connecting, a pre-split database upgraded with its rows, and the API refusing to start with a wider account | `test_bootstrap.py`, `test_privileges.py`, `test_cli.py` (the operator commands as the retention account) |
+| **Migration** | The suite builds the schema by running all Alembic migrations (`tests/conftest.py`), so a broken migration fails every test; `test_migrations.py` applies, undoes and re-applies them | alembic | implicit + explicit |
 
 Do not mock what you own. **The database is never mocked or replaced with SQLite**: the schema uses PostgreSQL arrays, timezone-aware timestamps and constraints that SQLite would silently ignore.
 
 ## 3. Structure and naming
 
-- `tests/` mirrors `app/` by topic: `test_applications.py`, `test_rate_limiter.py`, `test_security.py`, `test_config.py`, and `test_container.py` (files outside `app/`, see §2). One test module per unit or concern, never a catch-all.
+- `tests/` mirrors `app/` by topic: `test_applications.py`, `test_rate_limiter.py`, `test_security.py`, `test_config.py`, `test_bootstrap.py`, `test_privileges.py`, `test_retention.py`, `test_cli.py`, `test_migrations.py`, and the static `test_container.py` and `test_compose.py` (files outside `app/`, see §2). One test module per unit or concern, never a catch-all.
 - **Test names state the behaviour in plain words**: `test_rejects_unknown_host`, `test_window_slides`, `test_invalid_requests_also_count_towards_the_limit`. Not `test_1`, `test_host`, `test_works`.
 - **Arrange – Act – Assert**, visibly separated; **one behaviour per test**. A test that needs "and" in its name is two tests.
 - Use `pytest.mark.parametrize` for the same rule over many inputs, with readable ids; never loops that hide which case failed.
@@ -58,11 +59,11 @@ python -m pytest tests/test_security.py -q
 python -m pytest --cov-report=html    # open htmlcov/index.html to see uncovered branches
 ```
 
-Local PostgreSQL: `localhost:5432` (user/password `postgres`); the suite creates and uses `kidsup_test`. Override with `KIDSUP_TEST_DATABASE_URL`. In CI use a throw-away PostgreSQL service container.
+Local PostgreSQL: `localhost:5432` (user/password `postgres`, a superuser: the suite creates `kidsup_test`, the scratch database `kidsup_bootstrap_test` and the `kidsup_*_test` roles, and drops the scratch ones again). Override with `KIDSUP_TEST_DATABASE_URL`, which must name a **local** database whose name ends in `_test`; the suite refuses anything else, because it truncates tables and creates and drops databases and roles. `test_compose.py` and `test_container.py` read `../docker-compose.yml` and `../db/Dockerfile`, so `back/` is not testable completely on its own. In CI use a throw-away PostgreSQL service container.
 
 ## 7. Review checklist for tests
 
-- [ ] Does each new branch and each security control have a test that would fail if it were removed?
+- [ ] Does each new branch and each security control have a test that would fail if it were removed? (Remove the control once and watch the test fail: a test that cannot fail is worse than none.)
 - [ ] Are names behaviour sentences, and is each test about one thing?
 - [ ] Is the data fake, the database real, the clock injected, the test order-independent?
 - [ ] Do assertions check observable behaviour (status, body, stored rows, headers)?

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { submitApplication } from '../api/applications';
+import { PRIVACY_NOTICE_VERSION } from '../content/privacyNotice';
 import Apply from './Apply';
 
 vi.mock('../api/applications', () => ({ submitApplication: vi.fn() }));
@@ -15,19 +16,22 @@ const parentInput = () => screen.getByLabelText('Valideynin adı');
 const phoneInput = () => screen.getByLabelText('Əlaqə nömrəsi');
 const sendButton = () => screen.getByRole('button', { name: /Göndər/ });
 const language = (name: string) => screen.getByRole('button', { name });
+const consentBox = () => screen.getByRole('checkbox', { name: /razıyam/ });
 
 async function fillValidForm() {
   await user.type(parentInput(), '  Aysel Məmmədova ');
   await user.type(phoneInput(), '+994 50 123 45 67');
   await user.type(screen.getByLabelText('Uşağın adı və soyadı'), 'Leyla Məmmədova');
   fireEvent.change(screen.getByLabelText('Doğum tarixi'), { target: { value: '2016-05-20' } });
+  await user.click(consentBox());
 }
 
 describe('Apply form', () => {
   beforeEach(() => {
+    window.location.hash = '';
     user = userEvent.setup({ delay: null });
     submit.mockReset();
-    submit.mockResolvedValue({ id: 'created' });
+    submit.mockResolvedValue();
   });
 
   it('lists the contact options next to the form', () => {
@@ -91,6 +95,12 @@ describe('Apply form', () => {
       expect(screen.getByLabelText('Uşağın adı və soyadı')).toHaveAttribute('maxlength', '120');
     });
 
+    it('never lets the browser autofill the child’s details (SEC-F-06)', () => {
+      render(<Apply />);
+      expect(screen.getByLabelText('Uşağın adı və soyadı')).toHaveAttribute('autocomplete', 'off');
+      expect(screen.getByLabelText('Doğum tarixi')).toHaveAttribute('autocomplete', 'off');
+    });
+
     it('requires at least one training language', async () => {
       render(<Apply />);
       await fillValidForm();
@@ -114,6 +124,51 @@ describe('Apply form', () => {
       expect(screen.queryByText('Uşağın adını və soyadını qeyd edin.')).not.toBeInTheDocument();
       fireEvent.change(screen.getByLabelText('Doğum tarixi'), { target: { value: '2016-05-20' } });
       expect(screen.queryByText('Doğum tarixini seçin.')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('consent and privacy notice (SEC-F-16)', () => {
+    it('asks for the parent’s consent, focuses it and sends nothing when it is missing', async () => {
+      render(<Apply />);
+      await fillValidForm();
+      await user.click(consentBox()); // take the yes back
+      await user.click(sendButton());
+
+      expect(screen.getByText('Davam etmək üçün razılığınızı təsdiq edin.')).toBeInTheDocument();
+      expect(consentBox()).toHaveAttribute('aria-invalid', 'true');
+      await vi.waitFor(() => expect(consentBox()).toHaveFocus());
+      expect(submit).not.toHaveBeenCalled();
+    });
+
+    it('clears the consent error as soon as consent is given', async () => {
+      render(<Apply />);
+      await user.click(sendButton());
+      expect(screen.getByText('Davam etmək üçün razılığınızı təsdiq edin.')).toBeInTheDocument();
+
+      await user.click(consentBox());
+      expect(screen.queryByText('Davam etmək üçün razılığınızı təsdiq edin.')).not.toBeInTheDocument();
+      expect(consentBox()).toBeChecked();
+    });
+
+    it('starts unchecked: consent is never pre-ticked', () => {
+      render(<Apply />);
+      expect(consentBox()).not.toBeChecked();
+    });
+
+    it('sends the consent together with the version of the notice the parent saw', async () => {
+      render(<Apply />);
+      await fillValidForm();
+      await user.click(sendButton());
+
+      const payload = submit.mock.calls[0]?.[0];
+      expect(payload).toMatchObject({ consent: true, privacy_notice_version: PRIVACY_NOTICE_VERSION });
+    });
+
+    it('offers the privacy notice right under the consent box', () => {
+      render(<Apply />);
+      const box = consentBox();
+      const notice = screen.getByText('Məxfilik bildirişini oxu');
+      expect(box.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 
@@ -179,6 +234,8 @@ describe('Apply form', () => {
         phone: '+994 50 123 45 67',
         children: [{ name: 'Leyla Məmmədova', birth_date: '2016-05-20' }],
         languages: ['Azərbaycan', 'Rus', 'İngilis'],
+        consent: true,
+        privacy_notice_version: PRIVACY_NOTICE_VERSION,
       });
       expect(await screen.findByText(/Müraciətiniz qəbul olundu/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Müraciət göndərildi/ })).toBeDisabled();
@@ -200,8 +257,8 @@ describe('Apply form', () => {
     });
 
     it('blocks a second submission while the first is still in flight', async () => {
-      let finish: (value: { id: string }) => void = () => {};
-      submit.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+      let finish: () => void = () => {};
+      submit.mockReturnValue(new Promise<void>((resolve) => (finish = resolve)));
       render(<Apply />);
       await fillValidForm();
       await user.click(sendButton());
@@ -209,7 +266,7 @@ describe('Apply form', () => {
       expect(screen.getByRole('button', { name: /Göndərilir/ })).toBeDisabled();
       fireEvent.submit(screen.getByRole('form', { name: 'Müraciət forması' }));
       expect(submit).toHaveBeenCalledTimes(1);
-      finish({ id: 'x' });
+      finish();
       expect(await screen.findByText(/Müraciətiniz qəbul olundu/)).toBeInTheDocument();
     });
 

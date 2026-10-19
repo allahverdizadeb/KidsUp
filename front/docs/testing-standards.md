@@ -7,7 +7,7 @@ Tools: **Vitest** (runner, `jsdom`), **@testing-library/react** + **user-event**
 - **Project-level coverage MUST be at least 80% on all four metrics: statements, branches, functions and lines.**
 - It is enforced automatically: `vite.config.ts` sets `coverage.thresholds` to 80 and `npm run test:coverage` (part of `npm run verify`) **fails** below it. Lowering a threshold, widening `coverage.exclude`, or adding ignore comments to pass the gate is forbidden without an entry in the *Accepted risks* table of [`security-standards.md`](security-standards.md).
 - Only `src/main.tsx` (the entry that mounts React) and the test helpers are excluded. Everything else in `src/` counts.
-- 80% is a **floor**. Current coverage: statements 98.6%, branches 95.3%, functions 98.6%, lines 99.3%. New or changed code SHOULD be ≥ 90% covered; **security-relevant code (forms, links, `api/`, `ErrorBoundary`, anything touching user data) MUST be covered 100% including failure paths.**
+- 80% is a **floor**. Current coverage: statements 98.7%, branches 95.5%, functions 98.8%, lines 99.3%. New or changed code SHOULD be ≥ 90% covered; **security-relevant code (forms, links, `api/`, `ErrorBoundary`, anything touching user data) MUST be covered 100% including failure paths.**
 - Coverage shows code *ran*, not that it is *right*. A test without a meaningful assertion does not count; reviewers reject it.
 
 ## 2. What to test
@@ -17,11 +17,13 @@ Tools: **Vitest** (runner, `jsdom`), **@testing-library/react** + **user-event**
 | **Unit** | Pure logic and hooks in isolation | `lib/hover.ts`, `useHover`, `useWidth`, `useReveal` |
 | **Component (the default)** | A component rendered as a user would see it: roles, labels, text, keyboard, state changes | `Lesson`, `Faq`, `Certificate`, `Apply` |
 | **Integration** | The whole `<App />` | Sections present and ordered, one `h1`, images have `alt`, no inline handlers |
-| **Accessibility** | axe-core over the full page at desktop and mobile widths | `App.a11y.test.tsx` (zero violations) |
+| **Accessibility** | axe-core over the full page at desktop and mobile widths, and with the privacy notice open and after an incomplete submit | `App.a11y.test.tsx` (zero violations) |
 | **Security** | One check per control in [`security-standards.md`](security-standards.md) | `rel="noopener noreferrer"`, input `maxlength`, request timeout, `ErrorBoundary` leaks nothing, lint rules, `npm run check:headers` |
 | **Contract** | The call to the API sends exactly the documented payload | `api/applications.test.ts`, `Apply.test.tsx` |
-| **Assets** | Every local file the page references exists and is complete (not cut off), and what the page says about a file (image size, PDF pages and size) is true | `publicAssets.test.tsx` |
-| **Visual parity** | The page is compared pixel-for-pixel with the approved design (`design-source/`) at 390 px and 1440 px with reduced motion | manual, before changing markup or styles; target 0% difference |
+| **Assets** | Everything under `public/` is a file a person reviewed (SHA-256 list), complete, free of scripts and personal metadata (PNG text chunks, JPEG EXIF/XMP/IPTC/comment segments, PDF author fields and active content, SVG scripts), and what the page says about a file (image size, PDF pages and size) is true | `publicAssets.test.tsx` |
+| **Server config** | The nginx files read as text: headers and policies (compared with the same `scripts/expected-headers.json` the live check uses), every location, one endpoint passed to the API and only for POST, the log format, the image's user | `nginxConfig.test.ts`, then `npm run check:headers` live |
+| **Content** | The privacy notice has a version the API accepts, and its wording cannot change under an unchanged version (SHA-256 per version) | `privacyNotice.test.ts` |
+| **Visual parity** | The page is compared pixel-for-pixel with the approved design (`design-source/`) at 390 px and 1440 px with reduced motion | manual, before changing markup or styles; target 0% difference, except the deliberate differences listed in `../CLAUDE.md` |
 
 Not tested: React internals, CSS values that restate the source, snapshots of large DOM trees (SVG illustrations in particular). **Do not write snapshot tests of components.**
 

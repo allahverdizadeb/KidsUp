@@ -9,7 +9,9 @@ WORKDIR /srv
 
 # requirements.txt is a hash-pinned lock (see docs/coding-standards.md); pip refuses anything not in it.
 COPY requirements.txt .
-RUN pip install --require-hashes -r requirements.txt
+RUN pip install --require-hashes -r requirements.txt \
+    # The running API never installs anything: drop the installer and its vendored libraries (less to patch and to attack).
+    && pip uninstall -y pip setuptools wheel
 
 COPY alembic.ini .
 COPY alembic ./alembic

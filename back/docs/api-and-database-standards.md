@@ -41,7 +41,7 @@ A new endpoint is not done until: input schema with limits · output schema · r
 - **Soft delete is not a default.** Deleting personal data on request MUST really delete it.
 - Query rules: **only through SQLAlchemy** (parameterised). `text()` with string formatting is forbidden (`SEC-B-02`). Avoid N+1 (use `selectinload`/`joinedload` deliberately). Never `SELECT *` on wide tables in hot paths.
 - **Transactions:** one request = one unit of work, committed by the service that owns the operation. No partial writes: if two tables change, they change in one transaction.
-- **Roles:** migrations run with a role that may alter the schema; the running API uses a **separate role with only `SELECT/INSERT/UPDATE/DELETE`** on its tables (`SEC-B-07`). The `postgres` superuser is for local development only.
+- **Roles:** migrations run with a role that may alter the schema; the running API uses a **separate role that can only `INSERT`** into its tables, and the retention job and operator commands a third one (find, delete, mark enrolled): see `SEC-B-07`. The `postgres` superuser is for local development only.
 
 ## 4. Migrations (Alembic)
 
@@ -51,5 +51,7 @@ A new endpoint is not done until: input schema with limits · output schema · r
 - A migration MUST be reversible (`downgrade`) unless data would be lost; then it says so in the docstring and is called out in review.
 - **Never edit a migration that has been applied anywhere shared.** Add a new one.
 - Destructive or long-locking operations (drop column, add `NOT NULL` without default, non-concurrent index on a large table) are done in multiple deploys: expand → migrate data → contract.
-- The Docker image runs `alembic upgrade head` on start; with more than one replica run it as a one-off job instead to avoid races.
+- The Docker image does not migrate. The one-off `bootstrap` job (`python -m app.bootstrap`) runs `alembic upgrade head` as the schema-owning role before the API starts, so there is no race between replicas and the API's own account never needs the right to change the schema (`SEC-B-07`).
+- A new table is closed to the API and retention accounts until `app/bootstrap.py` grants it explicitly (per table and column, never `ALL TABLES`): add the grant in the same change as the migration.
+- A column that a job filters on by value (such as `status`) has a `CHECK` that lists the values; a new value needs a migration and a decision on how long such rows are kept (`SEC-B-09`).
 - Every migration is tested: the test suite builds the schema by running all migrations against a real PostgreSQL (`tests/conftest.py`).

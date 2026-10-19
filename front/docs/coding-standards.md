@@ -67,7 +67,7 @@ Names say **what a thing is or does**, in full words. No abbreviations except `i
 | Generic parameter | `T` or descriptive | `T`, `TItem` | `Type1` |
 | Context / provider | `<Thing>Context`, `<Thing>Provider` | `AuthContext` | `Ctx` |
 | CSS class | `kebab-case`, describes meaning | `cert-dialog` | `box1`, `redText` |
-| Content key | camelCase noun | `faqItems`, `lessonStages` | `arr1` |
+| Content export | `UPPER_SNAKE_CASE` constant, noun | `FAQ`, `LESSONS`, `PRIVACY_NOTICE` | `arr1` |
 | Env variable | `VITE_` + `UPPER_SNAKE` (**public by definition**) | `VITE_API_URL` | `API_KEY` (never expose secrets) |
 | Test title | behaviour sentence | `'closes with Escape and returns focus'` | `'works'`, `'test 1'` |
 | Branch / commit | as in the backend (`feat/…`, Conventional Commits) | `fix(apply): keep errors aligned after removing a child` | `fix`, `wip` |

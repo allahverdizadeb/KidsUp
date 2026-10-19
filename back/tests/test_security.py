@@ -2,6 +2,7 @@ import logging
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
 
 from app.main import create_app
 from tests.conftest import make_settings
@@ -94,6 +95,32 @@ def test_invalid_requests_also_count_towards_the_limit():
     limited = TestClient(create_app(make_settings(rate_limit_per_minute=2)))
     statuses = [limited.post("/api/applications", json={}).status_code for _ in range(3)]
     assert statuses == [422, 422, 429]
+
+
+def test_in_production_the_api_refuses_to_start_as_a_superuser():
+    # The URL the settings hold passes the name check; what the database says about the account does not.
+    with pytest.raises(RuntimeError, match="administrative attributes"), TestClient(create_app(production())):
+        pass
+
+
+def test_in_production_the_api_starts_as_the_limited_account(provisioned, monkeypatch):
+    monkeypatch.setattr("app.main.engine", create_engine(provisioned.app))
+
+    with TestClient(create_app(production())) as running:
+        assert running.get("/health").status_code == 200
+
+
+def test_in_development_the_superuser_may_be_used_for_convenience():
+    with TestClient(create_app(make_settings())) as running:
+        assert running.get("/health").status_code == 200
+
+
+def test_a_trailing_slash_is_not_redirected_to_the_internal_host_name(client):
+    # Starlette would answer 307 with a Location built from the Host header nginx forwards ("back:8000").
+    response = client.post("/api/applications/", json=VALID, follow_redirects=False)
+
+    assert response.status_code == 404
+    assert "location" not in response.headers
 
 
 def test_production_forbids_wildcards():

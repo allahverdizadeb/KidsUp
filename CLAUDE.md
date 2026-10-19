@@ -6,12 +6,12 @@ This repo has three independent projects. This file only covers what is shared a
 
 | Folder   | What it is                                       | Status                                                          |
 |----------|--------------------------------------------------|-----------------------------------------------------------------|
-| `front/` | Public landing page, React + TypeScript (Vite)   | Ported, pixel-identical to the design; 109 tests, ~99% coverage |
-| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` live; 25 tests, 100% coverage          |
+| `front/` | Public landing page, React + TypeScript (Vite)   | Ported from the design (deliberate differences: `front/CLAUDE.md`); 169 tests, ~99% coverage |
+| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` live; 272 tests, 100% coverage  |
 | `admin/` | Admin panel                                      | **Blocked: design not ready**                                   |
 
 Each project has `docs/` (standards) and `.claude/` (skills + agents); the repo root has `.claude/` (cross-project
-skills + agents) and `docs/docker.md`. Run everything in Docker with `docker compose up --build` (see `docs/docker.md`).
+skills + agents), `docs/docker.md`, `SECURITY.md` and `db/` (the database image). Run everything in Docker with `docker compose up --build` (see `docs/docker.md`).
 
 Local dev without Docker: Postgres 17 on `localhost:5432` (user/password `postgres`, databases `kidsup` and `kidsup_test`),
 API on :8000, front on :5173 (Vite proxies `/api` to the API). See each project's CLAUDE.md for commands.
@@ -22,7 +22,7 @@ API on :8000, front on :5173 (Vite proxies `/api` to the API). See each project'
 their parents. Controls are numbered so they can be cited in reviews and tests:
 
 - Backend: [`back/docs/security-standards.md`](back/docs/security-standards.md) (`SEC-B-01…18`)
-- Frontend: [`front/docs/security-standards.md`](front/docs/security-standards.md) (`SEC-F-01…16`)
+- Frontend: [`front/docs/security-standards.md`](front/docs/security-standards.md) (`SEC-F-NN`)
 - Admin panel (future) adds stricter rules: [`admin/docs/README.md`](admin/docs/README.md)
 
 Rules that follow from it, for every contributor (human or AI):
@@ -68,11 +68,10 @@ Cross-project conventions (language, naming, git, deploy, security baseline) →
 
 `front/design-source/` holds the original Claude Design export (`KidsUp Landing Page.dc.html`,
 `support.js`, `assets/`). It is read-only reference material, not production code. The React port in
-`front/src/` matches it pixel for pixel; if the design changes, diff against it. The one permitted change is restoring a file
-the export failed to deliver, so that the HTML renders as designed (`sertifikat-full-name.png` arrived truncated and
-`KidsUp-Brosura.pdf` was missing; both restored on 2026-10-18 from the full project export, also into `front/public/assets/`).
+`front/src/` matches it except for the deliberate differences listed in `front/CLAUDE.md` (which owns that list); if the design changes, diff against it.
 
 Open owner decisions: use `#D6006E` for small pink text (brand pink fails WCAG AA contrast, see
 `front/docs/styling-and-accessibility-standards.md` A11Y-1); notification channel for new applications; a text-based export of
-the brochure PDF (it is two images, A11Y-4); privacy notice wording
-(**the form currently collects children's data without one: a launch blocker**, `SEC-F-16`).
+the brochure PDF (it is two images, A11Y-4); **the privacy notice and consent wording, built as a draft: a launch blocker until counsel
+approves it** (`SEC-F-16`, the points to confirm are in `front/docs/privacy-notice-review.md`); the owner's signature on the six accepted risks in
+`back/docs/security-standards.md` section 5; the contact and response times in `SECURITY.md`.
