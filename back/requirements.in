@@ -4,3 +4,9 @@ pydantic-settings>=2.4
 sqlalchemy>=2.0
 psycopg[binary]>=3.2
 alembic>=1.13
+# Admin panel (app/panel): Argon2id password hashes, one-time codes for the second factor, the secret of that
+# factor encrypted in the database, and re-encoding of uploaded images (SEC-B-03, SEC-B-09).
+argon2-cffi>=23.1
+pyotp>=2.9
+cryptography>=43
+pillow>=10.4

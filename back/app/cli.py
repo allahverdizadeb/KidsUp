@@ -31,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
     purge = commands.add_parser(
         "purge-expired",
-        help=f"delete applications that never led to enrolment after {settings.retention_days} days",
+        help=f"delete applications that were not approved after {settings.retention_days} days",
     )
     purge.add_argument("--dry-run", action="store_true", help="only count what would be deleted")
     purge.add_argument(
@@ -40,10 +40,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"delete even if more than {MAX_EXPIRED_PER_RUN} applications are due "
         "(check with --dry-run first)",
     )
-    enrolled = commands.add_parser(
-        "mark-enrolled", help="keep a family's application out of purge-expired once the child is enrolled"
-    )
-    enrolled.add_argument("application_id", type=uuid.UUID)
+
     erase = commands.add_parser(
         "erase-application", help="really delete one application at a parent's request"
     )
@@ -73,14 +70,6 @@ def purge_expired(db: Session, dry_run: bool, force: bool) -> int:
         "expired applications deleted: %d",
         retention.delete_expired_applications(db, now, settings.retention_days),
     )
-    return 0
-
-
-def mark_enrolled(db: Session, application_id: uuid.UUID) -> int:
-    if not retention.mark_enrolled(db, application_id):
-        logger.warning("no application with that id")
-        return 1
-    logger.info("application marked as enrolled")
     return 0
 
 
@@ -125,8 +114,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         match args.command:
             case "purge-expired":
                 return purge_expired(db, args.dry_run, args.force)
-            case "mark-enrolled":
-                return mark_enrolled(db, args.application_id)
+
             case "erase-application":
                 return erase_application(db, args.application_id)
             case "erase-by-phone":

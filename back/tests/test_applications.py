@@ -23,7 +23,7 @@ VALID: dict[str, Any] = {
     "children": [{"name": "Leyla Məmmədova", "birth_date": "2016-03-14"}],
     "languages": ["Azərbaycan", "Rus"],
     "consent": True,
-    "privacy_notice_version": "2026-10-19-draft",
+    "privacy_notice_version": "2026-10-19",
 }
 
 
@@ -207,7 +207,7 @@ def test_records_the_consent_and_the_notice_version_it_was_given_for(client):
     assert client.post("/api/applications", json=VALID).status_code == 201
 
     saved = stored_applications()[0]
-    assert saved.privacy_notice_version == "2026-10-19-draft"
+    assert saved.privacy_notice_version == "2026-10-19"
     # The database's clock, read in the same statement as created_at: the moment the yes was received.
     assert saved.consent_given_at == saved.created_at
 
@@ -237,7 +237,9 @@ def test_refuses_a_notice_version_that_is_not_a_date_with_a_short_suffix(client,
     assert stored_applications() == []
 
 
-@pytest.mark.parametrize("version", ["2026-10-19", "2026-10-18-draft", "2099-01-01", "2026-10-19-draft2"])
+@pytest.mark.parametrize(
+    "version", ["2026-10-19-draft", "2026-10-18", "2099-01-01", "2026-10-19-v2"], ids=repr
+)  # the retired draft, the day before, the future, a suffix nobody published
 def test_refuses_a_notice_version_that_was_never_published(client, version):
     # Well formed, but no parent was ever shown it: the record must not point at wording that never existed.
     assert version not in PUBLISHED_NOTICE_VERSIONS
@@ -264,7 +266,7 @@ def test_the_api_knows_the_notice_version_the_page_sends():
     "columns",
     [
         {"consent_given_at": func.now()},
-        {"privacy_notice_version": "2026-10-19-draft"},
+        {"privacy_notice_version": "2026-10-19"},
     ],
     ids=["a time but no version", "a version but no time"],
 )
@@ -286,12 +288,13 @@ def test_every_status_the_code_knows_can_be_stored(status):
     assert [stored.status for stored in stored_applications()] == [status.value]
 
 
-def test_the_database_refuses_a_status_the_code_does_not_know():
+@pytest.mark.parametrize(
+    "status", ["enrolled", "archived", "NEW", ""]
+)  # the retired status, a stranger, a case
+def test_the_database_refuses_a_status_the_code_does_not_know(status):
     # The retention job deletes by status, so an unknown one must not be storable.
     with SessionLocal() as db:
-        db.add(
-            Application(parent_name="Aysel", phone="+994 50 123 45 67", languages=["Rus"], status="declined")
-        )
+        db.add(Application(parent_name="Aysel", phone="+994 50 123 45 67", languages=["Rus"], status=status))
         with pytest.raises(IntegrityError, match="ck_applications_status_known"):
             db.commit()
 

@@ -1,7 +1,11 @@
 import { useHover } from '../hooks/useHover';
+import { useText } from '../hooks/usePublicContent';
 
 export default function Approach() {
   const { on, off, hv } = useHover(['i2', 'i3', 'i4']);
+  const first = { title: useText('approach.1_title'), text: useText('approach.1_text') };
+  const second = { title: useText('approach.2_title'), text: useText('approach.2_text') };
+  const third = { title: useText('approach.3_title'), text: useText('approach.3_text') };
   return (
     <section id="yanasma" style={{ background: '#FFFFFF', borderTop: '1px solid #EAEAEA' }}>
       <div
@@ -32,7 +36,7 @@ export default function Approach() {
                 textWrap: 'balance',
               }}
             >
-              Hər şey bir sualdan başlayır.
+              {first.title}
             </h2>
             <p
               style={{
@@ -44,8 +48,7 @@ export default function Approach() {
                 textWrap: 'pretty',
               }}
             >
-              Uşaqlar ətraflarındakı gündəlik problemləri axtarır, suallar verir və ilk həll ideyasını
-              dəftərdə eskiz kimi çəkirlər. Sonra eskizdən sadə model hazırlayırlar.
+              {first.text}
             </p>
           </div>
           <div style={{ flex: '1.5 1 460px', minWidth: '0' }}>
@@ -152,7 +155,7 @@ export default function Approach() {
                 textWrap: 'balance',
               }}
             >
-              Özümüz hazırlayırıq, özümüz sınayırıq.
+              {second.title}
             </h2>
             <p
               style={{
@@ -164,8 +167,7 @@ export default function Approach() {
                 textWrap: 'pretty',
               }}
             >
-              Karton, lent və əldəki materiallarla prototip qurur, sınayır və rəylərə əsasən yaxşılaşdırırlar.
-              Vaxtın 60%-i oyun və praktikaya ayrılır.
+              {second.text}
             </p>
           </div>
           <div style={{ flex: '1.5 1 460px', minWidth: '0' }}>
@@ -262,7 +264,7 @@ export default function Approach() {
                 textWrap: 'balance',
               }}
             >
-              İdeyanın hesabını da aparırıq.
+              {third.title}
             </h2>
             <p
               style={{
@@ -274,8 +276,7 @@ export default function Approach() {
                 textWrap: 'pretty',
               }}
             >
-              Materialların xərcini yazır, məhsula qiymət qoyur və qazancı hesablayırlar. Sadə maliyyə hesabı
-              Demo Day-də təqdim olunan nəticələrdən biridir.
+              {third.text}
             </p>
           </div>
           <div style={{ flex: '1.5 1 460px', minWidth: '0' }}>

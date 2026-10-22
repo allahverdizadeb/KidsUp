@@ -11,7 +11,7 @@ import {
 // line here, and the version added to PUBLISHED_NOTICE_VERSIONS in back/app/schemas/application.py): the version is
 // stored with every application, so it must always say which text the parent agreed to.
 const SHOWN_WORDING: Readonly<Record<string, string>> = {
-  '2026-10-19-draft': '310bd39e1f665903efc98b6b2299796483ff688193efd28b84ffc045893ea5ae',
+  '2026-10-19': '310bd39e1f665903efc98b6b2299796483ff688193efd28b84ffc045893ea5ae',
 };
 
 function fingerprintOfWording(): string {

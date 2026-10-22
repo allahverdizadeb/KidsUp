@@ -1,3 +1,5 @@
+// The six modules as the design shows them. The page takes them from the content registry (modules.items); this
+// copy is what the tests compare that default against, so a change to the default cannot slip through unnoticed.
 export const MODULES = [
   {
     week: '1-ci həftə',

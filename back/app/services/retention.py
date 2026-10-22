@@ -3,7 +3,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 
-from sqlalchemy import ColumnElement, delete, func, select, update
+from sqlalchemy import ColumnElement, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Application, ApplicationStatus
@@ -15,7 +15,7 @@ SIGNIFICANT_DIGITS = 9
 
 def is_expired(now: datetime, retention_days: int) -> ColumnElement[bool]:
     cutoff = now - timedelta(days=retention_days)
-    return (Application.status == ApplicationStatus.NEW.value) & (Application.created_at < cutoff)
+    return (Application.status != ApplicationStatus.APPROVED.value) & (Application.created_at < cutoff)
 
 
 def count_expired_applications(db: Session, now: datetime, retention_days: int) -> int:
@@ -27,26 +27,15 @@ def count_expired_applications(db: Session, now: datetime, retention_days: int) 
 def delete_expired_applications(db: Session, now: datetime, retention_days: int) -> int:
     """Delete applications that never led to enrolment and are older than the retention period (SEC-B-09).
 
-    Only status "new" is touched: records of enrolled families follow the programme's own retention rules.
-    The children are removed with them by the foreign key's ON DELETE CASCADE.
+    Everything except an approved application is deleted (new, contacted and declined ones alike): records of
+    approved families follow the programme's own retention rules. The children and the staff's notes are
+    removed with them by the foreign keys' ON DELETE CASCADE.
     """
     deleted = db.execute(
         delete(Application).where(is_expired(now, retention_days)).returning(Application.id)
     ).all()
     db.commit()
     return len(deleted)
-
-
-def mark_enrolled(db: Session, application_id: uuid.UUID) -> bool:
-    """Keep a family's application out of the retention job once the child is enrolled."""
-    marked = db.execute(
-        update(Application)
-        .where(Application.id == application_id)
-        .values(status=ApplicationStatus.ENROLLED.value)
-        .returning(Application.id)
-    ).all()
-    db.commit()
-    return bool(marked)
 
 
 def erase_application(db: Session, application_id: uuid.UUID) -> bool:

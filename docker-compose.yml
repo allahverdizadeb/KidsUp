@@ -1,14 +1,20 @@
-# KidsUp production-like stack: nginx (front) -> API (back) -> PostgreSQL (db).
-# Only the front is reachable from outside, and only on the loopback address by default.
+# KidsUp production-like stack: nginx (front) -> API (back) -> PostgreSQL (db), and beside it the admin panel:
+# nginx (admin) -> panel API (panel) -> PostgreSQL (db). Only the two nginx containers are reachable from outside, and
+# only on the loopback address by default.
 #
-#   cp .env.example .env     # then set the four passwords
+#   cp .env.example .env     # then set the five passwords and the panel key
 #   docker compose up --build
-#   open http://localhost:8080
+#   open http://localhost:8080   (the public site)  and  http://localhost:8081  (the admin panel)
 #
-# Startup order: db -> bootstrap (accounts, migrations, grants; exits) -> back -> front. retention runs beside them.
-# Networks: `edge` (nginx only, the one with a route out), `app` (nginx <-> API, internal) and `data`
-# (API, jobs and database, internal). The API therefore cannot reach the internet and the database cannot be reached
-# from anywhere but the API and the jobs.
+# Startup order: db -> bootstrap (accounts, migrations, grants; exits) -> back, panel -> front, admin. retention runs
+# beside them. The panel writes what the public site shows (texts, open courses, pictures) into the `content` volume;
+# the front serves it read-only, so the public site never talks to the database or to the panel.
+# Networks: `edge` (the public nginx only, the one with a route out), `app` (public nginx <-> API, internal), `data`
+# (API, jobs and database, internal), `data_panel` (panel and database only, internal), `admin_edge` (the admin nginx
+# only) and `admin_app` (admin nginx <-> panel, internal). The API and the panel therefore cannot reach the internet,
+# the database cannot be reached from anywhere but them and the jobs, the public nginx shares no network with anything
+# of the admin panel, and the API (the one component the whole internet talks to) cannot reach the panel at all: staff
+# get to the panel only through the admin nginx, with its allow-list, its limits and its headers.
 
 name: kidsup
 
@@ -64,16 +70,17 @@ services:
     tmpfs: [/tmp, /var/run/postgresql]
     pids_limit: 300
     mem_limit: 512m
+    cpus: "2.0"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kidsup -d kidsup"]
       interval: 5s
       timeout: 3s
       retries: 10
-    networks: [data]
+    networks: [data, data_panel]
 
-  # One-off: creates/updates the owner, app and retention accounts, runs the migrations as the owner and grants the other
-  # two exactly what they need (the API: INSERT; retention: find, delete, mark enrolled). Safe to run on every start,
-  # and it upgrades a database created before the split.
+  # One-off: creates/updates the owner, app, retention and panel accounts, runs the migrations as the owner and grants the
+  # other three exactly what they need (the API: INSERT; retention: find and delete; the panel: what staff work with, listed
+  # per table and column in app/grants.py). Safe to run on every start, and it upgrades a database created earlier.
   bootstrap:
     <<: *hardening
     image: kidsup-back
@@ -87,7 +94,9 @@ services:
       KIDSUP_MIGRATION_DATABASE_URL: postgresql://kidsup_owner:${POSTGRES_OWNER_PASSWORD:?Set POSTGRES_OWNER_PASSWORD in .env}@db:5432/kidsup
       KIDSUP_DATABASE_URL: postgresql://kidsup_app:${POSTGRES_APP_PASSWORD:?Set POSTGRES_APP_PASSWORD in .env}@db:5432/kidsup
       KIDSUP_RETENTION_DATABASE_URL: postgresql://kidsup_retention:${POSTGRES_RETENTION_PASSWORD:?Set POSTGRES_RETENTION_PASSWORD in .env}@db:5432/kidsup
+      KIDSUP_PANEL_DATABASE_URL: postgresql://kidsup_panel:${POSTGRES_PANEL_PASSWORD:?Set POSTGRES_PANEL_PASSWORD in .env}@db:5432/kidsup
     mem_limit: 256m
+    cpus: "1.0"
     depends_on:
       db:
         condition: service_healthy
@@ -111,6 +120,7 @@ services:
       # nothing else. Never "*" (uvicorn then trusts any peer and the left-most, client-supplied, address).
       FORWARDED_ALLOW_IPS: ${APP_SUBNET:-172.29.250.0/28}
     mem_limit: 256m
+    cpus: "1.0"
     depends_on:
       db:
         condition: service_healthy
@@ -118,7 +128,55 @@ services:
         condition: service_completed_successfully
     networks: [data, app]
 
-  # Deletes applications that never led to enrolment once they are older than RETENTION_DAYS (SEC-B-09), once a day.
+  # The admin panel's API (app/panel): staff sign in, read and manage applications and courses, edit the landing page.
+  # Its own container and its own database account (kidsup_panel): it can read and change what staff work with, and
+  # nothing else; it refuses to start as anything wider (SEC-B-07). It writes the public site's files into `content`.
+  # Reachable only through the `admin` nginx. One worker, on purpose: the sign-in limiter and the refresh of the public
+  # files live in the process. Create the first staff account with the operator command (docs/docker.md):
+  #   docker compose exec panel python -m app.panel.cli create-admin --email <e-mail> --name <name> --role admin
+  panel:
+    <<: *hardening
+    image: kidsup-back
+    pull_policy: never
+    # Exec form, no shell. --factory: the app is built with its settings when the process starts.
+    command:
+      - uvicorn
+      - app.panel.main:create_panel_app
+      - --factory
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --no-server-header
+      - --no-access-log
+      - --proxy-headers
+    restart: unless-stopped
+    environment:
+      KIDSUP_ENVIRONMENT: production
+      KIDSUP_DATABASE_URL: postgresql://kidsup_panel:${POSTGRES_PANEL_PASSWORD:?Set POSTGRES_PANEL_PASSWORD in .env}@db:5432/kidsup
+      # Encrypts the one-time-code secrets in the database: a copy of the database alone does not give them away.
+      KIDSUP_PANEL_SECRET_KEY: ${PANEL_SECRET_KEY:?Set PANEL_SECRET_KEY in .env}
+      # A state-changing request is accepted only from the admin panel's own origin (CSRF, on top of SameSite=Strict).
+      KIDSUP_PANEL_ALLOWED_ORIGINS: '${ADMIN_ORIGINS:-["http://127.0.0.1:8081","http://localhost:8081"]}'
+      KIDSUP_ALLOWED_HOSTS: '["panel","localhost","127.0.0.1"]'
+      KIDSUP_CORS_ORIGINS: "[]"
+      # X-Forwarded-For is believed only from the private admin nginx <-> panel network (never "*").
+      FORWARDED_ALLOW_IPS: ${ADMIN_SUBNET:-172.29.250.16/28}
+    volumes:
+      - content:/srv/content
+    # Argon2id uses 64 MiB per sign-in (three at a time), and a picture of up to 16 megapixels is decoded in memory
+    # before it is shrunk (one at a time). The CPU limit keeps a flood of sign-ins from starving the public site.
+    mem_limit: 512m
+    cpus: "1.5"
+    depends_on:
+      db:
+        condition: service_healthy
+      bootstrap:
+        condition: service_completed_successfully
+    # Not `data`: the public API is on that one and must not be able to reach the panel (admin/docs/README.md, rule 7).
+    networks: [data_panel, admin_app]
+
+  # Deletes applications that were not approved once they are older than RETENTION_DAYS (SEC-B-09), once a day.
   # It also hosts the operator's commands, because only its account may delete or read what they match on:
   #   docker compose exec retention python -m app.cli --help
   # A failing run ends the container (and Docker then restarts it), so a broken deletion job shows up as a restarting
@@ -137,6 +195,7 @@ services:
       KIDSUP_DATABASE_URL: postgresql://kidsup_retention:${POSTGRES_RETENTION_PASSWORD:?Set POSTGRES_RETENTION_PASSWORD in .env}@db:5432/kidsup
       KIDSUP_RETENTION_DAYS: ${RETENTION_DAYS:-365}
     mem_limit: 256m
+    cpus: "0.5"
     depends_on:
       bootstrap:
         condition: service_completed_successfully
@@ -149,14 +208,42 @@ services:
     ports:
       # Loopback by default. Put a TLS-terminating proxy in front for real traffic (see docs/docker.md).
       - "${FRONT_BIND:-127.0.0.1}:${FRONT_PORT:-8080}:8080"
+    volumes:
+      # What the admin panel published for the page: the texts, the open courses, the pictures. Read-only.
+      - content:/usr/share/nginx/content:ro
     mem_limit: 128m
+    cpus: "0.5"
     depends_on:
       back:
         condition: service_healthy
+      # Started, not healthy: a panel that is down must not keep the public site down. The panel is started first so
+      # that a new `content` volume takes its owner from the panel's image (the panel is the one that writes to it).
+      panel:
+        condition: service_started
     networks: [edge, app]
 
+  # The admin panel's origin: nginx with the panel's security headers, in front of the panel API. Its own loopback port
+  # and its own networks, so the public nginx and the admin panel share nothing. Not for the internet: put a
+  # TLS-terminating proxy and a network allow-list (VPN or office addresses) in front of it (docs/docker.md).
+  admin:
+    <<: *hardening
+    build: ./admin
+    image: kidsup-admin
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_BIND:-127.0.0.1}:${ADMIN_PORT:-8081}:8080"
+    # nginx holds a picture upload (5 MiB at most) in /tmp before passing it on; the tmpfs counts against the memory
+    # limit, so it is given a size well inside it, and a flood of uploads fills it and fails instead of the container.
+    tmpfs: ["/tmp:size=32m"]
+    mem_limit: 128m
+    cpus: "0.5"
+    depends_on:
+      panel:
+        condition: service_healthy
+    networks: [admin_edge, admin_app]
+
 networks:
-  # The only network with a route to the outside; only nginx joins it.
+  # The only network with a route to the outside for the public site; only its nginx joins it.
   edge: {}
   # nginx <-> API. Internal (no route out) with a fixed range, so uvicorn can trust exactly this range.
   app:
@@ -167,6 +254,19 @@ networks:
   # API, jobs <-> database. Internal.
   data:
     internal: true
+  # Panel <-> database. Internal, and shared with nothing else: the public API cannot reach the panel through it.
+  data_panel:
+    internal: true
+  # The admin nginx's way to the host (its published port); nothing else joins it.
+  admin_edge: {}
+  # Admin nginx <-> panel. Internal, with a fixed range like `app`, so the panel trusts exactly this range.
+  admin_app:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${ADMIN_SUBNET:-172.29.250.16/28}
 
 volumes:
   db-data:
+  # The files the public site shows that staff manage: written by `panel`, served read-only by `front`.
+  content:

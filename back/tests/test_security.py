@@ -30,6 +30,27 @@ def test_security_headers_on_every_response(client):
         assert "Strict-Transport-Security" not in response.headers  # plain HTTP in development
 
 
+def test_an_unexpected_failure_is_answered_with_nothing_to_learn_from_and_with_the_security_headers(
+    monkeypatch,
+):
+    # Starlette builds this answer outside the middleware, so it needs its own handler for the headers.
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("secret internal detail: postgres://user:password@db/kidsup")
+
+    monkeypatch.setattr("app.routers.applications.service.create_application", explode)
+    client = TestClient(create_app(production()), raise_server_exceptions=False)
+
+    response = client.post("/api/applications", json=VALID)
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal server error."}
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["X-Frame-Options"] == "DENY"
+    assert response.headers["Cache-Control"] == "no-store"
+    assert "default-src 'none'" in response.headers["Content-Security-Policy"]
+    assert "max-age=" in response.headers["Strict-Transport-Security"]
+
+
 def test_hsts_only_in_production():
     response = TestClient(create_app(production())).get("/health")
     assert "max-age=" in response.headers["Strict-Transport-Security"]
@@ -89,6 +110,35 @@ def test_rate_limit_hits_are_logged_as_events_without_the_address(caplog):
 
     assert [record.getMessage() for record in caplog.records] == ["rate limit exceeded"]
     assert "testclient" not in caplog.text  # the TestClient's "address": an IP is personal data (SEC-B-10)
+
+
+def test_a_refused_application_is_answered_with_where_and_what_never_with_what_was_sent(client):
+    # SEC-B-01, SEC-B-12: FastAPI's own 422 repeats every refused value (`input`) and the limits (`ctx`).
+    body = {
+        **VALID,
+        "parent_name": "Parent Fake-Name-Sent",
+        "phone": "not-a-phone-fake-12345",
+        "children": [{"name": "Child Fake-Name-Sent", "birth_date": "2016-03-14"}] * 3,
+    }
+
+    response = client.post("/api/applications", json=body)
+
+    assert response.status_code == 422
+    for sent in ("Fake-Name-Sent", "not-a-phone-fake-12345", "2016-03-14", "Aysel"):
+        assert sent not in response.text
+    faults = response.json()["detail"]
+    assert {("body", "phone"), ("body", "children")} <= {tuple(fault["loc"]) for fault in faults}
+    assert all(set(fault) == {"loc", "type"} for fault in faults)
+
+
+def test_a_body_that_is_not_json_is_answered_in_the_same_plain_way(client):
+    raw = b'{"parent_name": "Parent Fake-Name-Sent",'
+
+    response = client.post("/api/applications", content=raw, headers={"Content-Type": "application/json"})
+
+    assert response.status_code == 422
+    assert "Fake-Name-Sent" not in response.text
+    assert all(set(fault) == {"loc", "type"} for fault in response.json()["detail"])
 
 
 def test_invalid_requests_also_count_towards_the_limit():

@@ -1,9 +1,12 @@
 import { Fragment, useState } from 'react';
+import { useText } from '../hooks/usePublicContent';
 import { useWidth } from '../hooks/useWidth';
 
 const STAGES = ['Eskiz', 'Prototip və sınaq', 'Sadə hesab', 'Təqdimat'];
 
 export default function SampleProject() {
+  const heading = useText('sample_project.heading');
+  const intro = useText('sample_project.intro');
   const [stage, setStage] = useState(0);
   const narrow = useWidth() < 700;
 
@@ -57,11 +60,9 @@ export default function SampleProject() {
                 textWrap: 'balance',
               }}
             >
-              Kiçik bir ideya necə layihəyə çevrilir?
+              {heading}
             </h2>
-            <p style={{ margin: '0', fontSize: '19px', lineHeight: '1.6', color: '#4A4A4A' }}>
-              Bir nümunə ilə baxaq: məktəb masası üçün kartondan qələm tutacağı.
-            </p>
+            <p style={{ margin: '0', fontSize: '19px', lineHeight: '1.6', color: '#4A4A4A' }}>{intro}</p>
           </div>
           <span
             style={{

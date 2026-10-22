@@ -50,6 +50,15 @@ def test_image_runs_as_a_non_root_user(dockerfile):
     assert user.split(":")[0] not in ROOT_USERS  # "root", "0", and also "root:root" or "0:0"
 
 
+def test_the_one_writable_folder_belongs_to_the_app_user_and_is_made_before_dropping_root():
+    # The admin panel writes the public site's files into a volume mounted at /srv/content. Docker gives a new
+    # volume the owner of the folder it is mounted over, so the folder must exist in the image, the user's.
+    lines = DOCKERFILES["back"].read_text(encoding="utf-8").splitlines()
+    instructions = " ".join(line.removesuffix("\\") for line in lines if not line.lstrip().startswith("#"))
+    assert "mkdir /srv/content && chown 10001:10001 /srv/content" in " ".join(instructions.split())
+    assert instructions.index("chown 10001:10001 /srv/content") < instructions.index("USER 10001")
+
+
 def test_database_image_does_not_ship_the_unused_gosu_binary():
     # gosu runs only when the container starts as root; ours never does, so it is dead weight.
     assert any("rm -f /usr/local/bin/gosu" in line for line in read_instructions("RUN", "db"))

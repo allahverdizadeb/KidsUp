@@ -1,7 +1,12 @@
 import { useHover } from '../hooks/useHover';
+import { useLines, useText } from '../hooks/usePublicContent';
 
 export default function DemoDay() {
   const { on, off, hv } = useHover(['i5']);
+  const eyebrow = useText('demo_day.eyebrow');
+  const heading = useText('demo_day.heading');
+  const intro = useText('demo_day.intro');
+  const items = useLines('demo_day.items');
   return (
     <section id="demo-day" style={{ background: '#FFFFFF', borderTop: '1px solid #EAEAEA' }}>
       <div
@@ -16,7 +21,7 @@ export default function DemoDay() {
         }}
       >
         <div data-reveal="1" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>Demo Day</div>
+          <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>{eyebrow}</div>
           <h2
             style={{
               margin: '0',
@@ -27,127 +32,43 @@ export default function DemoDay() {
               textWrap: 'balance',
             }}
           >
-            Bu dəfə təqdimatı uşaqlar edir.
+            {heading}
           </h2>
           <p
             style={{ margin: '0', fontSize: '19px', lineHeight: '1.6', color: '#4A4A4A', maxWidth: '560px' }}
           >
-            Proqramın sonunda uşaqlar hazırladıqları layihələri valideynlərə və qonaqlara təqdim edirlər.
+            {intro}
           </p>
         </div>
         <ul
           data-reveal="1"
           style={{ margin: '0', padding: '0', listStyle: 'none', display: 'flex', flexDirection: 'column' }}
         >
-          <li
-            style={{
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'center',
-              padding: '16px 0',
-              borderBottom: '1px solid #EAEAEA',
-              fontSize: '18px',
-              fontWeight: '700',
-            }}
-          >
-            <span
+          {items.map((item, index) => (
+            <li
+              key={index}
               style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: '#FF0083',
-                flexShrink: '0',
+                display: 'flex',
+                gap: '16px',
+                alignItems: 'center',
+                padding: '16px 0',
+                ...(index < items.length - 1 ? { borderBottom: '1px solid #EAEAEA' } : {}),
+                fontSize: '18px',
+                fontWeight: '700',
               }}
-            />
-            Məhsul və ya xidmət nümunəsi
-          </li>
-          <li
-            style={{
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'center',
-              padding: '16px 0',
-              borderBottom: '1px solid #EAEAEA',
-              fontSize: '18px',
-              fontWeight: '700',
-            }}
-          >
-            <span
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: '#FF0083',
-                flexShrink: '0',
-              }}
-            />
-            Sadə maliyyə hesabı
-          </li>
-          <li
-            style={{
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'center',
-              padding: '16px 0',
-              borderBottom: '1px solid #EAEAEA',
-              fontSize: '18px',
-              fontWeight: '700',
-            }}
-          >
-            <span
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: '#FF0083',
-                flexShrink: '0',
-              }}
-            />
-            İstifadəçi rəyləri
-          </li>
-          <li
-            style={{
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'center',
-              padding: '16px 0',
-              borderBottom: '1px solid #EAEAEA',
-              fontSize: '18px',
-              fontWeight: '700',
-            }}
-          >
-            <span
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: '#FF0083',
-                flexShrink: '0',
-              }}
-            />
-            Yekun təqdimat
-          </li>
-          <li
-            style={{
-              display: 'flex',
-              gap: '16px',
-              alignItems: 'center',
-              padding: '16px 0',
-              fontSize: '18px',
-              fontWeight: '700',
-            }}
-          >
-            <span
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                background: '#FF0083',
-                flexShrink: '0',
-              }}
-            />
-            Proqramı uğurla tamamlama sertifikatı
-          </li>
+            >
+              <span
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  background: '#FF0083',
+                  flexShrink: '0',
+                }}
+              />
+              {item}
+            </li>
+          ))}
         </ul>
       </div>
       <div

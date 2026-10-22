@@ -33,14 +33,14 @@ def clean_name(value: str) -> str:
 Name = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120), AfterValidator(clean_name)
 ]
-# The date of the privacy notice the parent was shown, with an optional short suffix (2026-10-19-draft).
+# The date of the privacy notice the parent was shown, with an optional short suffix (2026-11-02-v2).
 NoticeVersion = Annotated[
     str, StringConstraints(pattern=r"^\d{4}-\d{2}-\d{2}(-[a-z0-9]{1,16})?$", max_length=32)
 ]
 # The versions of the privacy notice that were ever shown to parents. A consent is stored only against one of
 # them, so the record always points at wording that existed. A new version is added here in the same change
 # that edits the notice (front/src/content/privacyNotice.ts), and the API is deployed before the page.
-PUBLISHED_NOTICE_VERSIONS = frozenset({"2026-10-19-draft"})
+PUBLISHED_NOTICE_VERSIONS = frozenset({"2026-10-19"})
 
 
 class ChildCreate(BaseModel):
@@ -60,6 +60,9 @@ class ApplicationCreate(BaseModel):
     phone: Annotated[str, StringConstraints(strip_whitespace=True, max_length=32)]
     children: Annotated[list[ChildCreate], Field(min_length=1, max_length=2)]
     languages: Annotated[list[Language], Field(min_length=1, max_length=3)]
+    # The course the family applies for (the landing page takes it from the list of open courses). Left out,
+    # the one open course is meant; with none or several open, the application is refused (HTTP 409).
+    course_id: uuid.UUID | None = None
     # The parent's explicit yes (SEC-F-16, SEC-B-09). Strict: only the JSON value `true` counts, not 1 or
     # "true", so an application without consent can never be stored.
     consent: StrictBool

@@ -1,0 +1,34 @@
+{
+  "comment": "The security headers the admin origin must send on every answer, exactly (admin/docs/README.md rule 7, SEC-F-02, SEC-F-11, SEC-B-11). Read by check-security-headers.mjs against a running stack; back/tests/test_admin_nginx.py checks that admin/nginx sends exactly these, so the two cannot drift apart.",
+  "headers": {
+    "cache-control": "no-store",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "referrer-policy": "no-referrer",
+    "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    "cross-origin-opener-policy": "same-origin",
+    "cross-origin-resource-policy": "same-origin",
+    "cross-origin-embedder-policy": "require-corp",
+    "strict-transport-security": "max-age=63072000; includeSubDomains",
+    "x-robots-tag": "noindex, nofollow, noarchive, nosnippet"
+  },
+  "csp": {
+    "page": {
+      "default-src": ["'self'"],
+      "script-src": ["'self'"],
+      "style-src": ["'self'"],
+      "font-src": ["'self'"],
+      "img-src": ["'self'"],
+      "connect-src": ["'self'"],
+      "object-src": ["'none'"],
+      "base-uri": ["'self'"],
+      "form-action": ["'self'"],
+      "frame-ancestors": ["'none'"],
+      "require-trusted-types-for": ["'script'"]
+    },
+    "api": {
+      "default-src": ["'none'"],
+      "frame-ancestors": ["'none'"]
+    }
+  }
+}

@@ -1,7 +1,14 @@
 import { useHover } from '../hooks/useHover';
+import { useText } from '../hooks/usePublicContent';
 
 export default function Brochure() {
   const { on, off, hv } = useHover(['b1']);
+  const eyebrow = useText('brochure.eyebrow');
+  const heading = useText('brochure.heading');
+  const text = useText('brochure.text');
+  const buttonLabel = useText('brochure.button');
+  const meta = useText('brochure.meta');
+  const file = useText('brochure.file');
   return (
     <section id="brosura" style={{ background: '#FFFFFF' }}>
       <div
@@ -66,7 +73,7 @@ export default function Brochure() {
             </svg>
           </div>
           <div style={{ flex: '1 1 380px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>Broşura</div>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>{eyebrow}</div>
             <h2
               style={{
                 margin: '0',
@@ -77,7 +84,7 @@ export default function Brochure() {
                 textWrap: 'balance',
               }}
             >
-              Proqramın tam təsvirini yükləyin
+              {heading}
             </h2>
             <p
               style={{
@@ -88,7 +95,7 @@ export default function Brochure() {
                 maxWidth: '560px',
               }}
             >
-              6 modul, dərs mövzuları, cədvəl və qiymət bir faylda. 2 səhifə.
+              {text}
             </p>
             <div
               style={{
@@ -100,7 +107,7 @@ export default function Brochure() {
               }}
             >
               <a
-                href="/assets/KidsUp-Brosura.pdf"
+                href={file}
                 download="KidsUp-Brosura.pdf"
                 style={{
                   display: 'flex',
@@ -128,9 +135,9 @@ export default function Brochure() {
                 >
                   <path d="M12 4v12M6 11l6 6 6-6M5 20h14" />
                 </svg>
-                Broşuranı yüklə
+                {buttonLabel}
               </a>
-              <span style={{ fontSize: '15px', fontWeight: '600', color: '#6B6B6B' }}>PDF · 0,6 MB</span>
+              <span style={{ fontSize: '15px', fontWeight: '600', color: '#6B6B6B' }}>{meta}</span>
             </div>
           </div>
         </div>

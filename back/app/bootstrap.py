@@ -1,13 +1,15 @@
 """One-off database setup, run before the API starts (SEC-B-07).
 
-Four accounts keep a compromised API from owning, reading or wiping the database:
+Five accounts keep a compromised service from owning, reading or wiping the database:
 
 * admin (the PostgreSQL superuser): used only here, to create the other accounts and set grants;
 * owner: owns the tables and runs the Alembic migrations;
-* app: what the API connects as. It can add an application and nothing else: it cannot read anything back (not
-  even a count), change a row or delete one;
-* retention: what the retention job and the operator's commands connect as. It reads only what it matches on,
-  deletes expired or erased applications and sets their status. The API never has this account's password.
+* app: what the public API connects as. It can add an application and nothing else: it cannot read anything
+  back (not even a count), change a row or delete one;
+* retention: what the retention job and the operator's commands connect as. It reads only what it matches
+  on and deletes expired or erased applications. The API never has this account's password;
+* panel: what the admin panel's API connects as. It reads and manages what staff work with (`PANEL_GRANTS` in
+  `app/grants.py`) and can append to the audit log but never change it. The public API never has its password.
 
 Every step is idempotent, so the job runs on every start. It also upgrades a database that was created before
 the split: its tables change owner and any earlier, wider grant is withdrawn; no row is touched.
@@ -29,6 +31,7 @@ from sqlalchemy.engine import URL, make_url
 
 from alembic import command
 from app.config import settings
+from app.grants import APP_GRANTS, PANEL_GRANTS, RETENTION_GRANTS, Grant
 from app.logging_config import configure_logging
 
 logger = logging.getLogger(__name__)
@@ -42,6 +45,12 @@ MIN_PASSWORD_LENGTH = 24
 CONNECT_TIMEOUT_SECONDS = 10
 LOCAL_HOSTS = frozenset({None, "localhost", "127.0.0.1", "::1"})
 
+# Role-level limits: a runaway query or a forgotten transaction cannot hold the database.
+APP_LIMITS = {"statement_timeout": "10s", "idle_in_transaction_session_timeout": "15s"}
+RETENTION_LIMITS = {"statement_timeout": "60s", "idle_in_transaction_session_timeout": "60s"}
+# A list of applications or a CSV export reads many rows; a person may look at a form for a while.
+PANEL_LIMITS = {"statement_timeout": "60s", "idle_in_transaction_session_timeout": "30s"}
+
 
 class UnsafeSetupError(ValueError):
     """The URLs would change an account or a database that is not KidsUp's, or would weaken the separation."""
@@ -54,39 +63,8 @@ class Account:
 
 
 @dataclass(frozen=True, slots=True)
-class Grant:
-    """What one account may do with one table. Anything not listed here is not allowed."""
-
-    table: str
-    privileges: tuple[str, ...] = ()  # on the whole table
-    readable_columns: tuple[str, ...] = ()  # SELECT on these columns only
-    writable_columns: tuple[str, ...] = ()  # UPDATE on these columns only
-
-
-# The API adds an application and its children and cannot read anything back (the ORM does not need to:
-# `eager_defaults` is off in models.py).
-APP_GRANTS = (
-    Grant("applications", privileges=("INSERT",)),
-    Grant("application_children", privileges=("INSERT",)),
-)
-# The retention job and the operator's commands: find what to delete by status, age or phone number, delete it
-# (the children go with it through ON DELETE CASCADE, which runs with the owner's rights), mark an enrolment.
-RETENTION_GRANTS = (
-    Grant(
-        "applications",
-        privileges=("DELETE",),
-        readable_columns=("id", "created_at", "status", "phone"),
-        writable_columns=("status",),
-    ),
-)
-# Role-level limits: a runaway query or a forgotten transaction cannot hold the database.
-APP_LIMITS = {"statement_timeout": "10s", "idle_in_transaction_session_timeout": "15s"}
-RETENTION_LIMITS = {"statement_timeout": "60s", "idle_in_transaction_session_timeout": "60s"}
-
-
-@dataclass(frozen=True, slots=True)
 class Setup:
-    """Four database URLs that passed every safety check. The steps below accept nothing else."""
+    """Five database URLs that passed every safety check. The steps below accept nothing else."""
 
     admin_url: URL
     owner_url: URL
@@ -94,31 +72,41 @@ class Setup:
     owner: Account
     app: Account
     retention: Account
+    panel: Account
 
     @classmethod
-    def validated(cls, admin_url: URL, owner_url: URL, app_url: URL, retention_url: URL) -> Self:
+    def validated(
+        cls, admin_url: URL, owner_url: URL, app_url: URL, retention_url: URL, panel_url: URL
+    ) -> Self:
         """Refuse anything that could change an account or database that is not ours. Makes no connection."""
         if admin_url.database is None:
             raise UnsafeSetupError("The admin database URL needs a database name.")
         if admin_url.database in SYSTEM_DATABASES:
             # Accounts and privileges are changed for the application's own database, never for the server's.
             raise UnsafeSetupError("Refusing to change accounts and privileges of a system database.")
-        for name, url in (("owner", owner_url), ("app", app_url), ("retention", retention_url)):
+        named_urls = (
+            ("owner", owner_url),
+            ("app", app_url),
+            ("retention", retention_url),
+            ("panel", panel_url),
+        )
+        for name, url in named_urls:
             if (url.host, url.port, url.database) != (admin_url.host, admin_url.port, admin_url.database):
                 raise UnsafeSetupError(
                     f"The {name} URL must name the same server and database as the admin URL."
                 )
 
         admin = read_account(admin_url)
-        owner, app, retention = read_account(owner_url), read_account(app_url), read_account(retention_url)
-        accounts = (admin, owner, app, retention)
+        owner, app = read_account(owner_url), read_account(app_url)
+        retention, panel = read_account(retention_url), read_account(panel_url)
+        accounts = (admin, owner, app, retention, panel)
         if len({account.role for account in accounts}) != len(accounts):
             raise UnsafeSetupError(
-                "The admin, owner, app and retention accounts must be four different roles."
+                "The admin, owner, app, retention and panel accounts must be five different roles."
             )
         if len({account.password for account in accounts}) != len(accounts):
-            raise UnsafeSetupError("The four accounts must have four different passwords.")
-        for account in (owner, app, retention):
+            raise UnsafeSetupError("The five accounts must have five different passwords.")
+        for account in (owner, app, retention, panel):
             if account.role == "postgres" or account.role.startswith("pg_"):
                 # CREATE/ALTER ROLE would rewrite a built-in account (or fail half-way through).
                 raise UnsafeSetupError(f"{account.role!r} is a reserved role name; choose another.")
@@ -126,13 +114,17 @@ class Setup:
         # much as the others'. The one exception is the throw-away superuser of a development PostgreSQL on
         # this machine.
         is_development_superuser = admin.role == "postgres" and admin_url.host in LOCAL_HOSTS
-        needing_a_long_password = (owner, app, retention) if is_development_superuser else accounts
+        needing_a_long_password = (owner, app, retention, panel) if is_development_superuser else accounts
         for account in needing_a_long_password:
             if len(account.password) < MIN_PASSWORD_LENGTH:
                 raise UnsafeSetupError(
                     f"The password of {account.role!r} must be at least {MIN_PASSWORD_LENGTH} characters."
                 )
-        return cls(admin_url, owner_url, admin_url.database, owner, app, retention)
+        return cls(admin_url, owner_url, admin_url.database, owner, app, retention, panel)
+
+    @property
+    def runtime_accounts(self) -> tuple[Account, Account, Account]:
+        return (self.app, self.retention, self.panel)
 
 
 def read_account(url: URL) -> Account:
@@ -199,12 +191,13 @@ def require_our_database(conn: psycopg.Connection[TupleRow]) -> None:
 def provision_accounts(setup: Setup) -> None:
     database = sql.Identifier(setup.database)
     owner_role = sql.Identifier(setup.owner.role)
-    runtime_roles = sql.SQL(", ").join(sql.Identifier(a.role) for a in (setup.app, setup.retention))
+    runtime_roles = sql.SQL(", ").join(sql.Identifier(a.role) for a in setup.runtime_accounts)
     with connect(setup.admin_url) as conn:
         require_our_database(conn)
         ensure_role(conn, setup.owner, {})
         ensure_role(conn, setup.app, APP_LIMITS)
         ensure_role(conn, setup.retention, RETENTION_LIMITS)
+        ensure_role(conn, setup.panel, PANEL_LIMITS)
         # Nobody else may connect or create objects; each account gets exactly what it needs.
         conn.execute(sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(database))
         conn.execute(
@@ -247,6 +240,10 @@ def grant_statements(role: sql.Identifier, grant: Grant) -> Iterator[sql.Compose
         yield sql.SQL("GRANT SELECT ({}) ON TABLE {} TO {}").format(
             columns(grant.readable_columns), table, role
         )
+    if grant.insertable_columns:
+        yield sql.SQL("GRANT INSERT ({}) ON TABLE {} TO {}").format(
+            columns(grant.insertable_columns), table, role
+        )
     if grant.writable_columns:
         yield sql.SQL("GRANT UPDATE ({}) ON TABLE {} TO {}").format(
             columns(grant.writable_columns), table, role
@@ -256,11 +253,15 @@ def grant_statements(role: sql.Identifier, grant: Grant) -> Iterator[sql.Compose
 def grant_runtime_privileges(setup: Setup) -> None:
     """Run after the migrations, so that the tables they create exist.
 
-    Only the tables named above are granted: a table added later (the admin panel's users, say) stays
-    closed to both accounts until someone decides otherwise.
+    Only the tables named in `app/grants.py` are granted: a table added later stays closed to every runtime
+    account until someone decides otherwise.
     """
     with connect(setup.admin_url) as conn:
-        for account, grants in ((setup.app, APP_GRANTS), (setup.retention, RETENTION_GRANTS)):
+        for account, grants in (
+            (setup.app, APP_GRANTS),
+            (setup.retention, RETENTION_GRANTS),
+            (setup.panel, PANEL_GRANTS),
+        ):
             role = sql.Identifier(account.role)
             # Start from nothing, so a wider grant (an earlier version of this job, or by hand) is withdrawn.
             conn.execute(sql.SQL("REVOKE ALL ON ALL TABLES IN SCHEMA {} FROM {}").format(SCHEMA, role))
@@ -269,8 +270,8 @@ def grant_runtime_privileges(setup: Setup) -> None:
                     conn.execute(statement)
 
 
-def bootstrap(admin_url: URL, owner_url: URL, app_url: URL, retention_url: URL) -> None:
-    setup = Setup.validated(admin_url, owner_url, app_url, retention_url)
+def bootstrap(admin_url: URL, owner_url: URL, app_url: URL, retention_url: URL, panel_url: URL) -> None:
+    setup = Setup.validated(admin_url, owner_url, app_url, retention_url, panel_url)
     provision_accounts(setup)
     run_migrations(setup)
     grant_runtime_privileges(setup)
@@ -283,15 +284,20 @@ def main() -> int:
     admin_url = settings.admin_database_url
     owner_url = settings.migration_database_url
     retention_url = settings.retention_database_url
-    if admin_url is None or owner_url is None or retention_url is None:
+    panel_url = settings.panel_database_url
+    if admin_url is None or owner_url is None or retention_url is None or panel_url is None:
         logger.error(
-            "KIDSUP_ADMIN_DATABASE_URL, KIDSUP_MIGRATION_DATABASE_URL and KIDSUP_RETENTION_DATABASE_URL "
-            "are required."
+            "KIDSUP_ADMIN_DATABASE_URL, KIDSUP_MIGRATION_DATABASE_URL, KIDSUP_RETENTION_DATABASE_URL "
+            "and KIDSUP_PANEL_DATABASE_URL are required."
         )
         return 2
     try:
         bootstrap(
-            make_url(admin_url), make_url(owner_url), make_url(settings.database_url), make_url(retention_url)
+            make_url(admin_url),
+            make_url(owner_url),
+            make_url(settings.database_url),
+            make_url(retention_url),
+            make_url(panel_url),
         )
     except UnsafeSetupError as error:
         logger.error("refusing to set up the database: %s", error)

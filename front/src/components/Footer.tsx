@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import type { PointerEvent } from 'react';
 import { PRIVACY_NOTICE_ANCHOR } from '../content/privacyNotice';
+import { useText } from '../hooks/usePublicContent';
 import { prefersReducedMotion } from '../lib/hover';
 import { useWidth } from '../hooks/useWidth';
 
@@ -22,6 +23,8 @@ const STARS = [
 
 export default function Footer() {
   const width = useWidth();
+  const phone = useText('contact.phone');
+  const whatsapp = useText('contact.whatsapp');
   const [measured, setMeasured] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [paused, setPaused] = useState(false);
@@ -322,7 +325,7 @@ export default function Footer() {
             }}
           >
             <a
-              href="https://wa.me/994509988707"
+              href={`https://wa.me/${whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: '#FFFFFF' }}
@@ -330,8 +333,8 @@ export default function Footer() {
             >
               WhatsApp
             </a>
-            <a href="tel:+994509988707" style={{ color: '#FFFFFF' }} className="hv-1">
-              +994 50 998 87 07
+            <a href={`tel:+${phone.replace(/\D/g, '')}`} style={{ color: '#FFFFFF' }} className="hv-1">
+              {phone}
             </a>
             <a href={`#${PRIVACY_NOTICE_ANCHOR}`} style={{ color: '#FFFFFF' }} className="hv-1">
               Məxfilik bildirişi

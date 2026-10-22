@@ -97,18 +97,19 @@ def test_a_dry_run_reports_more_than_the_limit_instead_of_refusing(caplog):
     assert len(stored_application_ids()) == cli.MAX_EXPIRED_PER_RUN + 1
 
 
-def test_marking_an_application_as_enrolled_keeps_it_out_of_the_purge():
+def test_an_approved_application_stays_out_of_the_purge():
     today = datetime.now(UTC)
-    old = add_application(age_days=RETENTION_DAYS + 30, now=today)
+    old = add_application(age_days=RETENTION_DAYS + 30, status="approved", now=today)
 
-    assert cli.main(["mark-enrolled", str(old)]) == 0
     assert cli.main(["purge-expired"]) == 0
 
     assert stored_application_ids() == {old}
 
 
-def test_marking_an_unknown_application_reports_failure():
-    assert cli.main(["mark-enrolled", str(uuid.uuid4())]) == 1
+def test_there_is_no_command_that_approves_an_application():
+    # Approving takes a seat in a course and the panel is the one place that checks the course has one.
+    with pytest.raises(SystemExit):
+        cli.main(["mark-enrolled", str(uuid.uuid4())])
 
 
 def test_erasing_one_application_by_id():
@@ -212,7 +213,7 @@ def test_a_command_added_to_the_parser_without_a_handler_fails_loudly(monkeypatc
 
 @pytest.mark.parametrize(
     "arguments",
-    [["purge-expired"], ["erase-by-phone"], ["erase-application", "ID"], ["mark-enrolled", "ID"]],
+    [["purge-expired"], ["erase-by-phone"], ["erase-application", "ID"]],
     ids=lambda arguments: arguments[0],
 )
 def test_the_commands_log_no_name_and_no_phone_number(monkeypatch, caplog, arguments):
@@ -249,7 +250,6 @@ def test_the_operator_commands_work_with_only_the_retention_account(provisioned,
         remaining = conn.execute("SELECT id FROM applications").fetchall()
     assert len(remaining) == 1
 
-    assert cli.main(["mark-enrolled", str(remaining[0][0])]) == 0
     type_in(monkeypatch, "050 123 45 67", "1")
     assert cli.main(["erase-by-phone"]) == 0
     with connect(provisioned.admin) as conn:

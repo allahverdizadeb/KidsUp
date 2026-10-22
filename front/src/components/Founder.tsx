@@ -1,4 +1,22 @@
+import { useText, useTexts } from '../hooks/usePublicContent';
+import BoldText from './BoldText';
+
 export default function Founder() {
+  const eyebrow = useText('founder.eyebrow');
+  const name = useText('founder.name');
+  const role = useText('founder.role');
+  const photo = useText('founder.photo');
+  const photoAlt = useText('founder.photo_alt');
+  const linkedin = useText('founder.linkedin');
+  const quotes = useTexts(['founder.quote_1', 'founder.quote_2', 'founder.quote_3']);
+  const wharton = useTexts([
+    'wharton.image',
+    'wharton.image_alt',
+    'wharton.caption',
+    'wharton.title',
+    'wharton.link',
+    'wharton.link_label',
+  ]);
   return (
     <section id="haqqimizda" style={{ background: '#F6F6F6', marginTop: '0' }}>
       <div
@@ -22,9 +40,7 @@ export default function Founder() {
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>
-              Proqramın qurucusundan mesaj
-            </div>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>{eyebrow}</div>
             <h2
               style={{
                 margin: '0',
@@ -34,7 +50,7 @@ export default function Founder() {
                 lineHeight: '1.02',
               }}
             >
-              Babək Allahverdizadə
+              {name}
             </h2>
           </div>
         </div>
@@ -67,8 +83,8 @@ export default function Founder() {
                 }}
               />
               <img
-                src="/assets/babek.jpeg"
-                alt="Babək Allahverdizadə"
+                src={photo}
+                alt={photoAlt}
                 loading="lazy"
                 decoding="async"
                 style={{
@@ -84,13 +100,11 @@ export default function Founder() {
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '12px' }}>
-              <div style={{ fontWeight: '800', fontSize: '26px', letterSpacing: '-0.02em' }}>
-                Babək Allahverdizadə
-              </div>
-              <div style={{ fontSize: '16px', fontWeight: '600', color: '#4A4A4A' }}>Proqramın qurucusu</div>
+              <div style={{ fontWeight: '800', fontSize: '26px', letterSpacing: '-0.02em' }}>{name}</div>
+              <div style={{ fontSize: '16px', fontWeight: '600', color: '#4A4A4A' }}>{role}</div>
             </div>
             <a
-              href="https://www.linkedin.com/in/babek-allahverdizade-mba-pmp-87379013a/"
+              href={linkedin}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
@@ -116,7 +130,7 @@ export default function Founder() {
               </svg>
             </a>
             <a
-              href="https://www.credential.net/288b2604-189b-4dfe-a01c-2c97d8b35f77"
+              href={wharton[4]}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -133,8 +147,8 @@ export default function Founder() {
               className="hv-9"
             >
               <img
-                src="/assets/wharton-sertifikat.png"
-                alt="Wharton sertifikatı"
+                src={wharton[0]}
+                alt={wharton[1]}
                 width="112"
                 height="79"
                 loading="lazy"
@@ -150,12 +164,8 @@ export default function Founder() {
                 }}
               />
               <span style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '0' }}>
-                <span style={{ fontSize: '13px', fontWeight: '800', color: '#FF0083' }}>
-                  Sertifikat · Wharton, 2023
-                </span>
-                <span style={{ fontSize: '14px', fontWeight: '700', lineHeight: '1.35' }}>
-                  Entrepreneurship Acceleration Program: Scaling Your Business
-                </span>
+                <span style={{ fontSize: '13px', fontWeight: '800', color: '#FF0083' }}>{wharton[2]}</span>
+                <span style={{ fontSize: '14px', fontWeight: '700', lineHeight: '1.35' }}>{wharton[3]}</span>
                 <span
                   style={{
                     fontSize: '13px',
@@ -164,7 +174,7 @@ export default function Founder() {
                     textDecoration: 'underline',
                   }}
                 >
-                  Sertifikata bax ↗
+                  {wharton[5]}
                 </span>
               </span>
             </a>
@@ -226,21 +236,10 @@ export default function Founder() {
                     fontWeight: '600',
                   }}
                 >
-                  İnanırıq ki, uşaqlar məktəb bilikləri ilə yanaşı, real həyata da hazır olmalıdırlar: qərar
-                  verməyi, problemlərə həll tapmağı, pulun dəyərini anlamağı və fikirlərini inamla ifadə
-                  etməyi bacarmalıdırlar.
+                  {quotes[0]}
                 </p>
                 <p style={{ margin: '0' }}>
-                  KidsUp-ı qurarkən Wharton məktəbinin{' '}
-                  <b style={{ color: '#1A1A1A' }}>
-                    “Entrepreneurship Acceleration Program: Scaling Your Business”
-                  </b>{' '}
-                  proqramında qazanılan biliklər, PAŞA Qrup daxilində akselerasiya proqramları və şəxsi
-                  startap layihələrindəki təcrübə əsas götürülmüşdür.{' '}
-                  <b style={{ color: '#1A1A1A' }}>
-                    Bu bilik və təcrübəni uşaqlara oyun və praktiki tapşırıqlar vasitəsilə çatdırmaq üçün
-                    KidsUp-ı yaratdıq.
-                  </b>
+                  <BoldText text={quotes[1]} />
                 </p>
               </div>
               <p
@@ -254,14 +253,11 @@ export default function Founder() {
                   color: '#1A1A1A',
                 }}
               >
-                Məqsədimiz öz fikrinə inanan və ideyalarını həyata keçirməyi bacaran bir nəslin yetişməsinə
-                töhfə verməkdir.
+                {quotes[2]}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span style={{ width: '36px', height: '2px', background: '#FF0083' }} />
-                <span style={{ fontSize: '17px', fontWeight: '700', color: '#1A1A1A' }}>
-                  Babək Allahverdizadə
-                </span>
+                <span style={{ fontSize: '17px', fontWeight: '700', color: '#1A1A1A' }}>{name}</span>
               </div>
             </div>
           </div>

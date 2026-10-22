@@ -7,7 +7,7 @@ Tools: **Vitest** (runner, `jsdom`), **@testing-library/react** + **user-event**
 - **Project-level coverage MUST be at least 80% on all four metrics: statements, branches, functions and lines.**
 - It is enforced automatically: `vite.config.ts` sets `coverage.thresholds` to 80 and `npm run test:coverage` (part of `npm run verify`) **fails** below it. Lowering a threshold, widening `coverage.exclude`, or adding ignore comments to pass the gate is forbidden without an entry in the *Accepted risks* table of [`security-standards.md`](security-standards.md).
 - Only `src/main.tsx` (the entry that mounts React) and the test helpers are excluded. Everything else in `src/` counts.
-- 80% is a **floor**. Current coverage: statements 98.7%, branches 95.6%, functions 98.8%, lines 99.3%. New or changed code SHOULD be ≥ 90% covered; **security-relevant code (forms, links, `api/`, `ErrorBoundary`, anything touching user data) MUST be covered 100% including failure paths.**
+- 80% is a **floor**. Current coverage: statements 99.0%, branches 95.5%, functions 99.1%, lines 99.5%. New or changed code SHOULD be ≥ 90% covered; **security-relevant code (forms, links, `api/`, `ErrorBoundary`, anything touching user data) MUST be covered 100% including failure paths.**
 - Coverage shows code *ran*, not that it is *right*. A test without a meaningful assertion does not count; reviewers reject it.
 
 ## 2. What to test
@@ -23,6 +23,7 @@ Tools: **Vitest** (runner, `jsdom`), **@testing-library/react** + **user-event**
 | **Assets** | Everything under `public/` is a file a person reviewed (SHA-256 list), complete, free of scripts and personal metadata (PNG text chunks, JPEG EXIF/XMP/IPTC/comment segments, PDF author fields and active content, SVG scripts), and what the page says about a file (image size, PDF pages and size) is true | `publicAssets.test.tsx` |
 | **Server config** | The nginx files read as text: headers and policies (compared with the same `scripts/expected-headers.json` the live check uses), every location, one endpoint passed to the API and only for POST, the log format, the image's user | `nginxConfig.test.ts`, then `npm run check:headers` live |
 | **Content** | The privacy notice has a version the API accepts, and its wording cannot change under an unchanged version (SHA-256 per version) | `privacyNotice.test.ts` |
+| **Published content** | The registry equals the one `back/` owns; a published value is used only when it has the shape of its place (a script link, another scheme, a foreign picture, a wrong type all fall back to the design's default); the page follows a changed course (prices, dates, places) and a changed text; no course open means the closed notice; the course choice | `registry.test.ts`, `usePublicContent.test.tsx`, `publicContent.test.ts`, `PublicContent.test.tsx`, `BoldText.test.tsx`, `Apply.test.tsx` |
 | **Visual parity** | The page is compared pixel-for-pixel with the approved design (`design-source/`) at 390 px and 1440 px with reduced motion | manual, before changing markup or styles; target 0% difference, except the deliberate differences listed in `../CLAUDE.md` |
 
 Not tested: React internals, CSS values that restate the source, snapshots of large DOM trees (SVG illustrations in particular). **Do not write snapshot tests of components.**

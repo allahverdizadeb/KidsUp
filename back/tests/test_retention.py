@@ -5,7 +5,7 @@ import pytest
 from sqlalchemy import func, select
 
 from app.db import SessionLocal
-from app.models import Application, ApplicationStatus, Child
+from app.models import Application, ApplicationNote, Child
 from app.services import retention
 
 NOW = datetime(2026, 12, 1, tzinfo=UTC)
@@ -39,17 +39,49 @@ def stored_children_count() -> int:
         return db.scalar(select(func.count()).select_from(Child)) or 0
 
 
-def test_only_old_applications_that_never_led_to_enrolment_are_deleted():
+def test_only_old_applications_that_were_not_approved_are_deleted():
     expired = add_application(age_days=400)
     recent = add_application(age_days=100)
-    enrolled = add_application(age_days=400, status="enrolled")
+    approved = add_application(age_days=400, status="approved")
 
     with SessionLocal() as db:
         deleted = retention.delete_expired_applications(db, NOW, RETENTION_DAYS)
 
     assert deleted == 1
-    assert stored_application_ids() == {recent, enrolled}
+    assert stored_application_ids() == {recent, approved}
     assert expired not in stored_application_ids()
+
+
+@pytest.mark.parametrize("status", ["new", "contacted", "declined"])
+def test_an_old_application_is_deleted_whatever_its_status_unless_it_was_approved(status):
+    # The notice promises families that what did not lead to enrolment is deleted after 12 months: a family
+    # that was called or turned down is no exception.
+    add_application(age_days=400, status=status)
+
+    with SessionLocal() as db:
+        assert retention.delete_expired_applications(db, NOW, RETENTION_DAYS) == 1
+
+    assert stored_application_ids() == set()
+
+
+def test_an_approved_application_is_never_purged_however_old():
+    approved = add_application(age_days=900, status="approved")
+
+    with SessionLocal() as db:
+        assert retention.delete_expired_applications(db, NOW, RETENTION_DAYS) == 0
+
+    assert stored_application_ids() == {approved}
+
+
+def test_the_notes_of_a_deleted_application_go_with_it():
+    expired = add_application(age_days=400)
+    with SessionLocal() as db:
+        db.add(ApplicationNote(application_id=expired, body="Called on Monday."))
+        db.commit()
+
+    with SessionLocal() as db:
+        retention.delete_expired_applications(db, NOW, RETENTION_DAYS)
+        assert db.scalar(select(func.count()).select_from(ApplicationNote)) == 0
 
 
 def test_the_children_of_a_deleted_application_go_with_it():
@@ -76,30 +108,12 @@ def test_an_application_exactly_at_the_retention_age_is_kept_and_one_day_older_i
 def test_counting_the_expired_applications_deletes_nothing():
     add_application(age_days=400)
     add_application(age_days=100)
-    add_application(age_days=400, status="enrolled")
+    add_application(age_days=400, status="approved")
 
     with SessionLocal() as db:
         assert retention.count_expired_applications(db, NOW, RETENTION_DAYS) == 1
 
     assert len(stored_application_ids()) == 3
-
-
-def test_a_family_marked_as_enrolled_is_never_purged():
-    marked = add_application(age_days=900)
-    with SessionLocal() as db:
-        assert retention.mark_enrolled(db, marked) is True
-        assert retention.delete_expired_applications(db, NOW, RETENTION_DAYS) == 0
-
-    assert stored_application_ids() == {marked}
-
-
-def test_marking_an_unknown_application_changes_nothing():
-    kept = add_application(age_days=1)
-    with SessionLocal() as db:
-        assert retention.mark_enrolled(db, uuid.uuid4()) is False
-
-    with SessionLocal() as db:
-        assert db.scalar(select(Application.status).where(Application.id == kept)) == ApplicationStatus.NEW
 
 
 def test_erasing_an_application_deletes_it_and_its_children_for_real():

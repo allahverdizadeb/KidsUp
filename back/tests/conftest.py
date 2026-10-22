@@ -16,6 +16,7 @@ from sqlalchemy.engine import URL, make_url
 from tests.scratch import (
     APP_ROLE,
     OWNER_ROLE,
+    PANEL_ROLE,
     RETENTION_ROLE,
     SCRATCH_DATABASE,
     SERVER,
@@ -29,7 +30,12 @@ from tests.scratch import (
 require_throwaway_database(make_url(TEST_URL))
 os.environ["KIDSUP_DATABASE_URL"] = TEST_URL
 # A shell or back/.env prepared for a real deployment must never make the tests migrate or provision it.
-for _name in ("KIDSUP_ADMIN_DATABASE_URL", "KIDSUP_MIGRATION_DATABASE_URL", "KIDSUP_RETENTION_DATABASE_URL"):
+for _name in (
+    "KIDSUP_ADMIN_DATABASE_URL",
+    "KIDSUP_MIGRATION_DATABASE_URL",
+    "KIDSUP_RETENTION_DATABASE_URL",
+    "KIDSUP_PANEL_DATABASE_URL",
+):
     os.environ.pop(_name, None)
 
 
@@ -59,11 +65,13 @@ from app.bootstrap import bootstrap
 from app.config import Settings, settings
 from app.db import SessionLocal
 from app.main import create_app
+from tests.factories import DEFAULT_COURSE_ID, make_course
 
 # back/.env is read by the settings too, so clear what only a real deployment sets.
 settings.admin_database_url = None
 settings.migration_database_url = None
 settings.retention_database_url = None
+settings.panel_database_url = None
 
 command.upgrade(Config("alembic.ini"), "head")
 
@@ -75,8 +83,19 @@ def make_settings(**overrides) -> Settings:
 
 @pytest.fixture(autouse=True)
 def clean_database() -> None:
+    """Every test starts with no data but one open course (like the programme the landing page advertises)."""
     with SessionLocal() as db:
-        db.execute(text("TRUNCATE applications CASCADE"))
+        # Every application belongs to a course and every note to an application, so this empties them too.
+        db.execute(
+            text("TRUNCATE courses, admin_users, site_content, site_publications, media_assets CASCADE")
+        )
+        # The audit log refuses TRUNCATE (it is append-only); a superuser can switch that trigger off for the
+        # length of this transaction, which is what the tests need and nobody else has.
+        db.execute(text("SET LOCAL session_replication_role = replica"))
+        db.execute(text("TRUNCATE audit_log"))
+        db.commit()
+    with SessionLocal() as db:
+        db.add(make_course(id=DEFAULT_COURSE_ID))
         db.commit()
 
 
@@ -124,7 +143,14 @@ def retention_url() -> URL:
 
 
 @pytest.fixture
-def provisioned(scratch_database: URL, owner_url: URL, app_url: URL, retention_url: URL) -> Provisioned:
-    """The scratch database after `bootstrap`: migrated, with the three accounts and their grants."""
-    bootstrap(scratch_database, owner_url, app_url, retention_url)
-    return Provisioned(scratch_database, owner_url, app_url, retention_url)
+def panel_url() -> URL:
+    return url_of(PANEL_ROLE, secrets.token_hex(12))
+
+
+@pytest.fixture
+def provisioned(
+    scratch_database: URL, owner_url: URL, app_url: URL, retention_url: URL, panel_url: URL
+) -> Provisioned:
+    """The scratch database after `bootstrap`: migrated, with the four limited accounts and their grants."""
+    bootstrap(scratch_database, owner_url, app_url, retention_url, panel_url)
+    return Provisioned(scratch_database, owner_url, app_url, retention_url, panel_url)

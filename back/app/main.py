@@ -1,20 +1,30 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.config import Settings
 from app.config import settings as default_settings
 from app.db import engine
-from app.middleware import BodySizeLimitMiddleware, SecurityHeadersMiddleware
+from app.middleware import (
+    BodySizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+    internal_error_handler,
+    validation_error_handler,
+)
 from app.privileges import require_least_privilege
 from app.rate_limit import RateLimiter
 from app.routers import applications
+from app.services.applications import RegistrationClosedError
 
 
 def create_app(config: Settings = default_settings) -> FastAPI:
+    config.require_web_settings_in_production(panel=False)
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         if config.is_production:
@@ -46,6 +56,13 @@ def create_app(config: Settings = default_settings) -> FastAPI:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=config.allowed_hosts)
 
     app.include_router(applications.router)
+
+    app.add_exception_handler(Exception, internal_error_handler(hsts=config.is_production))
+    app.add_exception_handler(RequestValidationError, validation_error_handler())
+
+    @app.exception_handler(RegistrationClosedError)
+    def registration_closed(_: Request, __: RegistrationClosedError) -> JSONResponse:
+        return JSONResponse({"detail": "Registration is closed."}, status_code=status.HTTP_409_CONFLICT)
 
     @app.get("/health")
     def health() -> dict[str, str]:

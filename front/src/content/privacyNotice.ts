@@ -1,12 +1,12 @@
 // The privacy notice shown in the application form (SEC-F-16).
 //
-// DRAFT: legal counsel must approve the wording before launch; the points that need a decision are listed in
-// front/docs/privacy-notice-review.md. Whenever the text changes, change PRIVACY_NOTICE_VERSION too (and add the
-// new version to PUBLISHED_NOTICE_VERSIONS in back/app/schemas/application.py, which the API is deployed with
-// first): the version is stored with every application, so the record says which text the parent agreed to.
-// privacyNotice.test.ts fails when the text changes under an unchanged version. Drop the "-draft" suffix only when
-// counsel has approved the text.
-export const PRIVACY_NOTICE_VERSION = '2026-10-19-draft';
+// Approved by legal counsel in exactly this wording (reported by the owner on 2026-10-19; see
+// front/docs/privacy-notice-review.md). Whenever the text changes, have counsel approve the new text and change
+// PRIVACY_NOTICE_VERSION too (and add the new version to PUBLISHED_NOTICE_VERSIONS in
+// back/app/schemas/application.py, which the API is deployed with first): the version is stored with every
+// application, so the record says which text the parent agreed to. privacyNotice.test.ts fails when the text
+// changes under an unchanged version.
+export const PRIVACY_NOTICE_VERSION = '2026-10-19';
 
 // The address fragment the footer link points at; the notice opens when the page is at it.
 export const PRIVACY_NOTICE_ANCHOR = 'mexfilik';

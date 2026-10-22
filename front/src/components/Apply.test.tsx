@@ -2,7 +2,10 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { submitApplication } from '../api/applications';
+import type { PublicCourse } from '../api/publicContent';
+import { RegistrationClosedError } from '../api/registrationClosed';
 import { PRIVACY_NOTICE_VERSION } from '../content/privacyNotice';
+import { makeCourse, withContent } from '../test/publicContent';
 import Apply from './Apply';
 
 vi.mock('../api/applications', () => ({ submitApplication: vi.fn() }));
@@ -348,6 +351,139 @@ describe('Apply form', () => {
       await user.click(sendButton());
       expect(await screen.findByText(/Müraciətiniz qəbul olundu/)).toBeInTheDocument();
       expect(submit).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('courses published by the admin panel', () => {
+    const spring = makeCourse({
+      id: '00000000-0000-4000-8000-0000000000a1',
+      title: 'Yaz 2027',
+      startDate: '2027-03-06',
+      ageMin: 9,
+      ageMax: 12,
+      priceMinor: 70_000,
+      secondChildPriceMinor: 55_000,
+    });
+    const autumn = makeCourse({
+      id: '00000000-0000-4000-8000-0000000000a2',
+      title: 'Payız 2027',
+      startDate: '2027-09-04',
+    });
+    const full = makeCourse({
+      id: '00000000-0000-4000-8000-0000000000a3',
+      title: 'Dolu qrup',
+      isAcceptingApplications: false,
+      seatsLeft: 0,
+    });
+    const courseSelect = () => screen.getByLabelText('Hansı qrupa müraciət edirsiniz?');
+    const renderWith = (courses: PublicCourse[] | null, site: Record<string, unknown> = {}) =>
+      render(<Apply />, { wrapper: withContent({ courses, site }) });
+
+    it('applies for the only open course without asking which one', async () => {
+      renderWith([spring, full]);
+      await fillValidForm();
+      await user.click(sendButton());
+
+      expect(screen.queryByLabelText('Hansı qrupa müraciət edirsiniz?')).not.toBeInTheDocument();
+      expect(submit).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ course_id: spring.id }));
+    });
+
+    it('checks the child’s age against the start date and age range of that course', () => {
+      renderWith([spring]);
+      const birth = screen.getByLabelText('Doğum tarixi');
+
+      fireEvent.change(birth, { target: { value: '2016-05-20' } });
+      expect(screen.getByText('Proqram başlayanda: 10 yaş')).toBeInTheDocument();
+
+      fireEvent.change(birth, { target: { value: '2018-05-20' } });
+      expect(screen.getByText('Proqram başlayanda: 8 yaş. Proqram 9–12 yaş üçündür.')).toBeInTheDocument();
+    });
+
+    it('lets the parent choose among several open courses, never offering a full one', async () => {
+      renderWith([spring, full, autumn]);
+      const options = within(courseSelect()).getAllByRole('option');
+
+      expect(options.map((option) => option.textContent)).toEqual([
+        'Yaz 2027 · 6 mart 2027',
+        'Payız 2027 · 4 sentyabr 2027',
+      ]);
+      expect(courseSelect()).toHaveValue(spring.id);
+
+      await user.selectOptions(courseSelect(), autumn.id);
+      await fillValidForm();
+      await user.click(sendButton());
+
+      expect(submit).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ course_id: autumn.id }));
+    });
+
+    it('works out the age and the family discount from the course that was chosen', async () => {
+      renderWith([spring, autumn]);
+      await user.click(screen.getByRole('button', { name: /İkinci uşağı əlavə et/ }));
+      expect(screen.getByText(/Ailə endirimi/)).toHaveTextContent('1 250 AZN');
+
+      await user.selectOptions(courseSelect(), autumn.id);
+
+      expect(screen.getByText(/Ailə endirimi/)).toHaveTextContent('1 150 AZN');
+      fireEvent.change(screen.getAllByLabelText('Doğum tarixi')[0], { target: { value: '2018-12-05' } });
+      expect(screen.getByText('Proqram başlayanda: 8 yaş')).toBeInTheDocument();
+    });
+
+    it('lets the parent retry after a failure when another course is picked', async () => {
+      submit.mockRejectedValueOnce(new Error('network'));
+      renderWith([spring, autumn]);
+      await fillValidForm();
+      await user.click(sendButton());
+      await screen.findByText('Müraciət göndərilmədi.');
+
+      await user.selectOptions(courseSelect(), autumn.id);
+      expect(screen.queryByRole('link', { name: 'WhatsApp ilə bizə yaz' })).not.toBeInTheDocument();
+      await user.click(sendButton());
+
+      expect(submit).toHaveBeenLastCalledWith(expect.objectContaining({ course_id: autumn.id }));
+    });
+
+    it.each([
+      ['no course is open', [full]],
+      ['the list is empty', []],
+    ])('replaces the form with the closed message when %s', (_what, courses) => {
+      renderWith(courses, { 'apply.closed': 'Qeydiyyat bağlıdır.' });
+
+      expect(screen.queryByRole('form', { name: 'Müraciət forması' })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Valideynin adı')).not.toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('Qeydiyyat bağlıdır.');
+      expect(screen.getByRole('link', { name: 'WhatsApp ilə bizə yaz' })).toHaveAttribute(
+        'href',
+        expect.stringContaining('https://wa.me/994509988707'),
+      );
+      expect(submit).not.toHaveBeenCalled();
+    });
+
+    it('does not claim registration is closed while the list of courses is unknown', () => {
+      renderWith(null);
+
+      expect(screen.getByRole('form', { name: 'Müraciət forması' })).toBeInTheDocument();
+      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+
+    it('shows the closed message when the API says the course filled up meanwhile', async () => {
+      submit.mockRejectedValue(new RegistrationClosedError());
+      renderWith([spring]);
+      await fillValidForm();
+      await user.click(sendButton());
+
+      expect(await screen.findByRole('status')).toHaveTextContent('Hazırda qeydiyyat bağlıdır.');
+      expect(screen.queryByRole('form', { name: 'Müraciət forması' })).not.toBeInTheDocument();
+      expect(screen.queryByText('Müraciət göndərilmədi.')).not.toBeInTheDocument();
+      expect(screen.queryByText('Leyla Məmmədova')).not.toBeInTheDocument();
+    });
+
+    it('shows the published contact numbers in the closed message and the fallback link', () => {
+      renderWith([], { 'contact.whatsapp': '994551112233' });
+
+      expect(screen.getByRole('link', { name: 'WhatsApp ilə bizə yaz' })).toHaveAttribute(
+        'href',
+        expect.stringContaining('https://wa.me/994551112233'),
+      );
     });
   });
 });

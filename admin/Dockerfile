@@ -1,0 +1,21 @@
+# The admin panel's origin: unprivileged nginx (non-root, port 8080) with the admin panel's security headers.
+# The screens are not built yet: their design has not been delivered (admin/CLAUDE.md), so this image serves a plain
+# notice page and passes /api/admin/ on to the panel API. When the design arrives, a build stage goes in front of this
+# one, as in front/Dockerfile, and its output replaces `public`.
+FROM nginxinc/nginx-unprivileged:stable-alpine
+# Pick up security fixes the base image has not shipped yet, then go back to the unprivileged user.
+USER root
+RUN apk upgrade --no-cache
+USER 101
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/proxy-panel.conf /etc/nginx/snippets/proxy-panel.conf
+COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY nginx/csp-page.conf /etc/nginx/snippets/csp-page.conf
+COPY nginx/csp-api.conf /etc/nginx/snippets/csp-api.conf
+COPY nginx/real-ip.conf /etc/nginx/snippets/real-ip.conf
+COPY nginx/network-allow-list.conf /etc/nginx/snippets/network-allow-list.conf
+COPY public /usr/share/nginx/html
+
+EXPOSE 8080
+HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget -q --spider http://127.0.0.1:8080/ || exit 1

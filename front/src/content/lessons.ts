@@ -1,3 +1,5 @@
+// The lesson flow as the design shows it. The page takes it from the content registry (lesson.items); this copy is
+// what the tests compare that default against, so a change to the default cannot slip through unnoticed.
 export const LESSONS: { time: string; title: string; desc: string }[] = [
   {
     time: '09:30–09:45',

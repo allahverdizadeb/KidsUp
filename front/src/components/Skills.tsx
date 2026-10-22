@@ -1,7 +1,13 @@
 import { useHover } from '../hooks/useHover';
+import { useText, useTexts } from '../hooks/usePublicContent';
+
+const SKILL_KEYS = [1, 2, 3, 4, 5, 6].map((number) => `skills.item_${number}`);
 
 export default function Skills() {
   const { on, off, hv } = useHover(['k1', 'k2', 'k3', 'k4', 'k5', 'k6']);
+  const eyebrow = useText('skills.eyebrow');
+  const heading = useText('skills.heading');
+  const skillTitles = useTexts(SKILL_KEYS);
   return (
     <section id="oyrenecek" style={{ background: '#FFFFFF' }}>
       <div
@@ -18,7 +24,7 @@ export default function Skills() {
           data-reveal="1"
           style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '860px' }}
         >
-          <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>Uşaqlar nə öyrənəcək?</div>
+          <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>{eyebrow}</div>
           <h2
             style={{
               margin: '0',
@@ -29,7 +35,7 @@ export default function Skills() {
               textWrap: 'balance',
             }}
           >
-            Öz fikrini həyata keçirmək üçün bacarıqlar
+            {heading}
           </h2>
         </div>
         <div
@@ -97,9 +103,7 @@ export default function Skills() {
                 </g>
               </svg>
             </div>
-            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>
-              Problemləri görmək və həll düşünmək
-            </div>
+            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>{skillTitles[0]}</div>
           </div>
           <div
             onPointerEnter={on.k2}
@@ -191,9 +195,7 @@ export default function Skills() {
                 </g>
               </svg>
             </div>
-            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>
-              Düzgün sual vermək və insanları dinləmək
-            </div>
+            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>{skillTitles[1]}</div>
           </div>
           <div
             onPointerEnter={on.k3}
@@ -254,7 +256,7 @@ export default function Skills() {
                 <path d="M214 132 H230 M216 142 H232" strokeWidth="2" />
               </svg>
             </div>
-            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>Komandada işləmək</div>
+            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>{skillTitles[2]}</div>
           </div>
           <div
             onPointerEnter={on.k4}
@@ -334,9 +336,7 @@ export default function Skills() {
                 <ellipse cx="180" cy="178" rx="12" ry="4" stroke="#BDBDBD" strokeWidth="2" />
               </svg>
             </div>
-            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>
-              Xərc və gəliri hesablamaq
-            </div>
+            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>{skillTitles[3]}</div>
           </div>
           <div
             onPointerEnter={on.k5}
@@ -415,9 +415,7 @@ export default function Skills() {
                 </g>
               </svg>
             </div>
-            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>
-              Fikrini aydın təqdim etmək
-            </div>
+            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>{skillTitles[4]}</div>
           </div>
           <div
             onPointerEnter={on.k6}
@@ -474,9 +472,7 @@ export default function Skills() {
                 </g>
               </svg>
             </div>
-            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>
-              Rəylə işini yaxşılaşdırmaq
-            </div>
+            <div style={{ fontWeight: '800', fontSize: '22px', lineHeight: '1.25' }}>{skillTitles[5]}</div>
           </div>
         </div>
       </div>

@@ -51,6 +51,42 @@ def test_production_refuses_the_postgres_superuser():
         )
 
 
+def production(**overrides):
+    return make_settings(environment="production", database_url=LIMITED_ACCOUNT_URL, **overrides)
+
+
+def test_a_web_process_in_production_must_be_told_its_hosts_and_origins():
+    with pytest.raises(RuntimeError, match="KIDSUP_CORS_ORIGINS, KIDSUP_ALLOWED_HOSTS"):
+        production().require_web_settings_in_production(panel=False)
+    with pytest.raises(RuntimeError, match="KIDSUP_ALLOWED_HOSTS"):
+        production(cors_origins=[]).require_web_settings_in_production(panel=False)
+    with pytest.raises(RuntimeError, match="KIDSUP_CORS_ORIGINS"):
+        production(allowed_hosts=["back"]).require_web_settings_in_production(panel=False)
+    production(cors_origins=[], allowed_hosts=["back"]).require_web_settings_in_production(panel=False)
+
+
+def test_the_panel_must_also_be_told_the_origin_of_its_pages():
+    only_the_api_settings = production(cors_origins=[], allowed_hosts=["panel"])
+
+    only_the_api_settings.require_web_settings_in_production(panel=False)  # the public API is not asked
+    with pytest.raises(RuntimeError, match="KIDSUP_PANEL_ALLOWED_ORIGINS"):
+        only_the_api_settings.require_web_settings_in_production(panel=True)
+    production(
+        cors_origins=[], allowed_hosts=["panel"], panel_allowed_origins=["https://admin.kidsup.az"]
+    ).require_web_settings_in_production(panel=True)
+
+
+def test_development_is_not_asked_for_anything():
+    make_settings().require_web_settings_in_production(panel=True)
+
+
+def test_the_public_api_refuses_to_start_in_production_with_the_developers_defaults():
+    from app.main import create_app
+
+    with pytest.raises(RuntimeError, match="developer's defaults"):
+        create_app(production())
+
+
 def test_development_may_use_the_superuser_for_convenience():
     url = "postgresql://postgres:postgres@localhost/kidsup"
     assert (

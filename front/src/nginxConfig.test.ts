@@ -133,6 +133,20 @@ describe('nginx configuration', () => {
     expect(endpoint).toContain('limit_req_status 429;');
   });
 
+  it('limits how many requests one address may hold open, and ends slow or timed-out connections (SEC-B-08)', () => {
+    // limit_req counts a request when it starts; a body sent a byte at a time or a file read slowly holds a connection.
+    expect(defaultConf).toMatch(/^limit_conn_zone \$binary_remote_addr zone=conn_per_address:\d+m;$/m);
+    expect(defaultConf).toMatch(/^\s*limit_conn conn_per_address \d+;$/m);
+    expect(defaultConf).toContain('limit_conn_status 429;');
+    const endpoint = locations.find(({ header }) => header === 'location = /api/applications')?.body ?? '';
+    const atOnce = /limit_conn conn_per_address (\d+);/.exec(endpoint)?.[1];
+    expect(Number(atOnce)).toBeGreaterThan(0);
+    expect(Number(atOnce)).toBeLessThanOrEqual(5); // the form is one small request
+    expect(defaultConf).toMatch(/^\s*reset_timedout_connection on;$/m);
+    expect(Number(/^\s*client_body_timeout (\d+)s;$/m.exec(defaultConf)?.[1])).toBeLessThanOrEqual(5);
+    expect(Number(/^\s*send_timeout (\d+)s;$/m.exec(defaultConf)?.[1])).toBeLessThanOrEqual(20);
+  });
+
   it('tells the API who the visitor is by overwriting X-Forwarded-For, never by appending to it', () => {
     expect(defaultConf).toContain('proxy_set_header X-Forwarded-For $remote_addr;');
     // $proxy_add_x_forwarded_for keeps whatever the visitor sent, which would let them choose their own address.
@@ -174,6 +188,47 @@ describe('nginx configuration', () => {
     for (const { header, body } of served) {
       expect(body, `${header} accepts other methods`).toMatch(/limit_except GET HEAD \{\s*deny all;\s*\}/);
     }
+  });
+
+  describe('what the admin panel published', () => {
+    const published = (header: string) =>
+      locations.find((location) => location.header === header)?.body ?? '';
+    const mediaHeader = locations.find(({ header }) => header.includes('/media/['))?.header ?? '';
+
+    it.each(['location = /content/site.json', 'location = /content/courses.json'])(
+      'serves %s read-only from the content volume, always asking whether it changed',
+      (header) => {
+        const body = published(header);
+        expect(body).toMatch(/limit_except GET HEAD \{\s*deny all;\s*\}/);
+        expect(body).toContain('add_header Cache-Control "no-cache" always;');
+        expect(body).toContain('root /usr/share/nginx;');
+        expect(body).toContain('try_files $uri =404;');
+      },
+    );
+
+    it('serves only picture files with a random id as their name, and caches them for a day only', () => {
+      expect(mediaHeader).toMatch(/\^\/media\/\[0-9a-f\]\{8\}-.*\\\.webp\$/);
+      const body = published(mediaHeader);
+      expect(body).toMatch(/limit_except GET HEAD \{\s*deny all;\s*\}/);
+      // Not for good: a picture that has to go (a parent withdraws consent for a photo) must leave caches next day.
+      expect(body).toContain('add_header Cache-Control "public, max-age=86400" always;');
+      expect(body).not.toContain('immutable');
+      expect(body).toContain('root /usr/share/nginx/content;');
+      expect(body).toContain('try_files $uri =404;');
+    });
+
+    it.each(['location /content/', 'location /media/'])(
+      'answers 404 for anything else under %s, never the page and never a listing',
+      (header) => {
+        const body = published(header);
+        expect(body).toContain('return 404;');
+        expect(body).not.toMatch(/autoindex|try_files|proxy_pass/);
+      },
+    );
+
+    it('keeps the temporary files the panel writes while it replaces a file out of reach (dotfiles)', () => {
+      expect(defaultConf).toMatch(/location ~ \/\\\.\(\?!well-known\) \{[^}]*deny all;/);
+    });
   });
 
   it('logs nothing but a shortened address, the time, the path and the outcome (privacy)', () => {

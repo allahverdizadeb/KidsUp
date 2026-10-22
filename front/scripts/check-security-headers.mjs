@@ -151,6 +151,52 @@ check(
 );
 checkSecurityHeaders('certificate image', certificate);
 
+// What the admin panel published (served from the content volume): two small JSON files that the browser must always
+// revalidate, and pictures that never change. Nothing else under these folders is a file.
+for (const name of ['site', 'courses']) {
+  const published = await get(`/content/${name}.json`);
+  check(`/content/${name}.json answers 200`, published.status === 200, String(published.status));
+  check(
+    `/content/${name}.json is served as JSON`,
+    (published.headers.get('content-type') ?? '').startsWith('application/json'),
+    published.headers.get('content-type') ?? '',
+  );
+  check(
+    `/content/${name}.json is revalidated every time`,
+    published.headers.get('cache-control') === 'no-cache',
+  );
+  const parsed = await published.json().catch(() => null);
+  check(`/content/${name}.json holds a JSON object`, typeof parsed === 'object' && parsed !== null);
+  checkSecurityHeaders(`/content/${name}.json`, published);
+}
+const noPicture = await get('/media/00000000-0000-4000-8000-000000000000.webp');
+check(
+  'a picture that does not exist is a 404, not the page',
+  noPicture.status === 404,
+  String(noPicture.status),
+);
+checkSecurityHeaders('missing picture (nginx 404)', noPicture);
+for (const path of ['/media/', '/content/', '/media/not-a-picture.webp', '/content/other.json']) {
+  const answer = await get(path);
+  check(`${path} is a plain 404`, answer.status === 404, String(answer.status));
+  checkSecurityHeaders(`${path} (nginx 404)`, answer);
+}
+// A path that climbs out of the folder is refused outright (nginx answers 400 for an encoded slash after "..").
+const traversal = await get('/media/..%2f..%2fetc%2fpasswd');
+check(
+  'a path climbing out of /media/ is refused',
+  [400, 404].includes(traversal.status),
+  String(traversal.status),
+);
+checkSecurityHeaders('refused path traversal', traversal);
+const publishedPost = await get('/content/site.json', { method: 'POST', body: 'x' });
+check(
+  'POST to the published texts is refused',
+  [403, 405].includes(publishedPost.status),
+  String(publishedPost.status),
+);
+checkSecurityHeaders('refused POST to the published texts', publishedPost);
+
 const missing = await get('/assets/missing.pdf');
 check('a missing asset is a 404, not the page', missing.status === 404, String(missing.status));
 checkSecurityHeaders('missing asset (nginx 404)', missing);

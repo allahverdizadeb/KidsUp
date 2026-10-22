@@ -1,11 +1,14 @@
 import { Fragment, useState } from 'react';
-import { MODULES } from '../content/modules';
+import { useModules, useText } from '../hooks/usePublicContent';
 import ModuleIcon from './ModuleIcon';
 
 export default function Modules() {
   const [openIndex, setOpenIndex] = useState(-1);
+  const eyebrow = useText('modules.eyebrow');
+  const heading = useText('modules.heading');
+  const applyLabel = useText('modules.cta');
 
-  const modules = MODULES.map((m, i) => {
+  const modules = useModules('modules.items').map((m, i) => {
     const open = openIndex === i;
     return {
       n: i + 1,
@@ -44,7 +47,7 @@ export default function Modules() {
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>Altı modul</div>
+            <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>{eyebrow}</div>
             <h2
               style={{
                 margin: '0',
@@ -54,7 +57,7 @@ export default function Modules() {
                 lineHeight: '1.02',
               }}
             >
-              İdeyadan ilk təqdimata
+              {heading}
             </h2>
           </div>
           <a
@@ -68,7 +71,7 @@ export default function Modules() {
             }}
             className="hv-1"
           >
-            Müraciət et
+            {applyLabel}
           </a>
         </div>
         <div

@@ -1,10 +1,11 @@
 import { Fragment, useState } from 'react';
-import { FAQ } from '../content/faq';
+import { useQuestions, useText } from '../hooks/usePublicContent';
 
 export default function Faq() {
   const [openIndex, setOpenIndex] = useState(0);
+  const heading = useText('faq.heading');
 
-  const faqs = FAQ.map(({ q, a }, i) => {
+  const faqs = useQuestions('faq.items').map(({ q, a }, i) => {
     const open = openIndex === i;
     return {
       q,
@@ -38,7 +39,7 @@ export default function Faq() {
             lineHeight: '1.02',
           }}
         >
-          Tez-tez verilən suallar
+          {heading}
         </h2>
         <div
           data-reveal="1"

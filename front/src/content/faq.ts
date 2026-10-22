@@ -1,4 +1,6 @@
 // "**text**" marks bold text inside an answer.
+// The questions as the design shows them (prices of the first course). The page takes them from the content registry
+// (faq.items, with {price} names in place of the figures); this copy is what the tests compare that default against.
 export const FAQ: { q: string; a: string }[] = [
   {
     q: 'Övladım gələcəkdə sahibkar olmaq istəməsə də, proqram ona faydalıdır?',

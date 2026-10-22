@@ -1,15 +1,20 @@
 import { Fragment, useState } from 'react';
-import { LESSONS } from '../content/lessons';
+import { useLessonSteps, useText } from '../hooks/usePublicContent';
 import { useWidth } from '../hooks/useWidth';
 
 export default function Lesson() {
   const [current, setCurrent] = useState(0);
+  const eyebrow = useText('lesson.eyebrow');
+  const heading = useText('lesson.heading');
+  const intro = useText('lesson.intro');
+  const note = useText('lesson.note');
+  const lessonSteps = useLessonSteps('lesson.items');
   const narrow = useWidth() < 900;
 
   const lsWide = !narrow;
   const lsNarrow = narrow;
   const lsCols = narrow ? 'minmax(0,1fr)' : 'minmax(280px,380px) minmax(0,1fr)';
-  const lessons = LESSONS.map(({ time, title }, i) => {
+  const lessons = lessonSteps.map(({ time, title }, i) => {
     const on = i === current;
     return {
       n: i + 1,
@@ -27,10 +32,10 @@ export default function Lesson() {
       ul: on ? 'underline' : 'none',
     };
   });
-  const [ls0, ls1, ls2, ls3, ls4, ls5, ls6, ls7] = LESSONS.map((_, i) => i === current);
-  const lsTime = LESSONS[current].time;
-  const lsTitle = LESSONS[current].title;
-  const lsDesc = LESSONS[current].desc;
+  const [ls0, ls1, ls2, ls3, ls4, ls5, ls6, ls7] = lessonSteps.map((_, i) => i === current);
+  const lsTime = lessonSteps[current].time;
+  const lsTitle = lessonSteps[current].title;
+  const lsDesc = lessonSteps[current].desc;
   return (
     <section id="ders" style={{ background: '#FFFFFF', borderTop: '1px solid #EAEAEA' }}>
       <div
@@ -47,7 +52,7 @@ export default function Lesson() {
           data-reveal="1"
           style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '860px' }}
         >
-          <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>Bir görüş, 3,5 saat</div>
+          <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>{eyebrow}</div>
           <h2
             style={{
               margin: '0',
@@ -58,13 +63,12 @@ export default function Lesson() {
               textWrap: 'balance',
             }}
           >
-            Bir dərsimiz necə keçir?
+            {heading}
           </h2>
           <p
             style={{ margin: '0', fontSize: '19px', lineHeight: '1.6', color: '#4A4A4A', textWrap: 'pretty' }}
           >
-            Dinləyirik, oynayırıq, hazırlayırıq və fikirlərimizi bölüşürük. Fasilələr də daxil olmaqla, 3,5
-            saatlıq bir görüşümüzlə tanış olun.
+            {intro}
           </p>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: lsCols, gap: '40px 72px', alignItems: 'start' }}>
@@ -920,9 +924,7 @@ export default function Lesson() {
                 {lsDesc}
               </p>
             </div>
-            <div style={{ fontSize: '14px', color: '#6B6B6B' }}>
-              Nümunə dərs axınıdır. Fəaliyyətlər modula uyğun dəyişə bilər.
-            </div>
+            <div style={{ fontSize: '14px', color: '#6B6B6B' }}>{note}</div>
           </div>
         </div>
       </div>

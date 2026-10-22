@@ -3,6 +3,9 @@ coverage
 design-source
 node_modules
 
+# a byte-for-byte copy of back/app/panel/content_registry.json (back/ owns its format; registry.test.ts compares them)
+src/content/registry.json
+
 # hand-written docs and Claude configuration are not reformatted
 docs
 .claude

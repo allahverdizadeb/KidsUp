@@ -6,15 +6,24 @@ This repo has three independent projects. This file only covers what is shared a
 
 | Folder   | What it is                                       | Status                                                          |
 |----------|--------------------------------------------------|-----------------------------------------------------------------|
-| `front/` | Public landing page, React + TypeScript (Vite)   | Ported from the design (deliberate differences: `front/CLAUDE.md`); 177 tests, ~99% coverage |
-| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` live; 320 tests, 100% coverage  |
-| `admin/` | Admin panel                                      | **Blocked: design not ready**                                   |
+| `front/` | Public landing page, React + TypeScript (Vite)   | Ported from the design (deliberate differences: `front/CLAUDE.md`); shows the texts, prices and open courses that staff publish in the admin panel (identical to the design when nothing is published); 379 tests, ~99.5% coverage |
+| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` (public) and the admin API `/api/admin/…` (sign-in with MFA, applications, courses, dashboard, landing page content, audit log) live; 1053 tests, 100% coverage |
+| `admin/` | Admin panel                                      | API and nginx origin live (`admin/nginx`, port 8081); **the screens are blocked: the design (`KidsUp Admin Panel v2.dc.html`) has not been delivered** |
 
 Each project has `docs/` (standards) and `.claude/` (skills + agents); the repo root has `.claude/` (cross-project
-skills + agents), `docs/docker.md`, `SECURITY.md` and `db/` (the database image). Run everything in Docker with `docker compose up --build` (see `docs/docker.md`).
+skills + agents), `docs/docker.md`, `SECURITY.md` and `db/` (the database image). Run everything in Docker with `docker compose up --build` (see `docs/docker.md`;
+`.env` needs five database passwords and the panel key, see `.env.example`). Seven containers: `db`, `bootstrap` (one-off), `back`, `panel`, `retention`, `front`, `admin`.
+
+How the landing page and the admin panel are linked: staff change courses, texts and pictures through the panel's API; the panel writes `courses.json` and `site.json`
+(and the pictures) into a volume that the public nginx serves read-only; the page reads those files when it loads. The public site never reads the database and never talks to the
+panel. Applications go the other way: the form posts to `back`, which can only INSERT; staff see them in the panel. A submission is **not** a registration: it takes a place in a course
+only when staff approve it, and the database refuses an approval that would overfill the course.
 
 Local dev without Docker: Postgres 17 on `localhost:5432` (user/password `postgres`, databases `kidsup` and `kidsup_test`),
-API on :8000, front on :5173 (Vite proxies `/api` to the API). See each project's CLAUDE.md for commands.
+API on :8000, front on :5173 (Vite proxies `/api` to the API; published content is only served in Docker). See each project's CLAUDE.md for commands.
+
+Live end-to-end check of the whole stack (landing page ↔ panel ↔ database, plus both header checks) on a throw-away copy that never touches the real stack:
+`powershell -File scripts\verify-stack.ps1` (`docs/docker.md`). Run it before a release and after any change to compose, nginx, the panel or the landing page's data flow.
 
 ## Mandatory standards (binding, read before changing code)
 
@@ -23,7 +32,7 @@ their parents. Controls are numbered so they can be cited in reviews and tests:
 
 - Backend: [`back/docs/security-standards.md`](back/docs/security-standards.md) (`SEC-B-01…18`)
 - Frontend: [`front/docs/security-standards.md`](front/docs/security-standards.md) (`SEC-F-NN`)
-- Admin panel (future) adds stricter rules: [`admin/docs/README.md`](admin/docs/README.md)
+- Admin panel adds stricter rules (nothing public, MFA, short sessions, roles, audit log, no personal data in URLs): [`admin/docs/README.md`](admin/docs/README.md)
 
 Rules that follow from it, for every contributor (human or AI):
 
@@ -61,7 +70,9 @@ Cross-project conventions (language, naming, git, deploy, security baseline) →
 - **User-facing text is Azerbaijani.** Code, identifiers, comments, commits: English. Commits follow Conventional Commits.
 - **The API contract is owned by `back/`.** `front/` and `admin/` consume it and never invent fields.
 - **No secrets in the repo.** Each project has `.env.example`; real `.env` files are git-ignored.
-- **Don't build admin screens** until the user supplies the design. Do not guess the layout.
+- **Don't build admin screens** until the user supplies the design (`KidsUp Admin Panel v2.dc.html` and `support.js`, to be exported into `admin/design-source/`). Do not guess the layout. The admin API and the admin origin (nginx) are built; only the screens wait.
+- **No online payment and no checkout** (the owner's instruction): prices are shown, never collected. Do not add a payment or checkout flow.
+- **Never delete or lose existing parent and child data.** Schema changes are Alembic migrations that keep every row (`back/docs/api-and-database-standards.md`); data is removed only by retention, by an erasure request, or by the owner.
 - Keep each project independently installable, runnable and deployable.
 
 ## Source of truth for the landing page
@@ -72,6 +83,9 @@ Cross-project conventions (language, naming, git, deploy, security baseline) →
 
 Open owner decisions: use `#D6006E` for small pink text (brand pink fails WCAG AA contrast, see
 `front/docs/styling-and-accessibility-standards.md` A11Y-1); notification channel for new applications; a text-based export of
-the brochure PDF (it is two images, A11Y-4); **the privacy notice and consent wording, built as a draft: a launch blocker until counsel
-approves it** (`SEC-F-16`, the points to confirm are in `front/docs/privacy-notice-review.md`); the owner's signature on the accepted risks in
-`back/docs/security-standards.md` section 5 (nine) and `front/docs/security-standards.md` section 5 (one); the contact and response times in `SECURITY.md`.
+the brochure PDF (it is two images, A11Y-4); the owner's signature on the accepted risks in
+`back/docs/security-standards.md` section 5 (seventeen) and `front/docs/security-standards.md` section 5 (one); the contact and response times in `SECURITY.md`;
+the export of the admin design (`KidsUp Admin Panel v2.dc.html`); who gets which staff role (`viewer`, `coordinator`, `admin`) and who holds the panel key (`PANEL_SECRET_KEY`);
+whether the privacy notice needs a sentence about staff's statuses and notes (`front/docs/privacy-notice-review.md` row 14).
+
+The privacy notice and the parental consent were approved by legal counsel in the wording now in `front/src/content/privacyNotice.ts` (reported by the owner on 2026-10-19; notice version `2026-10-19`). What the approval leaves to the owner is in `front/docs/privacy-notice-review.md`.

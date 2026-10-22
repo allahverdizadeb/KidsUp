@@ -21,8 +21,9 @@ SCRATCH_DATABASE = "kidsup_bootstrap_test"
 OWNER_ROLE = "kidsup_owner_test"
 APP_ROLE = "kidsup_app_test"
 RETENTION_ROLE = "kidsup_retention_test"
+PANEL_ROLE = "kidsup_panel_test"
 STRANGER_ROLE = "kidsup_stranger_test"
-ALL_ROLES = (OWNER_ROLE, APP_ROLE, RETENTION_ROLE, STRANGER_ROLE)
+ALL_ROLES = (OWNER_ROLE, APP_ROLE, RETENTION_ROLE, PANEL_ROLE, STRANGER_ROLE)
 
 # The server's superuser on its own `postgres` database: only used to create and drop the names above.
 SERVER = make_url(TEST_URL).set(database="postgres")
@@ -67,3 +68,4 @@ class Provisioned:
     owner: URL
     app: URL
     retention: URL
+    panel: URL

@@ -1,11 +1,20 @@
 import { Fragment } from 'react';
 import type { PointerEvent } from 'react';
 import { useHover } from '../hooks/useHover';
+import { useFigures, useText } from '../hooks/usePublicContent';
 
 const STEPS = ['İdeya yarat', 'Birlikdə hazırla', 'Sına', 'Təqdim et'];
 
 export default function Hero() {
   const { hov, setHov, on, off, hv } = useHover(['h0', 'h1', 'h2', 'h3']);
+  const figures = useFigures();
+  const titleFirst = useText('hero.title_first');
+  const titleLead = useText('hero.title_lead');
+  const titleAccent = useText('hero.title_accent');
+  const subtitle = useText('hero.subtitle');
+  const primaryCta = useText('hero.primary_cta');
+  const secondaryCta = useText('hero.secondary_cta');
+  const duration = useText('hero.duration');
 
   // Moving over the hero illustration lights up whichever of the four kids/props is under the pointer.
   const heroMove = (e: PointerEvent<SVGSVGElement>) => {
@@ -52,9 +61,9 @@ export default function Hero() {
             color: '#1A1A1A',
           }}
         >
-          Kiçik ideyalar.
+          {titleFirst}
           <br />
-          Böyük <span style={{ color: '#FF0083' }}>başlanğıclar.</span>
+          {titleLead} <span style={{ color: '#FF0083' }}>{titleAccent}</span>
         </h1>
         <p
           style={{
@@ -66,8 +75,7 @@ export default function Hero() {
             textWrap: 'pretty',
           }}
         >
-          8–13 yaşlı uşaqlar üçün praktiki sahibkarlıq proqramı. Uşaqlar ideya yaradır, məhsul hazırlayıb
-          sınayır və öz layihələrini təqdim edirlər.
+          {subtitle}
         </p>
         <div
           style={{
@@ -91,7 +99,7 @@ export default function Hero() {
             }}
             className="hv-3"
           >
-            Müraciət et
+            {primaryCta}
           </a>
           <a
             href="#proqram"
@@ -104,7 +112,7 @@ export default function Hero() {
             }}
             className="hv-1"
           >
-            Proqramla tanış ol
+            {secondaryCta}
           </a>
         </div>
         <ul
@@ -129,7 +137,7 @@ export default function Hero() {
               color: '#1A1A1A',
             }}
           >
-            8–13 yaş
+            {figures.age_min}–{figures.age_max} yaş
           </li>
           <li
             style={{
@@ -141,7 +149,7 @@ export default function Hero() {
               color: '#1A1A1A',
             }}
           >
-            Başlanğıc: 5 dekabr 2026
+            Başlanğıc: {figures.start_date}
           </li>
           <li
             style={{
@@ -153,7 +161,7 @@ export default function Hero() {
               color: '#1A1A1A',
             }}
           >
-            6 həftə · şənbə, 09:30–13:00
+            {duration} · {figures.schedule}
           </li>
           <li
             style={{
@@ -165,7 +173,7 @@ export default function Hero() {
               color: '#1A1A1A',
             }}
           >
-            Maksimum 20 iştirakçı
+            Maksimum {figures.capacity} iştirakçı
           </li>
         </ul>
       </div>

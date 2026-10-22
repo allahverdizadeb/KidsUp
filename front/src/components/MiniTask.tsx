@@ -1,8 +1,11 @@
 import { Fragment, useState } from 'react';
+import { useText } from '../hooks/usePublicContent';
 
 const OPTIONS = ['İnsanlardan soruş', 'İdeyanı çək', 'Nümunə hazırla'];
 
 export default function MiniTask() {
+  const heading = useText('mini_task.heading');
+  const intro = useText('mini_task.intro');
   const [picked, setPicked] = useState<number | null>(null);
   const [seen, setSeen] = useState<number[]>([]);
 
@@ -60,12 +63,12 @@ export default function MiniTask() {
               maxWidth: '900px',
             }}
           >
-            Övladınız bunu necə həll edərdi?
+            {heading}
           </h2>
           <p
             style={{ margin: '0', fontSize: '19px', lineHeight: '1.6', color: '#4A4A4A', maxWidth: '640px' }}
           >
-            Bir dəqiqəlik tapşırığı birlikdə sınayın. Burada tək bir düzgün cavab yoxdur.
+            {intro}
           </p>
         </div>
         <div

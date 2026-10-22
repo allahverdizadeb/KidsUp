@@ -1,0 +1,181 @@
+{
+  "sections": [
+    {"id": "hero", "label": "Əsas bölmə"},
+    {"id": "stats", "label": "Rəqəmlər"},
+    {"id": "skills", "label": "Bacarıqlar"},
+    {"id": "lesson", "label": "Dərs axını"},
+    {"id": "approach", "label": "Yanaşma"},
+    {"id": "modules", "label": "Modullar"},
+    {"id": "mini_task", "label": "Mini tapşırıq"},
+    {"id": "sample_project", "label": "Nümunə layihə"},
+    {"id": "demo_day", "label": "Demo Day"},
+    {"id": "certificate", "label": "Sertifikat"},
+    {"id": "founder", "label": "Qurucu"},
+    {"id": "pricing", "label": "Qiymət və iştirak"},
+    {"id": "brochure", "label": "Broşura"},
+    {"id": "faq", "label": "Tez-tez verilən suallar"},
+    {"id": "apply", "label": "Müraciət forması"},
+    {"id": "contact", "label": "Əlaqə"}
+  ],
+  "fields": [
+    {"key": "hero.title_first", "section": "hero", "label": "Başlıq, 1-ci sətir", "kind": "text", "max_length": 80, "default": "Kiçik ideyalar."},
+    {"key": "hero.title_lead", "section": "hero", "label": "Başlıq, 2-ci sətir (adi hissə)", "kind": "text", "max_length": 60, "default": "Böyük"},
+    {"key": "hero.title_accent", "section": "hero", "label": "Başlıq, 2-ci sətir (çəhrayı hissə)", "kind": "text", "max_length": 60, "default": "başlanğıclar."},
+    {"key": "hero.subtitle", "section": "hero", "label": "Alt başlıq", "kind": "paragraph", "max_length": 400, "default": "{age_min}–{age_max} yaşlı uşaqlar üçün praktiki sahibkarlıq proqramı. Uşaqlar ideya yaradır, məhsul hazırlayıb sınayır və öz layihələrini təqdim edirlər."},
+    {"key": "hero.primary_cta", "section": "hero", "label": "Əsas düymənin yazısı", "kind": "text", "max_length": 40, "default": "Müraciət et"},
+    {"key": "hero.secondary_cta", "section": "hero", "label": "İkinci keçidin yazısı", "kind": "text", "max_length": 40, "default": "Proqramla tanış ol"},
+    {"key": "hero.duration", "section": "hero", "label": "Proqramın müddəti (məs. 6 həftə)", "kind": "text", "max_length": 30, "default": "6 həftə"},
+
+    {"key": "stats.weeks_value", "section": "stats", "label": "1-ci rəqəm", "kind": "text", "max_length": 10, "default": "6"},
+    {"key": "stats.weeks_label", "section": "stats", "label": "1-ci rəqəmin izahı", "kind": "text", "max_length": 40, "default": "həftə"},
+    {"key": "stats.modules_value", "section": "stats", "label": "2-ci rəqəm", "kind": "text", "max_length": 10, "default": "6"},
+    {"key": "stats.modules_label", "section": "stats", "label": "2-ci rəqəmin izahı", "kind": "text", "max_length": 40, "default": "modul"},
+    {"key": "stats.topics_value", "section": "stats", "label": "3-cü rəqəm", "kind": "text", "max_length": 10, "default": "16"},
+    {"key": "stats.topics_label", "section": "stats", "label": "3-cü rəqəmin izahı", "kind": "text", "max_length": 40, "default": "dərs mövzusu"},
+    {"key": "stats.play_value", "section": "stats", "label": "4-cü rəqəm", "kind": "text", "max_length": 10, "default": "60%"},
+    {"key": "stats.play_label", "section": "stats", "label": "4-cü rəqəmin izahı", "kind": "text", "max_length": 40, "default": "oyun və praktika"},
+    {"key": "stats.caption", "section": "stats", "label": "Rəqəmlərin altındakı cümlə", "kind": "paragraph", "max_length": 300, "default": "Həftədə bir görüş. Hər görüşdə bir modul və ona uyğun praktiki tapşırıqlar."},
+
+    {"key": "skills.eyebrow", "section": "skills", "label": "Üst yazı", "kind": "text", "max_length": 60, "default": "Uşaqlar nə öyrənəcək?"},
+    {"key": "skills.heading", "section": "skills", "label": "Başlıq", "kind": "text", "max_length": 120, "default": "Öz fikrini həyata keçirmək üçün bacarıqlar"},
+    {"key": "skills.item_1", "section": "skills", "label": "1-ci bacarıq", "kind": "text", "max_length": 100, "default": "Problemləri görmək və həll düşünmək"},
+    {"key": "skills.item_2", "section": "skills", "label": "2-ci bacarıq", "kind": "text", "max_length": 100, "default": "Düzgün sual vermək və insanları dinləmək"},
+    {"key": "skills.item_3", "section": "skills", "label": "3-cü bacarıq", "kind": "text", "max_length": 100, "default": "Komandada işləmək"},
+    {"key": "skills.item_4", "section": "skills", "label": "4-cü bacarıq", "kind": "text", "max_length": 100, "default": "Xərc və gəliri hesablamaq"},
+    {"key": "skills.item_5", "section": "skills", "label": "5-ci bacarıq", "kind": "text", "max_length": 100, "default": "Fikrini aydın təqdim etmək"},
+    {"key": "skills.item_6", "section": "skills", "label": "6-cı bacarıq", "kind": "text", "max_length": 100, "default": "Rəylə işini yaxşılaşdırmaq"},
+
+    {"key": "lesson.eyebrow", "section": "lesson", "label": "Üst yazı", "kind": "text", "max_length": 60, "default": "Bir görüş, 3,5 saat"},
+    {"key": "lesson.heading", "section": "lesson", "label": "Başlıq", "kind": "text", "max_length": 120, "default": "Bir dərsimiz necə keçir?"},
+    {"key": "lesson.intro", "section": "lesson", "label": "Giriş mətni", "kind": "paragraph", "max_length": 400, "default": "Dinləyirik, oynayırıq, hazırlayırıq və fikirlərimizi bölüşürük. Fasilələr də daxil olmaqla, 3,5 saatlıq bir görüşümüzlə tanış olun."},
+    {"key": "lesson.note", "section": "lesson", "label": "Qeyd", "kind": "text", "max_length": 200, "default": "Nümunə dərs axınıdır. Fəaliyyətlər modula uyğun dəyişə bilər."},
+    {
+      "key": "lesson.items", "section": "lesson", "label": "Dərs axını (saat, ad, izah)", "kind": "list", "min_items": 8, "max_items": 8,
+      "item": [
+        {"name": "time", "label": "Saat", "kind": "text", "max_length": 20},
+        {"name": "title", "label": "Ad", "kind": "text", "max_length": 80},
+        {"name": "desc", "label": "İzah", "kind": "paragraph", "max_length": 300}
+      ],
+      "default": [
+        {"time": "09:30–09:45", "title": "Qarşılama və isinmə", "desc": "Qısa oyunla günə başlayır, bir-birimizi dinləyir və diqqətimizi toplayırıq."},
+        {"time": "09:45–10:15", "title": "Mövzunu kəşf edirik", "desc": "Gündəlik həyatdan bir nümunəyə baxır, suallar verir və yeni anlayışlarla tanış oluruq."},
+        {"time": "10:15–10:45", "title": "Komanda oyunu", "desc": "Öyrəndiklərimizi oyunla sınayır, birlikdə düşünür və qərar veririk."},
+        {"time": "10:45–11:00", "title": "Fasilə", "desc": "Dincəlir, hərəkət edir və növbəti fəaliyyətə hazırlaşırıq."},
+        {"time": "11:00–12:00", "title": "Praktiki iş", "desc": "İdeyamızı çəkir, hazırlayır və sınaqdan keçiririk. Təlimçi proses boyunca bizə dəstək olur."},
+        {"time": "12:00–12:10", "title": "Fasilə", "desc": "Qısa fasilə verib enerjimizi toplayırıq."},
+        {"time": "12:10–12:45", "title": "Paylaşırıq və rəy alırıq", "desc": "Gördüyümüz işi təqdim edir, sualları dinləyir və nəyi yaxşılaşdıra biləcəyimizi düşünürük."},
+        {"time": "12:45–13:00", "title": "Günün yekunu", "desc": "Bu gün nə öyrəndik? Nəyi yenidən sınamaq istərdik? Fikirlərimizi bölüşərək dərsi tamamlayırıq."}
+      ]
+    },
+
+    {"key": "approach.1_title", "section": "approach", "label": "1-ci blok, başlıq", "kind": "text", "max_length": 100, "default": "Hər şey bir sualdan başlayır."},
+    {"key": "approach.1_text", "section": "approach", "label": "1-ci blok, mətn", "kind": "paragraph", "max_length": 400, "default": "Uşaqlar ətraflarındakı gündəlik problemləri axtarır, suallar verir və ilk həll ideyasını dəftərdə eskiz kimi çəkirlər. Sonra eskizdən sadə model hazırlayırlar."},
+    {"key": "approach.2_title", "section": "approach", "label": "2-ci blok, başlıq", "kind": "text", "max_length": 100, "default": "Özümüz hazırlayırıq, özümüz sınayırıq."},
+    {"key": "approach.2_text", "section": "approach", "label": "2-ci blok, mətn", "kind": "paragraph", "max_length": 400, "default": "Karton, lent və əldəki materiallarla prototip qurur, sınayır və rəylərə əsasən yaxşılaşdırırlar. Vaxtın 60%-i oyun və praktikaya ayrılır."},
+    {"key": "approach.3_title", "section": "approach", "label": "3-cü blok, başlıq", "kind": "text", "max_length": 100, "default": "İdeyanın hesabını da aparırıq."},
+    {"key": "approach.3_text", "section": "approach", "label": "3-cü blok, mətn", "kind": "paragraph", "max_length": 400, "default": "Materialların xərcini yazır, məhsula qiymət qoyur və qazancı hesablayırlar. Sadə maliyyə hesabı Demo Day-də təqdim olunan nəticələrdən biridir."},
+
+    {"key": "modules.eyebrow", "section": "modules", "label": "Üst yazı", "kind": "text", "max_length": 60, "default": "Altı modul"},
+    {"key": "modules.heading", "section": "modules", "label": "Başlıq", "kind": "text", "max_length": 120, "default": "İdeyadan ilk təqdimata"},
+    {"key": "modules.cta", "section": "modules", "label": "Düymənin yazısı", "kind": "text", "max_length": 40, "default": "Müraciət et"},
+    {
+      "key": "modules.items", "section": "modules", "label": "Modullar", "kind": "list", "min_items": 6, "max_items": 6,
+      "item": [
+        {"name": "week", "label": "Həftə", "kind": "text", "max_length": 30},
+        {"name": "title", "label": "Ad", "kind": "text", "max_length": 120},
+        {"name": "desc", "label": "İzah", "kind": "paragraph", "max_length": 300},
+        {"name": "topics", "label": "Mövzular", "kind": "strings", "max_items": 6, "max_length": 100}
+      ],
+      "default": [
+        {"week": "1-ci həftə", "title": "Sahibkar kimi düşünmək və komanda qurmaq", "desc": "Problemləri görəcək, ideyalar yaradacaq və birlikdə işləməyi öyrənəcəklər.", "topics": ["Sahibkar kimdir?", "Problemləri necə tapaq?", "Birlikdə necə işləyək?"]},
+        {"week": "2-ci həftə", "title": "İnsanları anlamaq və ideyanı yoxlamaq", "desc": "İdeyanı yoxlamaq üçün insanlarla danışır, düzgün suallar verir və cavabları dinləyirlər.", "topics": ["Kimin üçün hazırlayırıq?", "Düzgün sual necə verilir?", "Cavablardan nə öyrəndik?"]},
+        {"week": "3-cü həftə", "title": "Məhsulu hazırlamaq və ona kimlik vermək", "desc": "İlk nümunəni öz əlləri ilə hazırlayır, sınayır və məhsula ad verirlər.", "topics": ["Eskizdən nümunəyə", "Sına və yaxşılaşdır", "Məhsulun adı və görünüşü"]},
+        {"week": "4-cü həftə", "title": "Pulu hesablamaq və idarə etmək", "desc": "Xərci, qiyməti və qazancı sadə hesablamalarla müəyyən edirlər.", "topics": ["Xərc nədir?", "Qiyməti necə təyin edək?", "Qazancı hesablayaq"]},
+        {"week": "5-ci həftə", "title": "Məhsulu tanıtmaq və müştəri ilə danışmaq", "desc": "Məhsulu başqalarına tanıdır, müştəri ilə danışır və rəy toplayırlar.", "topics": ["Məhsulu necə tanıdaq?", "Müştəri ilə söhbət", "Rəyləri toplamaq"]},
+        {"week": "6-cı həftə", "title": "Layihəni təqdim etmək və nəticələri paylaşmaq", "desc": "Komanda layihəsini Demo Day-də valideynlərə və qonaqlara təqdim edir.", "topics": ["Təqdimatı hazırlamaq", "Aydın danışmaq", "Nəticələri paylaşmaq"]}
+      ]
+    },
+
+    {"key": "mini_task.heading", "section": "mini_task", "label": "Başlıq", "kind": "text", "max_length": 120, "default": "Övladınız bunu necə həll edərdi?"},
+    {"key": "mini_task.intro", "section": "mini_task", "label": "Giriş mətni", "kind": "paragraph", "max_length": 300, "default": "Bir dəqiqəlik tapşırığı birlikdə sınayın. Burada tək bir düzgün cavab yoxdur."},
+
+    {"key": "sample_project.heading", "section": "sample_project", "label": "Başlıq", "kind": "text", "max_length": 120, "default": "Kiçik bir ideya necə layihəyə çevrilir?"},
+    {"key": "sample_project.intro", "section": "sample_project", "label": "Giriş mətni", "kind": "paragraph", "max_length": 300, "default": "Bir nümunə ilə baxaq: məktəb masası üçün kartondan qələm tutacağı."},
+
+    {"key": "demo_day.eyebrow", "section": "demo_day", "label": "Üst yazı", "kind": "text", "max_length": 60, "default": "Demo Day"},
+    {"key": "demo_day.heading", "section": "demo_day", "label": "Başlıq", "kind": "text", "max_length": 120, "default": "Bu dəfə təqdimatı uşaqlar edir."},
+    {"key": "demo_day.intro", "section": "demo_day", "label": "Giriş mətni", "kind": "paragraph", "max_length": 300, "default": "Proqramın sonunda uşaqlar hazırladıqları layihələri valideynlərə və qonaqlara təqdim edirlər."},
+    {"key": "demo_day.items", "section": "demo_day", "label": "Demo Day-də nə olacaq", "kind": "strings", "min_items": 1, "max_items": 10, "max_length": 100, "default": ["Məhsul və ya xidmət nümunəsi", "Sadə maliyyə hesabı", "İstifadəçi rəyləri", "Yekun təqdimat", "Proqramı uğurla tamamlama sertifikatı"]},
+
+    {"key": "certificate.eyebrow", "section": "certificate", "label": "Üst yazı", "kind": "text", "max_length": 60, "default": "Sertifikat"},
+    {"key": "certificate.heading", "section": "certificate", "label": "Başlıq", "kind": "text", "max_length": 120, "default": "Əməyinin və öyrəndiklərinin bir xatirəsi."},
+    {"key": "certificate.text", "section": "certificate", "label": "Mətn", "kind": "paragraph", "max_length": 500, "default": "Proqramı uğurla tamamlayan hər uşağa Demo Day-də KidsUp sertifikatı təqdim olunur. Sertifikat onun proqram boyunca qazandığı praktiki təcrübəni və tamamladığı fəaliyyətləri əks etdirir."},
+    {"key": "certificate.button", "section": "certificate", "label": "Düymənin yazısı", "kind": "text", "max_length": 60, "default": "Sertifikata yaxından bax"},
+    {"key": "certificate.image", "section": "certificate", "label": "Sertifikat nümunəsinin şəkli", "kind": "image", "default": "/assets/sertifikat-full-name.png"},
+    {"key": "certificate.image_alt", "section": "certificate", "label": "Şəklin təsviri (görmə məhdudiyyətlisi olanlar üçün)", "kind": "text", "max_length": 160, "default": "KidsUp proqramı tamamlama sertifikatının nümunəsi"},
+
+    {"key": "founder.eyebrow", "section": "founder", "label": "Üst yazı", "kind": "text", "max_length": 80, "default": "Proqramın qurucusundan mesaj"},
+    {"key": "founder.name", "section": "founder", "label": "Ad və soyad", "kind": "text", "max_length": 80, "default": "Babək Allahverdizadə"},
+    {"key": "founder.role", "section": "founder", "label": "Vəzifə", "kind": "text", "max_length": 80, "default": "Proqramın qurucusu"},
+    {"key": "founder.photo", "section": "founder", "label": "Şəkil", "kind": "image", "default": "/assets/babek.jpeg"},
+    {"key": "founder.photo_alt", "section": "founder", "label": "Şəklin təsviri", "kind": "text", "max_length": 160, "default": "Babək Allahverdizadə"},
+    {"key": "founder.linkedin", "section": "founder", "label": "LinkedIn keçidi", "kind": "link", "max_length": 300, "hosts": ["www.linkedin.com"], "default": "https://www.linkedin.com/in/babek-allahverdizade-mba-pmp-87379013a/"},
+    {"key": "founder.quote_1", "section": "founder", "label": "Mesaj, 1-ci abzas", "kind": "paragraph", "max_length": 500, "default": "İnanırıq ki, uşaqlar məktəb bilikləri ilə yanaşı, real həyata da hazır olmalıdırlar: qərar verməyi, problemlərə həll tapmağı, pulun dəyərini anlamağı və fikirlərini inamla ifadə etməyi bacarmalıdırlar."},
+    {"key": "founder.quote_2", "section": "founder", "label": "Mesaj, 2-ci abzas (**qalın** yazı üçün ulduzlar)", "kind": "paragraph", "max_length": 700, "default": "KidsUp-ı qurarkən Wharton məktəbinin **“Entrepreneurship Acceleration Program: Scaling Your Business”** proqramında qazanılan biliklər, PAŞA Qrup daxilində akselerasiya proqramları və şəxsi startap layihələrindəki təcrübə əsas götürülmüşdür. **Bu bilik və təcrübəni uşaqlara oyun və praktiki tapşırıqlar vasitəsilə çatdırmaq üçün KidsUp-ı yaratdıq.**"},
+    {"key": "founder.quote_3", "section": "founder", "label": "Mesaj, məqsəd cümləsi", "kind": "paragraph", "max_length": 300, "default": "Məqsədimiz öz fikrinə inanan və ideyalarını həyata keçirməyi bacaran bir nəslin yetişməsinə töhfə verməkdir."},
+    {"key": "wharton.image", "section": "founder", "label": "Wharton sertifikatının şəkli", "kind": "image", "default": "/assets/wharton-sertifikat.png"},
+    {"key": "wharton.image_alt", "section": "founder", "label": "Wharton şəklinin təsviri", "kind": "text", "max_length": 160, "default": "Wharton sertifikatı"},
+    {"key": "wharton.caption", "section": "founder", "label": "Wharton sertifikatı, üst yazı", "kind": "text", "max_length": 80, "default": "Sertifikat · Wharton, 2023"},
+    {"key": "wharton.title", "section": "founder", "label": "Wharton sertifikatı, ad", "kind": "text", "max_length": 160, "default": "Entrepreneurship Acceleration Program: Scaling Your Business"},
+    {"key": "wharton.link", "section": "founder", "label": "Wharton sertifikatının keçidi", "kind": "link", "max_length": 300, "hosts": ["www.credential.net"], "default": "https://www.credential.net/288b2604-189b-4dfe-a01c-2c97d8b35f77"},
+    {"key": "wharton.link_label", "section": "founder", "label": "Wharton keçidinin yazısı", "kind": "text", "max_length": 60, "default": "Sertifikata bax ↗"},
+
+    {"key": "pricing.heading", "section": "pricing", "label": "Başlıq", "kind": "text", "max_length": 80, "default": "Qiymət və iştirak"},
+    {"key": "pricing.plan_title", "section": "pricing", "label": "Proqramın adı", "kind": "text", "max_length": 100, "default": "6 həftəlik KidsUp proqramı"},
+    {"key": "pricing.first_child_label", "section": "pricing", "label": "Qiymətin üstündəki yazı", "kind": "text", "max_length": 60, "default": "1 uşaq üçün"},
+    {"key": "pricing.family_title", "section": "pricing", "label": "Ailə endirimi, başlıq", "kind": "text", "max_length": 100, "default": "Birlikdə öyrənmək daha sərfəlidir!"},
+    {"key": "pricing.family_text", "section": "pricing", "label": "Ailə endirimi, mətn", "kind": "paragraph", "max_length": 300, "default": "Eyni ailədən iki uşaq qoşulduqda ikinci uşaq üçün qiymət **{price_second}** olur."},
+    {"key": "pricing.double_label", "section": "pricing", "label": "İki uşaq üçün, yazı", "kind": "text", "max_length": 60, "default": "İki uşaq üçün:"},
+    {"key": "pricing.saving_badge", "section": "pricing", "label": "Qənaət nişanı", "kind": "text", "max_length": 100, "default": "{price_saving} qənaət — {saving_percent} ailə endirimi"},
+    {"key": "pricing.included", "section": "pricing", "label": "Qiymətə nələr daxildir", "kind": "paragraph", "max_length": 300, "default": "Dərs materialları, Demo Day və sertifikat qiymətə daxildir."},
+    {"key": "pricing.cta", "section": "pricing", "label": "Düymənin yazısı", "kind": "text", "max_length": 40, "default": "Müraciət et"},
+
+    {"key": "brochure.eyebrow", "section": "brochure", "label": "Üst yazı", "kind": "text", "max_length": 60, "default": "Broşura"},
+    {"key": "brochure.heading", "section": "brochure", "label": "Başlıq", "kind": "text", "max_length": 120, "default": "Proqramın tam təsvirini yükləyin"},
+    {"key": "brochure.text", "section": "brochure", "label": "Mətn", "kind": "paragraph", "max_length": 300, "default": "6 modul, dərs mövzuları, cədvəl və qiymət bir faylda. 2 səhifə."},
+    {"key": "brochure.button", "section": "brochure", "label": "Düymənin yazısı", "kind": "text", "max_length": 40, "default": "Broşuranı yüklə"},
+    {"key": "brochure.meta", "section": "brochure", "label": "Faylın təsviri", "kind": "text", "max_length": 40, "default": "PDF · 0,6 MB"},
+    {"key": "brochure.file", "section": "brochure", "label": "Broşura faylının ünvanı", "kind": "link", "max_length": 300, "hosts": [], "default": "/assets/KidsUp-Brosura.pdf"},
+
+    {"key": "faq.heading", "section": "faq", "label": "Başlıq", "kind": "text", "max_length": 100, "default": "Tez-tez verilən suallar"},
+    {
+      "key": "faq.items", "section": "faq", "label": "Suallar və cavablar (**qalın** yazı üçün ulduzlar)", "kind": "list", "min_items": 1, "max_items": 30,
+      "item": [
+        {"name": "q", "label": "Sual", "kind": "text", "max_length": 200},
+        {"name": "a", "label": "Cavab", "kind": "paragraph", "max_length": 1500}
+      ],
+      "default": [
+        {"q": "Övladım gələcəkdə sahibkar olmaq istəməsə də, proqram ona faydalıdır?", "a": "Bəli. Öz fikrini ifadə etmək, komanda ilə işləmək, pulun dəyərini anlamaq və problemlərə həll tapmaq hər bir peşədə lazımdır. KidsUp uşaqlara bu bacarıqları praktik şəkildə sınamaq imkanı verir."},
+        {"q": "Övladım utancaqdır. Proqrama uyğunlaşa biləcək?", "a": "Uşaqların hamısından ilk gündən hamının qarşısında danışmaq gözlənilmir. Kiçik komanda tapşırıqları və təlimçinin dəstəyi ilə hər uşağa fikrini rahat şəkildə bölüşmək üçün imkan yaradılır. Məqsəd uşaqları bir-biri ilə müqayisə etmək deyil, hər birinin özünəinamını inkişaf etdirməkdir."},
+        {"q": "8 yaşlı uşaqla 13 yaşlı uşaq eyni tapşırıqları necə yerinə yetirəcək?", "a": "Tapşırıqların çətinliyi və təlimçinin dəstəyi uşaqların yaşına və hazırlıq səviyyəsinə uyğunlaşdırılır. Eyni fəaliyyət daxilində biri ideyanı rəsmlə göstərə, digəri hesablamanı apara və ya təqdimatda iştirak edə bilər. Hər uşağın prosesə töhfə verməsi əsasdır."},
+        {"q": "Bu, adi dərs kimi keçəcək? Uşaqlar sıxılmayacaq?", "a": "Proqramın təxminən 60%-i oyun və praktiki fəaliyyətlərdən ibarətdir. Uşaqlar dinləməklə yanaşı, hazırlayır, hesablayır, müzakirə edir və sınaqdan keçirirlər. Həftəlik 3,5 saatlıq görüşə fasilələr də daxildir."},
+        {"q": "Bir qrupda neçə uşaq olacaq və onlarla kim işləyəcək?", "a": "Qrupda maksimum {capacity} uşaq olacaq. Uşaqlarla bir təlimçi və bir köməkçi işləyəcək. Praktiki fəaliyyətlər kiçik komandalar şəklində keçiriləcək."},
+        {"q": "Proqramın sonunda övladım konkret nə əldə edəcək?", "a": "Övladınız ideyadan məhsul və ya xidmət nümunəsinə gedən prosesi təcrübədən keçirəcək: sadə xərcləri hesablayacaq, rəy toplayacaq və gördüyü işi təqdim edəcək. Proqramın sonunda layihə materialları və iştirakını, proqramı uğurla tamamlamasını təsdiqləyən sertifikat alacaq."},
+        {"q": "Övladımın gördüyü işləri mən də görə biləcəyəm?", "a": "Bəli. Proqramın sonundakı Demo Day tədbirində uşaqlar hazırladıqları layihələri valideynlərə təqdim edəcəklər. Siz onların nə hazırladığını, necə düşündüyünü və fikirlərini necə izah etdiyini görə biləcəksiniz."},
+        {"q": "{price} ödənişə nələr daxildir?", "a": "Ödəniş bütün 6 həftəlik proqramı, dərslərdə istifadə ediləcək materialları, Demo Day tədbirini və sertifikatı əhatə edir."},
+        {"q": "İki övladımı qeydiyyatdan keçirsəm, endirim varmı?", "a": "Bəli. Birinci uşaq üçün qiymət {price}, ikinci uşaq üçün {price_second}-dir. İki övlad üçün ümumi ödəniş {price_double} əvəzinə **{price_family}** olur — ailəniz üçün **{price_saving}, yəni təxminən {saving_percent} endirim**."}
+      ]
+    },
+
+    {"key": "apply.heading_lead", "section": "apply", "label": "Başlıq (adi hissə, əvvəl)", "kind": "text", "max_length": 60, "default": "İlk addımı"},
+    {"key": "apply.heading_accent", "section": "apply", "label": "Başlıq (çəhrayı hissə)", "kind": "text", "max_length": 40, "default": "birlikdə"},
+    {"key": "apply.heading_tail", "section": "apply", "label": "Başlıq (adi hissə, sonra)", "kind": "text", "max_length": 40, "default": "ataq."},
+    {"key": "apply.intro", "section": "apply", "label": "Giriş mətni", "kind": "paragraph", "max_length": 300, "default": "Müraciətdən sonra proqram və qeydiyyat şərtləri barədə sizinlə əlaqə saxlayacağıq."},
+    {"key": "apply.whatsapp_label", "section": "apply", "label": "WhatsApp düyməsinin yazısı", "kind": "text", "max_length": 60, "default": "WhatsApp ilə yaz"},
+    {"key": "apply.success", "section": "apply", "label": "Müraciət göndəriləndən sonrakı mesaj", "kind": "paragraph", "max_length": 300, "default": "Müraciətiniz qəbul olundu. Proqram və qeydiyyat şərtləri barədə sizinlə əlaqə saxlayacağıq."},
+    {"key": "apply.closed", "section": "apply", "label": "Qeydiyyat bağlı olanda göstərilən mesaj", "kind": "paragraph", "max_length": 300, "default": "Hazırda qeydiyyat bağlıdır. Yeni qrup haqqında məlumat üçün bizə WhatsApp ilə yazın."},
+
+    {"key": "contact.phone", "section": "contact", "label": "Telefon nömrəsi", "kind": "phone", "max_length": 24, "default": "+994 50 998 87 07"},
+    {"key": "contact.whatsapp", "section": "contact", "label": "WhatsApp nömrəsi (yalnız rəqəmlər, ölkə kodu ilə)", "kind": "digits", "max_length": 15, "default": "994509988707"}
+  ]
+}

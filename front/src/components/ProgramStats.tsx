@@ -1,4 +1,11 @@
+import { useText } from '../hooks/usePublicContent';
+
 export default function ProgramStats() {
+  const weeks = { value: useText('stats.weeks_value'), label: useText('stats.weeks_label') };
+  const modules = { value: useText('stats.modules_value'), label: useText('stats.modules_label') };
+  const topics = { value: useText('stats.topics_value'), label: useText('stats.topics_label') };
+  const play = { value: useText('stats.play_value'), label: useText('stats.play_label') };
+  const caption = useText('stats.caption');
   return (
     <section id="proqram" style={{ marginTop: '96px', background: '#F6F6F6' }}>
       <div
@@ -36,9 +43,9 @@ export default function ProgramStats() {
                 lineHeight: '1',
               }}
             >
-              6
+              {weeks.value}
             </span>
-            <span style={{ fontSize: '18px', fontWeight: '600', color: '#4A4A4A' }}>həftə</span>
+            <span style={{ fontSize: '18px', fontWeight: '600', color: '#4A4A4A' }}>{weeks.label}</span>
           </div>
           <div
             style={{
@@ -57,9 +64,9 @@ export default function ProgramStats() {
                 lineHeight: '1',
               }}
             >
-              6
+              {modules.value}
             </span>
-            <span style={{ fontSize: '18px', fontWeight: '600', color: '#4A4A4A' }}>modul</span>
+            <span style={{ fontSize: '18px', fontWeight: '600', color: '#4A4A4A' }}>{modules.label}</span>
           </div>
           <div
             style={{
@@ -78,9 +85,9 @@ export default function ProgramStats() {
                 lineHeight: '1',
               }}
             >
-              16
+              {topics.value}
             </span>
-            <span style={{ fontSize: '18px', fontWeight: '600', color: '#4A4A4A' }}>dərs mövzusu</span>
+            <span style={{ fontSize: '18px', fontWeight: '600', color: '#4A4A4A' }}>{topics.label}</span>
           </div>
           <div
             style={{
@@ -100,9 +107,9 @@ export default function ProgramStats() {
                 color: '#FF0083',
               }}
             >
-              60%
+              {play.value}
             </span>
-            <span style={{ fontSize: '18px', fontWeight: '600', color: '#4A4A4A' }}>oyun və praktika</span>
+            <span style={{ fontSize: '18px', fontWeight: '600', color: '#4A4A4A' }}>{play.label}</span>
           </div>
         </div>
         <p
@@ -115,7 +122,7 @@ export default function ProgramStats() {
             maxWidth: '760px',
           }}
         >
-          Həftədə bir görüş. Hər görüşdə bir modul və ona uyğun praktiki tapşırıqlar.
+          {caption}
         </p>
       </div>
     </section>

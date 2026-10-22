@@ -1,4 +1,19 @@
+import { useCourse, useFigures, useText } from '../hooks/usePublicContent';
+import { splitMoney } from '../lib/figures';
+import BoldText from './BoldText';
+
 export default function Pricing() {
+  const price = splitMoney(useCourse().priceMinor);
+  const figures = useFigures();
+  const heading = useText('pricing.heading');
+  const planTitle = useText('pricing.plan_title');
+  const firstChildLabel = useText('pricing.first_child_label');
+  const familyTitle = useText('pricing.family_title');
+  const familyText = useText('pricing.family_text');
+  const doubleLabel = useText('pricing.double_label');
+  const savingBadge = useText('pricing.saving_badge');
+  const included = useText('pricing.included');
+  const cta = useText('pricing.cta');
   return (
     <section id="qiymet" style={{ background: '#FFFFFF' }}>
       <div
@@ -22,7 +37,7 @@ export default function Pricing() {
             textAlign: 'center',
           }}
         >
-          Qiymət və iştirak
+          {heading}
         </h2>
         <div
           style={{
@@ -35,9 +50,9 @@ export default function Pricing() {
           <div
             style={{ padding: 'clamp(28px,4vw,56px)', display: 'flex', flexDirection: 'column', gap: '24px' }}
           >
-            <div style={{ fontSize: '20px', fontWeight: '700' }}>6 həftəlik KidsUp proqramı</div>
+            <div style={{ fontSize: '20px', fontWeight: '700' }}>{planTitle}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <span style={{ fontSize: '16px', fontWeight: '700', color: '#6B6B6B' }}>1 uşaq üçün</span>
+              <span style={{ fontSize: '16px', fontWeight: '700', color: '#6B6B6B' }}>{firstChildLabel}</span>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
                 <span
                   style={{
@@ -47,9 +62,11 @@ export default function Pricing() {
                     lineHeight: '0.9',
                   }}
                 >
-                  650
+                  {price.amount}
                 </span>
-                <span style={{ fontWeight: '800', fontSize: '32px', color: '#FF0083' }}>AZN</span>
+                <span style={{ fontWeight: '800', fontSize: '32px', color: '#FF0083' }}>
+                  {price.currency}
+                </span>
               </div>
             </div>
             <div
@@ -62,11 +79,10 @@ export default function Pricing() {
               }}
             >
               <div style={{ fontWeight: '800', fontSize: '22px', letterSpacing: '-0.01em' }}>
-                Birlikdə öyrənmək daha sərfəlidir!
+                {familyTitle}
               </div>
               <p style={{ margin: '0', fontSize: '17px', lineHeight: '1.6', color: '#4A4A4A' }}>
-                Eyni ailədən iki uşaq qoşulduqda ikinci uşaq üçün qiymət{' '}
-                <b style={{ color: '#1A1A1A' }}>500 AZN</b> olur.
+                <BoldText text={familyText} />
               </p>
               <div
                 style={{
@@ -77,7 +93,7 @@ export default function Pricing() {
                   marginTop: '4px',
                 }}
               >
-                <span style={{ fontSize: '17px', fontWeight: '700' }}>İki uşaq üçün:</span>
+                <span style={{ fontSize: '17px', fontWeight: '700' }}>{doubleLabel}</span>
                 <span
                   style={{
                     fontSize: '20px',
@@ -86,10 +102,10 @@ export default function Pricing() {
                     textDecoration: 'line-through',
                   }}
                 >
-                  1 300 AZN
+                  {figures.price_double}
                 </span>
                 <span style={{ fontSize: '30px', fontWeight: '800', letterSpacing: '-0.02em' }}>
-                  1 150 AZN
+                  {figures.price_family}
                 </span>
               </div>
               <span
@@ -103,12 +119,10 @@ export default function Pricing() {
                   fontWeight: '800',
                 }}
               >
-                150 AZN qənaət — 11,5% ailə endirimi
+                {savingBadge}
               </span>
             </div>
-            <p style={{ margin: '0', fontSize: '16px', lineHeight: '1.6', color: '#4A4A4A' }}>
-              Dərs materialları, Demo Day və sertifikat qiymətə daxildir.
-            </p>
+            <p style={{ margin: '0', fontSize: '16px', lineHeight: '1.6', color: '#4A4A4A' }}>{included}</p>
           </div>
           <div
             style={{
@@ -132,7 +146,7 @@ export default function Pricing() {
                 }}
               >
                 <dt style={{ fontSize: '16px', fontWeight: '600', color: '#6B6B6B' }}>Başlanğıc</dt>
-                <dd style={{ margin: '0', fontSize: '17px', fontWeight: '800' }}>5 dekabr 2026</dd>
+                <dd style={{ margin: '0', fontSize: '17px', fontWeight: '800' }}>{figures.start_date}</dd>
               </div>
               <div
                 style={{
@@ -145,7 +159,7 @@ export default function Pricing() {
                 }}
               >
                 <dt style={{ fontSize: '16px', fontWeight: '600', color: '#6B6B6B' }}>Vaxt</dt>
-                <dd style={{ margin: '0', fontSize: '17px', fontWeight: '800' }}>şənbə, 09:30–13:00</dd>
+                <dd style={{ margin: '0', fontSize: '17px', fontWeight: '800' }}>{figures.schedule}</dd>
               </div>
               <div
                 style={{
@@ -158,7 +172,9 @@ export default function Pricing() {
                 }}
               >
                 <dt style={{ fontSize: '16px', fontWeight: '600', color: '#6B6B6B' }}>Yaş</dt>
-                <dd style={{ margin: '0', fontSize: '17px', fontWeight: '800' }}>8–13</dd>
+                <dd style={{ margin: '0', fontSize: '17px', fontWeight: '800' }}>
+                  {figures.age_min}–{figures.age_max}
+                </dd>
               </div>
               <div
                 style={{
@@ -171,7 +187,9 @@ export default function Pricing() {
                 }}
               >
                 <dt style={{ fontSize: '16px', fontWeight: '600', color: '#6B6B6B' }}>Qrup</dt>
-                <dd style={{ margin: '0', fontSize: '17px', fontWeight: '800' }}>maksimum 20 uşaq</dd>
+                <dd style={{ margin: '0', fontSize: '17px', fontWeight: '800' }}>
+                  maksimum {figures.capacity} uşaq
+                </dd>
               </div>
               <div
                 style={{
@@ -192,7 +210,7 @@ export default function Pricing() {
                     maxWidth: '340px',
                   }}
                 >
-                  Bakı, dəqiq ünvan qeydiyyatdan əvvəl bildiriləcək
+                  {figures.location}
                 </dd>
               </div>
             </dl>
@@ -211,7 +229,7 @@ export default function Pricing() {
               }}
               className="hv-10"
             >
-              Müraciət et
+              {cta}
             </a>
           </div>
         </div>

@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
+import { useText } from '../hooks/usePublicContent';
 
 export default function Certificate() {
+  const eyebrow = useText('certificate.eyebrow');
+  const heading = useText('certificate.heading');
+  const text = useText('certificate.text');
+  const buttonLabel = useText('certificate.button');
+  const image = useText('certificate.image');
+  const imageAlt = useText('certificate.image_alt');
   const [certOpen, setCertOpen] = useState(false);
   const certCloseRef = useRef<HTMLButtonElement>(null);
   const trigger = useRef<HTMLElement | null>(null);
@@ -53,7 +60,7 @@ export default function Certificate() {
           data-reveal="1"
           style={{ flex: '1 1 360px', display: 'flex', flexDirection: 'column', gap: '20px' }}
         >
-          <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>Sertifikat</div>
+          <div style={{ fontSize: '15px', fontWeight: '800', color: '#FF0083' }}>{eyebrow}</div>
           <h2
             style={{
               margin: '0',
@@ -64,7 +71,7 @@ export default function Certificate() {
               textWrap: 'balance',
             }}
           >
-            Əməyinin və öyrəndiklərinin bir xatirəsi.
+            {heading}
           </h2>
           <p
             style={{
@@ -76,8 +83,7 @@ export default function Certificate() {
               textWrap: 'pretty',
             }}
           >
-            Proqramı uğurla tamamlayan hər uşağa Demo Day-də KidsUp sertifikatı təqdim olunur. Sertifikat onun
-            proqram boyunca qazandığı praktiki təcrübəni və tamamladığı fəaliyyətləri əks etdirir.
+            {text}
           </p>
           <button
             onClick={openCert}
@@ -113,7 +119,7 @@ export default function Certificate() {
               <circle cx="10.5" cy="10.5" r="6.5" />
               <path d="M15.5 15.5L21 21M10.5 7.5v6M7.5 10.5h6" />
             </svg>
-            Sertifikata yaxından bax
+            {buttonLabel}
           </button>
         </div>
         <div
@@ -144,13 +150,19 @@ export default function Certificate() {
             className="hv-6 fc-1"
           >
             <img
-              src="/assets/sertifikat-full-name.png"
-              alt="KidsUp proqramı tamamlama sertifikatının nümunəsi"
+              src={image}
+              alt={imageAlt}
               width="2246"
               height="1588"
               loading="lazy"
               decoding="async"
-              style={{ display: 'block', width: '100%', height: 'auto', aspectRatio: '2246/1588' }}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: 'auto',
+                aspectRatio: '2246/1588',
+                objectFit: 'contain',
+              }}
             />
           </button>
           <div style={{ fontSize: '14px', fontWeight: '600', color: '#6B6B6B' }}>Sertifikat nümunəsi</div>
@@ -224,8 +236,8 @@ export default function Certificate() {
               }}
             >
               <img
-                src="/assets/sertifikat-full-name.png"
-                alt="KidsUp proqramı tamamlama sertifikatının nümunəsi, böyüdülmüş"
+                src={image}
+                alt={`${imageAlt}, böyüdülmüş`}
                 width="2246"
                 height="1588"
                 style={{ display: 'block', width: '100%', height: 'auto', borderRadius: '4px' }}

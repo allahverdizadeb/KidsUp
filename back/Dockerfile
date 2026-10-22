@@ -21,8 +21,12 @@ COPY alembic.ini .
 COPY alembic ./alembic
 COPY app ./app
 
-# Never run as root: a dedicated, shell-less system user owns nothing writable.
-RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app
+# Never run as root: a dedicated, shell-less system user.
+RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app \
+    # The only place that user may write (and only in the admin panel's container, which mounts a volume here): the files
+    # the public site serves. Docker gives a new volume the owner of this directory, so the panel can write to it.
+    && mkdir /srv/content \
+    && chown 10001:10001 /srv/content
 USER 10001
 
 EXPOSE 8000
