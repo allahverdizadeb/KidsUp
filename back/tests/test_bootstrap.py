@@ -372,7 +372,7 @@ def test_a_database_created_before_the_split_is_upgraded_and_keeps_its_rows(
     bootstrap(scratch_database, owner_url, app_url, retention_url, panel_url)
 
     with connect(scratch_database) as conn:
-        assert conn.execute("SELECT version_num FROM alembic_version").fetchone() == ("0011",)
+        assert conn.execute("SELECT version_num FROM alembic_version").fetchone() == ("0012",)
         # The row is untouched: it predates the consent record, so that stays empty, and its status is "new".
         # It now belongs to the first course, the programme the landing page was advertising.
         assert conn.execute(

@@ -73,13 +73,15 @@ def test_the_courses_come_with_their_seats(admin):
     )
 
 
-def test_the_latest_applications_are_the_five_newest(admin):
-    for number in range(7):
-        add_family(f"Family {number}", created_at=at(days_ago=7 - number))
+def test_the_latest_applications_are_the_seven_newest(admin):
+    for number in range(9):
+        add_family(f"Family {number}", created_at=at(days_ago=9 - number))
 
     latest = admin.get(URL).json()["latest_applications"]
 
-    assert [item["parent_name"] for item in latest] == [f"Family {number}" for number in (6, 5, 4, 3, 2)]
+    assert [item["parent_name"] for item in latest] == [
+        f"Family {number}" for number in (8, 7, 6, 5, 4, 3, 2)
+    ]
 
 
 def test_the_dynamics_count_each_day_in_baku_and_end_with_today(admin):

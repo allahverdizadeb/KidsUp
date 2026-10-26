@@ -23,6 +23,7 @@ class AuditAction(StrEnum):
     PASSWORD_CHANGE_FAILED = "password_change_failed"  # noqa: S105  # nosec B105 (an event's name)
     ADMIN_CREATED = "admin_created"
     ADMIN_CHANGED = "admin_changed"
+    STAFF_LISTED = "staff_listed"
     APPLICATIONS_LISTED = "applications_listed"
     APPLICATION_VIEWED = "application_viewed"
     APPLICATION_STATUS_CHANGED = "application_status_changed"

@@ -307,14 +307,16 @@ def test_the_panel_runs_without_a_shell_and_without_an_access_log(compose):
     assert all("$" not in part for part in command)
 
 
-def test_the_public_files_volume_is_written_by_the_panel_and_only_read_by_the_public_site(compose):
+def test_the_public_files_volume_is_written_by_the_panel_and_only_read_by_the_sites(compose):
     mounts = {
         name: [volume for volume in service.get("volumes", []) if volume.startswith("content:")]
         for name, service in compose["services"].items()
     }
     assert mounts["panel"] == ["content:/srv/content"]
     assert mounts["front"] == ["content:/usr/share/nginx/content:ro"]
-    assert {name for name, found in mounts.items() if found} == {"panel", "front"}
+    # The admin origin shows the uploaded pictures (thumbnails in the page editor); it cannot change them.
+    assert mounts["admin"] == ["content:/usr/share/nginx/content:ro"]
+    assert {name for name, found in mounts.items() if found} == {"panel", "front", "admin"}
 
 
 def test_the_retention_command_has_no_shell_expansion(compose):

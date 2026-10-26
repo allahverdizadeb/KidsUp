@@ -30,7 +30,7 @@ from app.middleware import (
 from app.panel import errors
 from app.panel.clock import Clock, utc_now
 from app.panel.content_values import check_registry
-from app.panel.routers import applications, audit, auth, content, courses, dashboard
+from app.panel.routers import applications, audit, auth, content, courses, dashboard, staff
 from app.panel.security import BACKGROUND_HEADER, CSRF_HEADER
 from app.panel.services.public_site import refresh_all
 from app.panel.services.secret_box import SecretBox
@@ -169,6 +169,7 @@ def create_panel_app(
     app.include_router(dashboard.router)
     app.include_router(content.router)
     app.include_router(audit.router)
+    app.include_router(staff.router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

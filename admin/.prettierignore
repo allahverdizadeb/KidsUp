@@ -1,0 +1,14 @@
+dist
+coverage
+design-source
+node_modules
+
+# the headers the live check expects are pinned byte for byte by back/tests/test_admin_nginx.py
+scripts/expected-headers.json
+nginx
+
+# hand-written docs and Claude configuration are not reformatted
+docs
+.claude
+CLAUDE.md
+*.md

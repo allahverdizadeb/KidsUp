@@ -232,6 +232,10 @@ services:
     restart: unless-stopped
     ports:
       - "${ADMIN_BIND:-127.0.0.1}:${ADMIN_PORT:-8081}:8080"
+    volumes:
+      # The pictures staff uploaded, so the screens can show them (a thumbnail in the page editor). Read-only: only
+      # the panel writes to this volume. Nothing but /media/<id>.webp is served from it (admin/nginx/default.conf).
+      - content:/usr/share/nginx/content:ro
     # nginx holds a picture upload (5 MiB at most) in /tmp before passing it on; the tmpfs counts against the memory
     # limit, so it is given a size well inside it, and a flood of uploads fills it and fails instead of the container.
     tmpfs: ["/tmp:size=32m"]

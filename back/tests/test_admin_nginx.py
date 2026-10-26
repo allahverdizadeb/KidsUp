@@ -196,6 +196,62 @@ def test_dotfiles_are_never_served():
     assert "deny all;" in LOCATIONS[r"location ~ /\.(?!well-known)"]
 
 
+# --- the uploaded pictures, which the page editor shows
+
+MEDIA_HEADER = next(header for header in LOCATIONS if header.startswith('location ~ "^/media/'))
+MEDIA_PATTERN = re.search(r'location ~ "([^"]+)"', MEDIA_HEADER)[1]  # type: ignore[index]
+PICTURE = "/media/00000000-0000-4000-8000-000000000001.webp"
+
+
+def test_a_picture_is_served_only_by_its_id_read_only_and_with_the_origins_own_headers():
+    picture = LOCATIONS[MEDIA_HEADER]
+
+    assert re.search(r"limit_except GET HEAD \{\s*deny all;\s*\}", picture)
+    assert "root /usr/share/nginx/content;" in picture
+    assert "disable_symlinks on from=$document_root;" in picture  # a link planted in the volume leads nowhere
+    assert "try_files $uri =404;" in picture
+    assert SECURITY_HEADERS in picture
+    assert CSP_PAGE in picture
+    assert "Cache-Control" not in picture  # the origin's no-store is the only policy
+
+
+def test_the_address_of_a_picture_is_the_one_the_public_site_serves_and_nothing_else_matches():
+    public = (FRONT_NGINX / "default.conf").read_text(encoding="utf-8")
+    assert f'location ~ "{MEDIA_PATTERN}"' in public  # one rule for both origins
+
+    assert re.search(MEDIA_PATTERN, PICTURE)
+    for refused in (
+        "/media/",
+        "/media/x.webp",
+        "/media/00000000-0000-4000-8000-000000000001.png",
+        "/media/00000000-0000-4000-8000-000000000001.webp.php",
+        "/media/00000000-0000-4000-8000-000000000001.webp/more",
+        "/media/../index.html",
+        "/media/00000000-0000-4000-8000-00000000000G.webp",
+        "/media/00000000-0000-4000-8000-000000000001/.webp",
+        "/other/00000000-0000-4000-8000-000000000001.webp",
+        "/x/media/00000000-0000-4000-8000-000000000001.webp",
+    ):
+        assert not re.search(MEDIA_PATTERN, refused), refused
+
+
+def test_anything_else_under_media_is_a_plain_404_and_never_the_screens_standing_in():
+    other = LOCATIONS["location /media/"]
+
+    assert "return 404;" in other
+    assert "root" not in other
+    assert "try_files" not in other
+    assert SECURITY_HEADERS in other
+    assert CSP_PAGE in other
+
+
+def test_the_only_part_of_the_content_volume_the_origin_can_reach_is_the_pictures():
+    assert DEFAULT.count("/usr/share/nginx/content") == 1
+    assert "/usr/share/nginx/content" in LOCATIONS[MEDIA_HEADER]
+    assert not any(line.startswith("alias ") for line in active_lines(DEFAULT))  # a path could walk out of it
+    assert "autoindex" not in DEFAULT
+
+
 def test_the_log_holds_nothing_but_a_shortened_address_the_time_the_path_and_the_outcome():
     format_line = re.search(r"log_format privacy ([^;]+);", DEFAULT)
     assert format_line is not None
@@ -233,7 +289,39 @@ def test_the_image_ships_every_file_the_configuration_includes_and_runs_unprivil
     assert "FROM nginxinc/nginx-unprivileged" in dockerfile
 
 
-@pytest.mark.parametrize("forbidden", ["<script", "<style", " style=", "onclick", "http://", "https://"])
-def test_the_page_served_until_the_screens_exist_loads_nothing_and_runs_nothing(forbidden):
-    # The policy forbids inline script and style, and any outside resource.
-    assert forbidden not in (ADMIN / "public" / "index.html").read_text(encoding="utf-8").lower()
+INDEX = ADMIN / "index.html"
+
+
+@pytest.mark.parametrize("forbidden", ["<style", " style=", "onclick", "onload", "http://", "https://"])
+def test_the_page_of_the_screens_has_no_inline_style_or_handler_and_loads_nothing_from_outside(forbidden):
+    # The policy forbids inline style and handlers, and any outside resource (admin/docs/README.md, rule 7).
+    assert forbidden not in INDEX.read_text(encoding="utf-8").lower()
+
+
+def test_the_only_script_of_the_page_is_a_module_of_the_same_origin_with_nothing_inline():
+    scripts = re.findall(r"<script\b([^>]*)>(.*?)</script>", INDEX.read_text(encoding="utf-8"), re.S)
+
+    assert len(scripts) == 1
+    attributes, inline = scripts[0]
+    assert inline.strip() == ""
+    assert 'type="module"' in attributes
+    assert re.search(r'src="/[^/"]', attributes)  # a path of this origin, not an address
+
+
+def test_the_image_builds_the_screens_from_the_lockfile_and_serves_only_what_was_built():
+    dockerfile = (ADMIN / "Dockerfile").read_text(encoding="utf-8")
+
+    assert (ADMIN / "package-lock.json").is_file()
+    assert "RUN npm ci" in dockerfile  # exactly the locked versions, never a fresh resolution
+    assert "RUN npm run build" in dockerfile
+    assert "COPY --from=build /app/dist /usr/share/nginx/html" in dockerfile
+    assert "COPY public" not in dockerfile  # the notice page that stood in until the screens existed is gone
+    assert not (ADMIN / "public" / "index.html").exists()  # it would overwrite the built page
+
+
+def test_the_build_context_leaves_out_what_must_not_ship():
+    ignored = (ADMIN / ".dockerignore").read_text(encoding="utf-8").split()
+
+    # The design export links a third-party font and is reference material, not part of the product.
+    for name in ("node_modules", "dist", "design-source", ".env", "docs", ".claude"):
+        assert name in ignored, name

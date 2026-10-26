@@ -16,7 +16,7 @@ from app.panel.services.applications import BAKU, load_in_order, start_of_day, t
 from app.panel.services.audit import AuditAction, AuditEvent
 from app.panel.services.courses import load_courses
 
-LATEST_APPLICATIONS = 5
+LATEST_APPLICATIONS = 7
 
 
 def count_by_status(db: Session) -> StatusCounts:

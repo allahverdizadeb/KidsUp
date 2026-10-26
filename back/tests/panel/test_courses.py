@@ -187,6 +187,50 @@ def test_a_patch_that_changes_nothing_records_nothing(admin):
     assert audit("course_updated") == []
 
 
+def test_a_course_may_have_an_end_date_and_the_landing_page_does_not_get_it(admin, tmp_path):
+    created = create(admin, end_date="2027-06-12", registration_open=True).json()
+
+    assert created["end_date"] == "2027-06-12"
+    assert admin.get(f"{BASE}/{created['id']}").json()["end_date"] == "2027-06-12"
+    assert create(admin).json()["end_date"] is None  # it is optional
+    published = next(course for course in public_courses(tmp_path) if course["id"] == created["id"])
+    assert "end_date" not in published  # the landing page's file keeps the shape it always had
+
+
+def test_the_end_date_can_be_set_changed_and_taken_back_and_each_change_is_audited(admin):
+    url = f"{BASE}/{DEFAULT_COURSE_ID}"
+
+    assert admin.patch(url, json={"end_date": "2027-02-27"}).json()["end_date"] == "2027-02-27"
+    assert admin.patch(url, json={"end_date": "2027-03-13"}).json()["end_date"] == "2027-03-13"
+    assert admin.patch(url, json={"capacity": 25}).json()["end_date"] == "2027-03-13"  # left alone
+    assert admin.patch(url, json={"end_date": None}).json()["end_date"] is None
+    # Taking back what is not there is not a change: it answers 200 and writes nothing to the log.
+    assert admin.patch(url, json={"end_date": None}).status_code == 200
+
+    assert [entry.detail for entry in audit("course_updated")] == [
+        {"changes": {"end_date": [None, "2027-02-27"]}},
+        {"changes": {"end_date": ["2027-02-27", "2027-03-13"]}},
+        {"changes": {"capacity": [20, 25]}},
+        {"changes": {"end_date": ["2027-03-13", None]}},
+    ]
+
+
+def test_a_course_cannot_end_before_it_starts_whichever_date_is_edited(admin):
+    url = f"{BASE}/{DEFAULT_COURSE_ID}"  # starts 2026-12-05
+
+    earlier = admin.patch(url, json={"end_date": "2026-12-04"})
+    assert (earlier.status_code, earlier.json()["code"], earlier.json()["field"]) == (
+        422,
+        "invalid_course",
+        "end_date",
+    )
+    assert admin.patch(url, json={"end_date": "2026-12-05"}).status_code == 200  # the same day is fine
+    later_start = admin.patch(url, json={"start_date": "2026-12-06"})
+    assert (later_start.status_code, later_start.json()["code"]) == (422, "invalid_course")
+    assert admin.patch(url, json={"start_date": "2026-12-06", "end_date": "2026-12-20"}).status_code == 200
+    assert admin.get(url).json()["start_date"] == "2026-12-06"
+
+
 def test_the_seats_left_on_the_landing_page_follow_the_approvals(admin, tmp_path):
     family = add_family(children=[("x", date(2016, 1, 1)), ("y", date(2017, 1, 1))])
 
@@ -254,6 +298,10 @@ def test_the_ages_must_stay_in_order_when_one_of_them_is_edited(admin):
         {"age_min": 13, "age_max": 8},
         {"start_date": "1999-01-01"},
         {"start_date": "next saturday"},
+        {"end_date": "2027-03-05"},  # the day before it starts
+        {"end_date": "1999-01-01"},
+        {"end_date": "2101-01-01"},
+        {"end_date": "soon"},
         {"registration_open": "yes"},
         {"currency": "USD"},
         {"id": str(uuid.uuid4())},

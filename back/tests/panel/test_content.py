@@ -207,6 +207,148 @@ def test_publishing_with_nothing_changed_still_works_and_writes_an_empty_content
     assert site_file(tmp_path)["content"] == {}
 
 
+# --- publishing some places only (the panel publishes one section of the page at a time)
+
+PHONE = "+994 55 111 22 33"
+
+
+def test_publishing_chosen_places_leaves_the_rest_of_the_draft_waiting(admin, tmp_path):
+    save(admin, **{"hero.title_first": "Yeni başlıq", "contact.phone": PHONE})
+
+    response = admin.post(PUBLISH, json={"keys": ["hero.title_first"]})
+
+    assert response.status_code == 201
+    assert site_file(tmp_path)["content"] == {"hero.title_first": "Yeni başlıq"}
+    page = admin.get(URL)
+    assert page.json()["has_unpublished_changes"] is True
+    assert field_of(page, "hero.title_first")["changed"] is False
+    assert field_of(page, "contact.phone")["changed"] is True  # still only a draft
+    (entry,) = audit("content_published")
+    assert entry.detail == {"version": response.json()["version"], "places": 1, "keys": ["hero.title_first"]}
+
+
+def test_publishing_the_other_places_later_keeps_what_is_already_live(admin, tmp_path):
+    save(admin, **{"hero.title_first": "Yeni başlıq", "contact.phone": PHONE})
+    admin.post(PUBLISH, json={"keys": ["hero.title_first"]})
+
+    admin.post(PUBLISH, json={"keys": ["contact.phone"]})
+
+    assert site_file(tmp_path)["content"] == {"hero.title_first": "Yeni başlıq", "contact.phone": PHONE}
+    assert admin.get(URL).json()["has_unpublished_changes"] is False
+
+
+def test_publishing_a_place_whose_draft_went_back_to_the_default_takes_it_off_the_live_page(admin, tmp_path):
+    save(admin, **{"hero.title_first": "Yeni başlıq", "contact.phone": PHONE})
+    admin.post(PUBLISH)
+    save(admin, **{"hero.title_first": None, "contact.phone": "+994 50 000 00 00"})
+
+    admin.post(PUBLISH, json={"keys": ["hero.title_first"]})
+
+    assert site_file(tmp_path)["content"] == {"contact.phone": PHONE}  # the new phone number still waits
+
+
+def test_the_live_page_is_read_while_the_lock_is_held_so_nobody_publishes_from_a_stale_copy(
+    admin, panel_app, monkeypatch
+):
+    files = panel_app.state.public_files
+    held = []
+    real = content_service.latest_publication
+
+    def spy(db):
+        held.append(files.lock.locked())
+        return real(db)
+
+    save(admin, **{"hero.title_first": "Yeni başlıq"})
+    monkeypatch.setattr(content_service, "latest_publication", spy)
+
+    assert admin.post(PUBLISH, json={"keys": ["hero.title_first"]}).status_code == 201
+
+    assert held == [True]
+
+
+def test_two_people_publishing_different_places_at_once_lose_neither(admin, panel_app, tmp_path):
+    files = panel_app.state.public_files
+    save(admin, **{"hero.title_first": "Yeni başlıq", "contact.phone": PHONE})
+    start = threading.Barrier(2)
+    failures: list[BaseException] = []
+
+    def publish_only(key: str) -> None:
+        try:
+            with SessionLocal() as db:
+                start.wait(timeout=10)
+                content_service.publish(db, principal_of(admin.staff), files, [key])
+        except BaseException as error:
+            failures.append(error)
+
+    threads = [
+        threading.Thread(target=publish_only, args=(key,)) for key in ("hero.title_first", "contact.phone")
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+
+    assert failures == []
+    assert site_file(tmp_path)["content"] == {"hero.title_first": "Yeni başlıq", "contact.phone": PHONE}
+    with SessionLocal() as db:
+        newest = db.scalars(select(SitePublication).order_by(SitePublication.id.desc())).first()
+    assert newest is not None
+    assert newest.content == {"hero.title_first": "Yeni başlıq", "contact.phone": PHONE}
+
+
+def test_a_place_listed_twice_is_published_once(admin, tmp_path):
+    save(admin, **{"hero.title_first": "Yeni başlıq"})
+
+    response = admin.post(PUBLISH, json={"keys": ["hero.title_first", "hero.title_first"]})
+
+    assert site_file(tmp_path)["content"] == {"hero.title_first": "Yeni başlıq"}
+    (entry,) = audit("content_published")
+    assert entry.detail == {"version": response.json()["version"], "places": 1, "keys": ["hero.title_first"]}
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {},
+        {"keys": []},
+        {"keys": [""]},
+        {"keys": ["x" * 81]},
+        {"keys": [f"hero.k{number}" for number in range(201)]},
+        {"keys": "hero.title_first"},
+        {"keys": [1]},
+        {"keys": ["hero.title_first"], "everything": True},
+    ],
+    ids=repr,
+)
+def test_a_list_of_places_the_rules_do_not_allow_publishes_nothing(admin, body):
+    save(admin, **{"hero.title_first": "Yeni başlıq"})
+
+    assert admin.post(PUBLISH, json=body).status_code == 422
+    with SessionLocal() as db:
+        assert db.scalars(select(SitePublication)).all() == []
+
+
+def test_a_place_that_does_not_exist_cannot_be_published_and_nothing_goes_live(admin):
+    save(admin, **{"hero.title_first": "Yeni başlıq"})
+
+    refused = admin.post(PUBLISH, json={"keys": ["hero.title_first", "no.such.place"]})
+
+    assert (refused.status_code, refused.json()["code"]) == (422, "unknown_content_key")
+    with SessionLocal() as db:
+        assert db.scalars(select(SitePublication)).all() == []
+
+
+def test_only_the_pictures_being_published_must_have_their_files(admin, tmp_path):
+    asset_id = add_picture(tmp_path, with_file=False)
+    save(admin, **{"founder.photo": str(asset_id), "hero.title_first": "Yeni başlıq"})
+
+    assert admin.post(PUBLISH, json={"keys": ["hero.title_first"]}).status_code == 201
+    refused = admin.post(PUBLISH, json={"keys": ["founder.photo"]})
+
+    assert (refused.status_code, refused.json()["rule"]) == (422, "missing_image_file")
+    assert site_file(tmp_path)["content"] == {"hero.title_first": "Yeni başlıq"}
+
+
 def test_nothing_is_published_when_the_file_cannot_be_written(admin, tmp_path):
     save(admin, **{"hero.title_first": "Changed"})
     (tmp_path / "content").write_text("a file where the directory should be", encoding="utf-8")

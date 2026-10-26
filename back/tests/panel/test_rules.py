@@ -46,6 +46,7 @@ def test_the_roles_widen_step_by_step_and_only_an_admin_exports_deletes_and_runs
         Permission.COURSES_WRITE,
         Permission.CONTENT_MANAGE,
         Permission.AUDIT_READ,
+        Permission.USERS_READ,
     }
 
 

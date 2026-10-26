@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+body{margin:0;background:#F4F4F6;font-family:'Manrope',sans-serif;color:#1A1A1A;-webkit-font-smoothing:antialiased;}
+a{color:#FF0083;text-decoration:none;}
+a:hover{color:#D6006E;}
+input,button,textarea,select{font-family:inherit;color:inherit;}
+button{cursor:pointer;}
+:focus-visible{outline:2px solid #FF0083;outline-offset:2px;}
+input:focus,textarea:focus{outline:none;border-color:#FF0083 !important;box-shadow:0 0 0 3px rgba(255,0,131,.12);}
+@keyframes kaIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes kaFade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</helmet>
+
+<sc-if value="{{ out }}" hint-placeholder-val="{{ false }}">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:#F7F7F8;">
+    <div style="width:min(400px,100%);background:#FFFFFF;border:1px solid #EDEDED;border-radius:16px;padding:36px 32px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;box-shadow:0 8px 32px rgba(26,26,26,.06);animation:kaIn .3s ease;">
+      <span style="font-weight:800;font-size:30px;letter-spacing:-0.03em;">Kids<span style="color:#FF0083;">Up</span></span>
+      <div style="font-size:18px;font-weight:800;">Sistemdən çıxdınız</div>
+      <div style="font-size:14px;line-height:1.5;color:#6B6B6B;font-weight:500;">Demo sessiya bağlandı. Daxil olmaq üçün aşağıdakı düyməni basın.</div>
+      <button onClick="{{ login }}" style="margin-top:8px;height:44px;padding:0 22px;border:none;border-radius:10px;background:#FF0083;color:#FFFFFF;font-size:15px;font-weight:800;" style-hover="background:#E00073;">Yenidən daxil ol</button>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ inside }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;background:#F4F4F6;">
+
+  <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+    <header style="position:sticky;top:0;z-index:50;height:60px;background:#FFFFFF;border-bottom:1px solid #EDEDED;display:flex;align-items:center;justify-content:space-between;padding:0 16px;">
+      <span style="display:flex;align-items:center;gap:8px;"><span style="font-weight:800;font-size:22px;letter-spacing:-0.03em;">Kids<span style="color:#FF0083;">Up</span></span><span style="padding:3px 8px;border-radius:6px;background:#F3F3F4;font-size:11px;font-weight:800;color:#6B6B6B;">Admin</span></span>
+      <button onClick="{{ toggleMenu }}" aria-label="Menyunu aç" style="width:44px;height:44px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+    </header>
+    <div onClick="{{ closeMenu }}" style="position:fixed;inset:0;z-index:55;background:rgba(26,26,26,.32);opacity:{{ sb.scrimO }};pointer-events:{{ sb.scrimPe }};transition:opacity .25s ease;"></div>
+  </sc-if>
+
+  <aside style="position:fixed;top:0;bottom:0;left:0;z-index:60;width:{{ sb.w }};background:{{ tone.bg }};border-right:1px solid {{ tone.line }};display:flex;flex-direction:column;gap:28px;padding:22px {{ sb.padX }} 18px;transform:{{ sb.x }};transition:transform .28s cubic-bezier(.2,.8,.2,1);">
+    <div style="display:flex;align-items:center;justify-content:{{ sb.just }};gap:10px;height:36px;padding:0 10px;">
+      <span style="font-weight:800;font-size:24px;letter-spacing:-0.03em;color:{{ tone.logo }};">{{ sb.logoA }}<span style="color:#FF0083;">{{ sb.logoB }}</span></span>
+      <sc-if value="{{ sb.labels }}" hint-placeholder-val="{{ true }}"><span style="padding:3px 8px;border-radius:6px;background:{{ tone.chip }};font-size:11px;font-weight:800;color:{{ tone.muted }};">Admin</span></sc-if>
+    </div>
+    <nav aria-label="Admin menyu" style="display:flex;flex-direction:column;gap:4px;">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="4">
+        <button onClick="{{ n.go }}" title="{{ n.label }}" aria-current="{{ n.cur }}" style="position:relative;display:flex;align-items:center;justify-content:{{ sb.just }};gap:12px;height:44px;padding:0 12px;border:none;border-radius:10px;background:{{ n.bg }};color:{{ n.fg }};font-size:14px;font-weight:{{ n.fw }};text-align:left;transition:background .15s, color .15s;" style-hover="background:{{ tone.hover }};">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="{{ n.d }}"></path></svg>
+          <sc-if value="{{ sb.labels }}" hint-placeholder-val="{{ true }}"><span style="white-space:nowrap;">{{ n.label }}</span></sc-if>
+          <sc-if value="{{ n.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="position:{{ n.bPos }};top:5px;right:6px;margin-left:{{ n.bMl }};min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#FF0083;color:#FFFFFF;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ n.badge }}</span></sc-if>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="flex:1;"></div>
+    <div style="display:flex;flex-direction:{{ sb.profDir }};align-items:center;gap:10px;padding:12px 10px;border-top:1px solid {{ tone.line }};">
+      <span style="width:36px;height:36px;border-radius:50%;background:#FFF0F7;color:#FF0083;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">KA</span>
+      <sc-if value="{{ sb.labels }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:14px;font-weight:800;color:{{ tone.logo }};">KidsUp Admin</span><span style="font-size:12px;font-weight:600;color:{{ tone.muted }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">admin@kidsup.az</span></div>
+      </sc-if>
+      <button onClick="{{ logout }}" title="Çıxış" aria-label="Çıxış" style="width:36px;height:36px;border:none;border-radius:8px;background:transparent;color:{{ tone.muted }};display:flex;align-items:center;justify-content:center;transition:background .15s, color .15s;" style-hover="background:{{ tone.hover }};color:#FF0083;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"></path></svg></button>
+    </div>
+  </aside>
+
+  <main style="margin-left:{{ sb.ml }};min-height:100vh;">
+    <div style="max-width:1280px;margin:0 auto;padding:{{ mainPad }};display:flex;flex-direction:column;gap:24px;">
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;gap:6px;max-width:720px;">
+          <h1 style="margin:0;font-size:28px;font-weight:800;letter-spacing:-0.03em;line-height:1.15;">{{ pageTitle }}</h1>
+          <p style="margin:0;font-size:14px;line-height:1.55;font-weight:500;color:#6B6B6B;text-wrap:pretty;">{{ pageSub }}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span title="Məlumatlar real serverə qoşulmayıb" style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;border:1px dashed #C9C9C9;background:#FFFFFF;font-size:12px;font-weight:700;color:#6B6B6B;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:#A3A3A3;"></span>Demo məlumatlar</span>
+          <sc-if value="{{ isCourses }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ newCourse }}" style="height:40px;padding:0 16px;border:none;border-radius:10px;background:#FF0083;color:#FFFFFF;font-size:14px;font-weight:800;display:inline-flex;align-items:center;gap:8px;transition:background .15s;" style-hover="background:#E00073;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Yeni kurs</button>
+          </sc-if>
+          <sc-if value="{{ isUsers }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ newUser }}" style="height:40px;padding:0 16px;border:none;border-radius:10px;background:#FF0083;color:#FFFFFF;font-size:14px;font-weight:800;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;transition:background .15s;" style-hover="background:#E00073;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>İstifadəçi əlavə et</button>
+          </sc-if>
+          <sc-if value="{{ showPublishAll }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ publishAll }}" style="height:40px;padding:0 16px;border:none;border-radius:10px;background:#FF0083;color:#FFFFFF;font-size:14px;font-weight:800;display:inline-flex;align-items:center;gap:8px;transition:background .15s;" style-hover="background:#E00073;">Hamısını dərc et<span style="min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:rgba(255,255,255,.22);font-size:12px;display:flex;align-items:center;justify-content:center;">{{ pendingN }}</span></button>
+          </sc-if>
+        </div>
+      </div>
+
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:18px;animation:kaFade .25s ease;">
+
+          <div style="position:relative;overflow:hidden;background:#1A1A1A;color:#FFFFFF;border-radius:24px;padding:{{ hero.pad }};display:grid;grid-template-columns:{{ hero.cols }};gap:28px;align-items:center;">
+            <div style="position:absolute;width:300px;height:300px;border-radius:50%;right:-110px;top:-150px;background:#FF0083;opacity:.12;pointer-events:none;"></div>
+                        <div style="position:relative;display:flex;flex-direction:column;gap:16px;min-width:0;">
+              <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;height:28px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.08);font-size:12px;font-weight:700;color:#D9D9D9;"><span style="width:6px;height:6px;border-radius:50%;background:#FF0083;"></span>18 oktyabr 2026, şənbə</span>
+              <div style="font-size:{{ hero.fs }};font-weight:800;letter-spacing:-0.035em;line-height:1.08;text-wrap:balance;">{{ hero.title }}</div>
+              <div style="font-size:15px;line-height:1.55;font-weight:500;color:#BDBDBD;max-width:520px;text-wrap:pretty;">{{ hero.sub }}</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;">
+                <button onClick="{{ hero.goNew }}" style="height:44px;padding:0 18px;border:none;border-radius:12px;background:#FF0083;color:#FFFFFF;font-size:14px;font-weight:800;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;flex-shrink:0;transition:background .15s, transform .15s;" style-hover="background:#E00073;transform:translateY(-1px);">Yeni müraciətlər<span style="min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:rgba(255,255,255,.22);font-size:12px;display:flex;align-items:center;justify-content:center;">{{ hero.newN }}</span></button>
+                <button onClick="{{ goCourses }}" style="height:44px;padding:0 18px;border:1px solid #3A3A3A;border-radius:12px;background:transparent;color:#FFFFFF;font-size:14px;font-weight:700;white-space:nowrap;flex-shrink:0;transition:background .15s, border-color .15s;" style-hover="background:#262626;border-color:#4A4A4A;">Kursları idarə et</button>
+              </div>
+            </div>
+            <sc-if value="{{ hero.hasActive }}" hint-placeholder-val="{{ true }}">
+              <div style="position:relative;display:flex;align-items:center;gap:22px;padding:20px 22px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);min-width:0;">
+                <div style="position:relative;width:128px;height:128px;border-radius:50%;background:{{ hero.ring }};flex-shrink:0;transition:background .4s;">
+                  <div style="position:absolute;inset:12px;border-radius:50%;background:#222222;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;">
+                    <span style="font-size:30px;font-weight:800;letter-spacing:-0.03em;line-height:1;">{{ hero.conf }}<span style="font-size:16px;color:#8A8A8A;">/{{ hero.max }}</span></span>
+                    <span style="font-size:11px;font-weight:700;color:#A3A3A3;">təsdiqlənib</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;min-width:0;">
+                  <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#5FD39C;"><span style="width:7px;height:7px;border-radius:50%;background:#1F9D66;box-shadow:0 0 0 4px rgba(31,157,102,.22);"></span>Saytda aktiv kurs</span>
+                  <span style="font-size:17px;font-weight:800;line-height:1.3;letter-spacing:-0.01em;text-wrap:balance;">{{ hero.name }}</span>
+                  <span style="font-size:13px;font-weight:600;color:#BDBDBD;">{{ hero.schedule }}</span>
+                  <span style="align-self:flex-start;margin-top:2px;padding:4px 10px;border-radius:8px;background:{{ hero.leftBg }};color:{{ hero.leftFg }};font-size:12px;font-weight:800;">{{ hero.leftTxt }}</span>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hero.noActive }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative;padding:22px;border-radius:20px;border:1px dashed #4A4A4A;font-size:14px;font-weight:600;color:#BDBDBD;line-height:1.5;">Saytda aktiv kurs yoxdur. Qeydiyyat formu müraciət qəbul etmir.</div>
+            </sc-if>
+          </div>
+
+          <div style="display:grid;grid-template-columns:{{ kpiCols }};gap:14px;">
+            <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+              <button onClick="{{ k.go }}" style="background:#FFFFFF;border:1px solid #ECECEE;border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,.03),0 8px 24px rgba(26,26,26,.03);padding:20px;display:flex;flex-direction:column;gap:16px;text-align:left;transition:transform .18s, box-shadow .18s, border-color .18s;" style-hover="transform:translateY(-2px);box-shadow:0 14px 32px rgba(26,26,26,.08);border-color:#E0E0E3;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;">
+                  <span style="display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#6B6B6B;"><span style="width:8px;height:8px;border-radius:3px;background:{{ k.dot }};"></span>{{ k.l }}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C2C2C2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"></path></svg>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+                  <span style="font-size:40px;font-weight:800;letter-spacing:-0.04em;line-height:1;">{{ k.v }}</span>
+                  <span style="font-size:12px;font-weight:800;padding:3px 8px;border-radius:999px;background:{{ k.chipBg }};color:{{ k.chipFg }};">{{ k.chip }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+                  <div style="height:6px;border-radius:999px;background:#F1F1F3;overflow:hidden;"><div style="height:100%;width:{{ k.pct }};background:{{ k.dot }};border-radius:999px;transition:width .5s ease;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#8A8A8A;">{{ k.sub }}</span>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:{{ dashCols }};gap:18px;">
+            <div style="background:#FFFFFF;border:1px solid #ECECEE;border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,.03),0 8px 24px rgba(26,26,26,.03);padding:24px;display:flex;flex-direction:column;gap:20px;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:16px;font-weight:800;">Müraciət axını</span><span style="font-size:13px;font-weight:600;color:{{ chart.capC }};transition:color .15s;">{{ chart.caption }}</span></div>
+                <div style="display:flex;gap:18px;">
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;"><span style="font-size:24px;font-weight:800;letter-spacing:-0.02em;line-height:1;">{{ chart.week }}</span><span style="font-size:12px;font-weight:600;color:#8A8A8A;">bu həftə</span></div>
+                  <div style="width:1px;background:#ECECEE;"></div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;"><span style="font-size:24px;font-weight:800;letter-spacing:-0.02em;line-height:1;">{{ chart.total }}</span><span style="font-size:12px;font-weight:600;color:#8A8A8A;">30 gündə</span></div>
+                </div>
+              </div>
+              <div onMouseLeave="{{ chart.leave }}" style="position:relative;height:210px;display:flex;align-items:flex-end;gap:{{ chart.gap }};padding-top:22px;">
+                <div style="position:absolute;left:0;right:0;top:22px;border-top:1px dashed #ECECEE;"></div>
+                <div style="position:absolute;left:0;right:0;top:calc(22px + (100% - 22px) / 2);border-top:1px dashed #ECECEE;"></div>
+                <div style="position:absolute;left:0;right:0;bottom:{{ chart.avgPos }};border-top:1.5px dashed #1A1A1A;opacity:.35;pointer-events:none;"></div>
+                <span style="position:absolute;left:0;bottom:{{ chart.avgPos }};transform:translateY(-4px);z-index:1;padding:2px 7px;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-size:10px;font-weight:800;pointer-events:none;">{{ chart.avgTxt }}</span>
+                <sc-for list="{{ chart.bars }}" as="b" hint-placeholder-count="30">
+                  <div onMouseEnter="{{ b.enter }}" title="{{ b.tip }}" style="position:relative;flex:1;height:100%;display:flex;align-items:flex-end;">
+                    <div style="width:100%;height:{{ b.h }};min-height:4px;border-radius:6px 6px 3px 3px;background:{{ b.c }};transition:background .15s, height .4s ease;"></div>
+                    <sc-if value="{{ b.hot }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:50%;bottom:{{ b.h }};transform:translate(-50%,-6px);min-width:22px;height:20px;padding:0 6px;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;pointer-events:none;">{{ b.n }}</span></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:#8A8A8A;margin-top:-8px;"><span>{{ chart.a }}</span><span>{{ chart.m }}</span><span style="color:#FF0083;font-weight:800;">{{ chart.z }}</span></div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid #ECECEE;border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,.03),0 8px 24px rgba(26,26,26,.03);padding:24px;display:flex;flex-direction:column;gap:14px;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                <div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:16px;font-weight:800;">Cavab gözləyənlər</span><span style="font-size:13px;font-weight:600;color:#8A8A8A;">Ən köhnə "Yeni" müraciətlər</span></div>
+                <span style="min-width:30px;height:30px;padding:0 9px;border-radius:10px;background:#FFF0F7;color:#FF0083;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ waitN }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <sc-for list="{{ waiting }}" as="r" hint-placeholder-count="5">
+                  <div onClick="{{ r.open }}" style="display:flex;align-items:center;gap:12px;padding:10px;margin:0 -10px;border-radius:12px;cursor:pointer;transition:background .12s;" style-hover="background:#F7F7F8;">
+                    <span style="width:38px;height:38px;border-radius:12px;background:{{ r.avBg }};color:{{ r.avFg }};font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ r.ini }}</span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.parent }}</span><span style="font-size:12px;font-weight:700;color:{{ r.waitC }};">{{ r.wait }}</span></div>
+                    <a href="{{ r.tel }}" onClick="{{ r.stop }}" title="Zəng et" aria-label="Zəng et" style="width:36px;height:36px;border-radius:10px;border:1px solid #ECECEE;color:#1A1A1A;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .12s, color .12s, border-color .12s;" style-hover="background:#FF0083;color:#FFFFFF;border-color:#FF0083;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg></a>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ noWaiting }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:28px 8px;text-align:center;font-size:13px;font-weight:600;color:#8A8A8A;">Bütün yeni müraciətlərə baxılıb.</div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:{{ dashCols }};gap:18px;">
+            <div style="background:#FFFFFF;border:1px solid #ECECEE;border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,.03),0 8px 24px rgba(26,26,26,.03);overflow:hidden;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:22px 24px 12px;">
+                <span style="font-size:16px;font-weight:800;">Son müraciətlər</span>
+                <button onClick="{{ goRegs }}" style="height:32px;padding:0 12px;border:1px solid #ECECEE;border-radius:10px;background:#FFFFFF;font-size:13px;font-weight:800;color:#1A1A1A;white-space:nowrap;flex-shrink:0;transition:background .15s;" style-hover="background:#F7F7F8;">Hamısına bax</button>
+              </div>
+              <div style="display:flex;flex-direction:column;padding:0 12px 12px;">
+                <sc-for list="{{ latest }}" as="r" hint-placeholder-count="7">
+                  <div onClick="{{ r.open }}" style="display:flex;align-items:center;gap:14px;padding:{{ rowPad }} 12px;border-radius:12px;cursor:pointer;transition:background .12s;" style-hover="background:#F7F7F8;">
+                    <span style="width:40px;height:40px;border-radius:50%;background:{{ r.avBg }};color:{{ r.avFg }};font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ r.ini }}</span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.parent }}</span>
+                      <span style="font-size:13px;font-weight:600;color:#6B6B6B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.child }} · {{ r.ageTxt }}</span>
+                    </div>
+                    <sc-if value="{{ wideDash }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;font-weight:600;color:#8A8A8A;white-space:nowrap;min-width:110px;text-align:right;">{{ r.rel }}</span></sc-if>
+                    <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.st.dot }};"></span>{{ r.st.l }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid #ECECEE;border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,.03),0 8px 24px rgba(26,26,26,.03);padding:24px;display:flex;flex-direction:column;gap:22px;min-width:0;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                <span style="font-size:16px;font-weight:800;">Kurslarda yerlər</span>
+                <button onClick="{{ goCourses }}" style="border:none;background:none;padding:4px 0;font-size:13px;font-weight:800;color:#FF0083;" style-hover="color:#D6006E;">Kurslar →</button>
+              </div>
+              <sc-for list="{{ seatsV }}" as="c" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                    <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+                      <span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;line-height:1.3;">{{ c.name }}</span>
+                      <span style="font-size:12px;font-weight:600;color:#8A8A8A;">{{ c.conf }} / {{ c.max }} təsdiqlənib</span>
+                    </div>
+                    <span style="padding:3px 9px;border-radius:999px;background:{{ c.tagBg }};color:{{ c.tagFg }};font-size:11px;font-weight:800;white-space:nowrap;flex-shrink:0;">{{ c.tag }}</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(10,minmax(0,26px));gap:5px;">
+                    <sc-for list="{{ c.seats }}" as="d" hint-placeholder-count="20">
+                      <span title="{{ d.t }}" style="aspect-ratio:1;border-radius:5px;background:{{ d.c }};border:1px solid {{ d.bd }};transition:background .3s;"></span>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:14px;border-top:1px solid #F1F1F3;font-size:12px;font-weight:700;color:#6B6B6B;">
+                <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#FF0083;"></span>Təsdiqlənib</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#FFD1E6;"></span>Gözləyir</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#F4F4F6;border:1px solid #E6E6EA;"></span>Boş</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isReg }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px;animation:kaFade .25s ease;">
+          <div style="background:#FFFFFF;border:1px solid #EDEDED;border-radius:14px;box-shadow:0 1px 2px rgba(26,26,26,.04);padding:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
+            <div style="position:relative;flex:1 1 260px;max-width:400px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" stroke-width="2" stroke-linecap="round" style="position:absolute;left:12px;top:12px;pointer-events:none;"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4"></path></svg>
+              <input value="{{ q }}" onChange="{{ onQ }}" placeholder="Valideyn, uşaq və ya telefon üzrə axtar" aria-label="Axtarış" style="width:100%;height:42px;padding:0 38px 0 40px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:600;">
+              <sc-if value="{{ hasQ }}" hint-placeholder-val="{{ false }}"><button onClick="{{ clearQ }}" aria-label="Axtarışı təmizlə" style="position:absolute;right:6px;top:6px;width:30px;height:30px;border:none;border-radius:8px;background:transparent;display:flex;align-items:center;justify-content:center;color:#8A8A8A;" style-hover="background:#F3F3F4;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></sc-if>
+            </div>
+            <div role="group" aria-label="Status filtri" style="display:flex;gap:6px;flex-wrap:wrap;">
+              <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+                <button onClick="{{ f.pick }}" aria-pressed="{{ f.on }}" style="height:36px;padding:0 12px;border:1px solid {{ f.bd }};border-radius:999px;background:{{ f.bg }};color:{{ f.fg }};font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;flex-shrink:0;transition:background .15s, color .15s, border-color .15s;">{{ f.l }}<span style="min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:{{ f.cbg }};font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ f.n }}</span></button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #EDEDED;border-radius:14px;box-shadow:0 1px 2px rgba(26,26,26,.04);overflow:hidden;">
+            <sc-if value="{{ regWide }}" hint-placeholder-val="{{ true }}">
+              <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:14px;min-width:880px;">
+                <thead><tr style="background:#FAFAFA;">
+                  <th style="text-align:left;padding:12px 20px;font-size:12px;font-weight:700;color:#8A8A8A;border-bottom:1px solid #F0F0F0;">Valideynin adı və soyadı</th>
+                  <th style="text-align:left;padding:12px 14px;font-size:12px;font-weight:700;color:#8A8A8A;border-bottom:1px solid #F0F0F0;">Telefon nömrəsi</th>
+                  <th style="text-align:left;padding:12px 14px;font-size:12px;font-weight:700;color:#8A8A8A;border-bottom:1px solid #F0F0F0;">Uşağın adı</th>
+                  <th style="text-align:left;padding:12px 14px;font-size:12px;font-weight:700;color:#8A8A8A;border-bottom:1px solid #F0F0F0;">Yaş</th>
+                  <th style="text-align:left;padding:12px 14px;font-size:12px;font-weight:700;color:#8A8A8A;border-bottom:1px solid #F0F0F0;">Seçilmiş kurs</th>
+                  <th style="text-align:left;padding:12px 14px;font-size:12px;font-weight:700;color:#8A8A8A;border-bottom:1px solid #F0F0F0;">Müraciət tarixi</th>
+                  <th style="text-align:left;padding:12px 14px;font-size:12px;font-weight:700;color:#8A8A8A;border-bottom:1px solid #F0F0F0;">Status</th>
+                  <th style="width:44px;border-bottom:1px solid #F0F0F0;"></th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+                    <tr onClick="{{ r.open }}" style="cursor:pointer;border-bottom:1px solid #F4F4F4;background:{{ r.bg }};transition:background .12s;" style-hover="background:#FAFAFA;">
+                      <td style="padding:{{ rowPad }} 20px;"><div style="display:flex;flex-direction:column;gap:2px;"><span style="font-weight:800;">{{ r.parent }}</span><span style="font-size:12px;font-weight:600;color:#A3A3A3;">{{ r.idLabel }}</span></div></td>
+                      <td style="padding:{{ rowPad }} 14px;"><a href="{{ r.tel }}" onClick="{{ r.stop }}" title="Zəng et" style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;margin-left:-8px;border-radius:8px;color:#1A1A1A;font-weight:600;white-space:nowrap;transition:background .12s, color .12s;" style-hover="background:#FFF0F7;color:#FF0083;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>{{ r.phone }}</a></td>
+                      <td style="padding:{{ rowPad }} 14px;font-weight:600;color:#4A4A4A;">{{ r.child }}</td>
+                      <td style="padding:{{ rowPad }} 14px;font-weight:600;color:#4A4A4A;">{{ r.age }}</td>
+                      <td style="padding:{{ rowPad }} 14px;font-weight:600;color:#4A4A4A;white-space:nowrap;">{{ r.course }}</td>
+                      <td style="padding:{{ rowPad }} 14px;white-space:nowrap;"><div style="display:flex;flex-direction:column;gap:2px;"><span style="font-weight:600;color:#4A4A4A;">{{ r.date }}</span><span style="font-size:12px;font-weight:600;color:#A3A3A3;">{{ r.time }}</span></div></td>
+                      <td style="padding:{{ rowPad }} 14px;"><span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:12px;font-weight:700;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.st.dot }};"></span>{{ r.st.l }}</span></td>
+                      <td style="padding:{{ rowPad }} 16px {{ rowPad }} 0;color:#C2C2C2;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+              </div>
+            </sc-if>
+            <sc-if value="{{ regNarrow }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;">
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+                  <div onClick="{{ r.open }}" style="display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-bottom:1px solid #F4F4F4;background:{{ r.bg }};cursor:pointer;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;"><div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:800;">{{ r.parent }}</span><span style="font-size:13px;font-weight:600;color:#6B6B6B;">{{ r.child }} · {{ r.ageTxt }}</span></div><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ r.st.bg }};color:{{ r.st.fg }};font-size:11px;font-weight:700;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.st.dot }};"></span>{{ r.st.l }}</span></div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><span style="font-size:12px;font-weight:600;color:#8A8A8A;">{{ r.course }} · {{ r.date }}</span><a href="{{ r.tel }}" onClick="{{ r.stop }}" style="display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid #E3E3E3;border-radius:999px;font-size:13px;font-weight:700;color:#1A1A1A;white-space:nowrap;flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF0083" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>{{ r.phone }}</a></div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:56px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;">
+                <span style="width:48px;height:48px;border-radius:14px;background:#F3F3F4;display:flex;align-items:center;justify-content:center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" stroke-width="2" stroke-linecap="round"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4"></path></svg></span>
+                <span style="font-size:15px;font-weight:800;">Müraciət tapılmadı</span>
+                <span style="font-size:13px;font-weight:500;color:#6B6B6B;">Axtarış sözünü və ya status filtrini dəyişin.</span>
+                <button onClick="{{ resetFilters }}" style="margin-top:6px;height:36px;padding:0 14px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:13px;font-weight:700;" style-hover="background:#F7F7F8;">Filtrləri sıfırla</button>
+              </div>
+            </sc-if>
+            <div style="padding:12px 20px;border-top:1px solid #F0F0F0;background:#FAFAFA;font-size:12px;font-weight:700;color:#8A8A8A;">{{ regCountTxt }}</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCourses }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;border-radius:14px;background:{{ active.bg }};border:1px solid {{ active.bd }};">
+          <span style="font-size:13px;font-weight:700;color:#6B6B6B;white-space:nowrap;">Saytdakı qeydiyyat formu</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A3A3A3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+          <span style="display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:{{ active.fg }};"><span style="width:8px;height:8px;border-radius:50%;background:{{ active.dot }};"></span>{{ active.name }}</span>
+          <span style="margin-left:auto;font-size:13px;font-weight:700;color:#6B6B6B;">{{ active.meta }}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:16px;animation:kaFade .25s ease;">
+          <sc-for list="{{ coursesV }}" as="c" hint-placeholder-count="3">
+            <div style="background:#FFFFFF;border:1px solid #EDEDED;border-radius:14px;box-shadow:0 1px 2px rgba(26,26,26,.04);padding:24px;display:flex;flex-direction:column;gap:20px;transition:box-shadow .2s, transform .2s;" style-hover="box-shadow:0 10px 30px rgba(26,26,26,.07);transform:translateY(-2px);">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                <div style="display:flex;flex-direction:column;gap:4px;min-width:0;"><span style="font-size:19px;font-weight:800;letter-spacing:-0.01em;line-height:1.25;">{{ c.name }}</span><span style="font-size:13px;font-weight:600;color:#8A8A8A;">8–13 yaş</span></div>
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:{{ c.stat.bg }};color:{{ c.stat.fg }};font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;"><span style="width:6px;height:6px;border-radius:50%;background:{{ c.stat.dot }};"></span>{{ c.stat.l }}</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;"><span style="font-size:32px;font-weight:800;letter-spacing:-0.03em;line-height:1;">{{ c.price }}</span><span style="font-size:15px;font-weight:800;color:#6B6B6B;">AZN</span><span style="margin-left:4px;padding:3px 8px;border-radius:6px;background:{{ c.tagBg }};color:{{ c.tagFg }};font-size:11px;font-weight:800;">{{ c.priceTag }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;">
+                <div style="display:flex;justify-content:space-between;gap:16px;"><span style="font-weight:600;color:#8A8A8A;">Müddət</span><span style="font-weight:700;text-align:right;">{{ c.weeksTxt }}</span></div>
+                <div style="display:flex;justify-content:space-between;gap:16px;"><span style="font-weight:600;color:#8A8A8A;">Cədvəl</span><span style="font-weight:700;text-align:right;">{{ c.schedule }}</span></div>
+                <div style="display:flex;justify-content:space-between;gap:16px;"><span style="font-weight:600;color:#8A8A8A;">Məkan</span><span style="font-weight:700;text-align:right;max-width:220px;">{{ c.location }}</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:12px;background:#FAFAFA;">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;"><span style="font-size:14px;font-weight:800;">{{ c.conf }} / {{ c.max }} <span style="font-weight:600;color:#6B6B6B;">təsdiqlənib</span></span><span style="font-size:13px;font-weight:800;color:{{ c.leftC }};">{{ c.leftTxt }}</span></div>
+                <div style="height:8px;border-radius:999px;background:#ECECEC;overflow:hidden;"><div style="height:100%;width:{{ c.pct }};background:{{ c.bar }};border-radius:999px;transition:width .5s ease;"></div></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;">
+                <button onClick="{{ c.edit }}" style="height:38px;padding:0 12px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;transition:background .15s;" style-hover="background:#F7F7F8;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"></path></svg>Redaktə et</button>
+                <button onClick="{{ c.people }}" style="height:38px;padding:0 12px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;transition:background .15s;" style-hover="background:#F7F7F8;">İştirakçılar<span style="min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#F3F3F4;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;">{{ c.regCount }}</span></button>
+                <button onClick="{{ c.toggle }}" role="switch" aria-checked="{{ c.aria }}" title="Saytdakı qeydiyyat formunu bu kursa bağla" style="margin-left:auto;display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 4px 0 8px;border:none;background:transparent;font-size:12px;font-weight:700;color:#6B6B6B;white-space:nowrap;"><span>{{ c.swLbl }}</span><span style="position:relative;width:40px;height:22px;border-radius:999px;background:{{ c.swBg }};transition:background .2s;"><span style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.2);transform:{{ c.swX }};transition:transform .2s ease;"></span></span></button>
+              </div>
+            </div>
+          </sc-for>
+          <button onClick="{{ newCourse }}" style="min-height:300px;border:1.5px dashed #D6D6D6;border-radius:14px;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#6B6B6B;transition:border-color .15s, background .15s, color .15s;" style-hover="border-color:#FF0083;background:#FFF7FB;color:#FF0083;">
+            <span style="width:44px;height:44px;border-radius:50%;background:#FFFFFF;border:1px solid #E3E3E3;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+            <span style="font-size:15px;font-weight:800;">Yeni kurs yarat</span>
+            <span style="font-size:12px;font-weight:600;color:#8A8A8A;">Standart: 650 AZN · 20 yer</span>
+          </button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isUsers }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;animation:kaFade .25s ease;">
+          <div style="display:grid;grid-template-columns:{{ roleCols }};gap:14px;">
+            <sc-for list="{{ roleCards }}" as="r" hint-placeholder-count="3">
+              <div style="background:#FFFFFF;border:1px solid #ECECEE;border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,.03),0 8px 24px rgba(26,26,26,.03);padding:20px;display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                  <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:800;"><span style="width:32px;height:32px;border-radius:10px;background:{{ r.bg }};color:{{ r.fg }};display:flex;align-items:center;justify-content:center;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ r.d }}"></path></svg></span>{{ r.l }}</span>
+                  <span style="font-size:28px;font-weight:800;letter-spacing:-0.03em;line-height:1;">{{ r.n }}</span>
+                </div>
+                <span style="font-size:13px;line-height:1.5;font-weight:600;color:#6B6B6B;text-wrap:pretty;">{{ r.desc }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #ECECEE;border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,.03),0 8px 24px rgba(26,26,26,.03);overflow:hidden;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 24px 10px;flex-wrap:wrap;">
+              <div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:16px;font-weight:800;">Panel istifadəçiləri</span><span style="font-size:13px;font-weight:600;color:#8A8A8A;">{{ usersSub }}</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;padding:0 12px 12px;">
+              <sc-for list="{{ usersV }}" as="u" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:14px;padding:{{ rowPad }} 12px;border-radius:12px;flex-wrap:{{ uWrap }};transition:background .12s;" style-hover="background:#FAFAFA;">
+                  <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:220px;">
+                    <span style="width:42px;height:42px;border-radius:50%;background:{{ u.avBg }};color:{{ u.avFg }};font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ u.ini }}</span>
+                    <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
+                      <span style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ u.name }}</span><sc-if value="{{ u.isMe }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 7px;border-radius:6px;background:#1A1A1A;color:#FFFFFF;font-size:10px;font-weight:800;flex-shrink:0;">Siz</span></sc-if></span>
+                      <span style="font-size:13px;font-weight:600;color:#6B6B6B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ u.email }}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;margin-left:auto;">
+                    <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:{{ u.stBg }};color:{{ u.stFg }};font-size:12px;font-weight:700;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:{{ u.stDot }};"></span>{{ u.stL }}</span>
+                    <sc-if value="{{ wideDash }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;font-weight:600;color:#8A8A8A;white-space:nowrap;min-width:120px;text-align:right;">{{ u.last }}</span></sc-if>
+                    <select key="{{ u.selKey }}" onChange="{{ u.onRole }}" disabled="{{ u.lock }}" aria-label="Rol" title="{{ u.lockTip }}" style="height:36px;padding:0 10px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:13px;font-weight:700;color:#1A1A1A;opacity:{{ u.lockOp }};">
+                      <option value="admin" selected="{{ u.selAdmin }}">Admin</option>
+                      <option value="manager" selected="{{ u.selManager }}">Menecer</option>
+                      <option value="editor" selected="{{ u.selEditor }}">Redaktor</option>
+                    </select>
+                    <sc-if value="{{ u.isInvite }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ u.resend }}" title="Dəvəti yenidən göndər" aria-label="Dəvəti yenidən göndər" style="width:36px;height:36px;border:1px solid #ECECEE;border-radius:10px;background:#FFFFFF;color:#1A1A1A;display:flex;align-items:center;justify-content:center;transition:background .12s;" style-hover="background:#F7F7F8;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4zM4 7l8 6 8-6"></path></svg></button>
+                    </sc-if>
+                    <button onClick="{{ u.remove }}" disabled="{{ u.lock }}" title="{{ u.rmTip }}" aria-label="İstifadəçini sil" style="width:36px;height:36px;border:1px solid #ECECEE;border-radius:10px;background:#FFFFFF;color:#C62828;display:flex;align-items:center;justify-content:center;opacity:{{ u.lockOp }};transition:background .12s;" style-hover="background:#FDECEC;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCms }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:{{ cmsCols }};gap:16px;align-items:start;animation:kaFade .25s ease;">
+          <sc-if value="{{ cmsShowList }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#FFFFFF;border:1px solid #EDEDED;border-radius:14px;box-shadow:0 1px 2px rgba(26,26,26,.04);padding:8px;display:flex;flex-direction:column;gap:2px;">
+              <div style="padding:10px 12px 8px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#8A8A8A;">Sayt bölmələri</div>
+              <sc-for list="{{ cmsList }}" as="s" hint-placeholder-count="9">
+                <button onClick="{{ s.pick }}" style="display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:none;border-radius:10px;background:{{ s.bg }};text-align:left;transition:background .15s;" style-hover="background:{{ s.hov }};">
+                  <span style="width:36px;height:36px;border-radius:10px;background:{{ s.ibg }};color:{{ s.ifg }};display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="{{ s.d }}"></path></svg></span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:14px;font-weight:800;">{{ s.t }}</span><span style="font-size:12px;font-weight:600;color:#8A8A8A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ s.sub }}</span></span>
+                  <span title="{{ s.stl }}" style="width:8px;height:8px;border-radius:50%;background:{{ s.dot }};flex-shrink:0;"></span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ cmsShowEditor }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#FFFFFF;border:1px solid #EDEDED;border-radius:14px;box-shadow:0 1px 2px rgba(26,26,26,.04);display:flex;flex-direction:column;min-width:0;">
+              <div style="padding:20px 24px;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+                  <sc-if value="{{ cmsBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ cmsBackFn }}" aria-label="Bölmələrə qayıt" style="width:36px;height:36px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button></sc-if>
+                  <div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
+                    <span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;">{{ ed.t }}</span>
+                    <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ ed.st.bg }};color:{{ ed.st.fg }};font-size:11px;font-weight:700;"><span style="width:6px;height:6px;border-radius:50%;background:{{ ed.st.dot }};"></span>{{ ed.st.l }}</span><span style="font-size:12px;font-weight:600;color:#8A8A8A;">{{ ed.pubTxt }}</span></span>
+                  </div>
+                </div>
+                <button onClick="{{ ed.preview }}" style="height:38px;padding:0 14px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:8px;transition:background .15s;" style-hover="background:#F7F7F8;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path></svg>Önizlə</button>
+              </div>
+              <div style="padding:24px;display:flex;flex-direction:column;gap:22px;">
+                <sc-for list="{{ ed.fields }}" as="f" hint-placeholder-count="2">
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <span style="font-size:13px;font-weight:800;">{{ f.l }}</span>
+                    <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}"><input value="{{ f.val }}" onChange="{{ f.onChange }}" placeholder="{{ f.ph }}" style="width:100%;height:44px;padding:0 14px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:600;"></sc-if>
+                    <sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}"><textarea value="{{ f.val }}" onChange="{{ f.onChange }}" rows="4" style="width:100%;padding:12px 14px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:500;line-height:1.55;resize:vertical;"></textarea></sc-if>
+                    <sc-if value="{{ f.isList }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;flex-direction:column;gap:8px;">
+                        <sc-for list="{{ f.items }}" as="it" hint-placeholder-count="4">
+                          <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="width:28px;height:28px;border-radius:8px;background:#F3F3F4;font-size:12px;font-weight:800;color:#6B6B6B;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ it.n }}</span>
+                            <input value="{{ it.v }}" onChange="{{ it.onChange }}" style="flex:1;min-width:0;height:42px;padding:0 14px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:600;">
+                            <button onClick="{{ it.remove }}" aria-label="Sil" style="width:36px;height:36px;border:none;border-radius:8px;background:transparent;color:#A3A3A3;display:flex;align-items:center;justify-content:center;flex-shrink:0;" style-hover="background:#FDECEC;color:#C62828;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ f.isFaq }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;flex-direction:column;gap:10px;">
+                        <sc-for list="{{ f.items }}" as="it" hint-placeholder-count="3">
+                          <div style="border:1px solid #EDEDED;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;background:#FCFCFC;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:12px;font-weight:800;color:#8A8A8A;">Sual {{ it.n }}</span><button onClick="{{ it.remove }}" aria-label="Sualı sil" style="width:32px;height:32px;border:none;border-radius:8px;background:transparent;color:#A3A3A3;display:flex;align-items:center;justify-content:center;" style-hover="background:#FDECEC;color:#C62828;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button></div>
+                            <input value="{{ it.q }}" onChange="{{ it.onQ }}" placeholder="Sual" style="width:100%;height:42px;padding:0 14px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:700;">
+                            <textarea value="{{ it.a }}" onChange="{{ it.onA }}" rows="3" placeholder="Cavab" style="width:100%;padding:10px 14px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:500;line-height:1.5;resize:vertical;"></textarea>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ f.isImg }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:14px;">
+                        <sc-for list="{{ f.items }}" as="it" hint-placeholder-count="3">
+                          <div style="display:flex;flex-direction:column;gap:10px;">
+                            <div style="aspect-ratio:4/3;border-radius:12px;border:1.5px dashed #D6D6D6;background:#FAFAFA;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                              <sc-if value="{{ it.has }}" hint-placeholder-val="{{ false }}"><div role="img" aria-label="{{ it.label }}" style="width:100%;height:100%;background-image:{{ it.bgi }};background-size:cover;background-position:center;"></div></sc-if>
+                              <sc-if value="{{ it.none }}" hint-placeholder-val="{{ true }}"><span style="display:flex;flex-direction:column;align-items:center;gap:6px;color:#A3A3A3;font-size:12px;font-weight:700;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9v.01"></path></svg>Şəkil yoxdur</span></sc-if>
+                            </div>
+                            <span style="font-size:13px;font-weight:800;">{{ it.label }}</span>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                              <label style="height:34px;padding:0 12px;border:1px solid #E3E3E3;border-radius:9px;background:#FFFFFF;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:background .15s;" style-hover="background:#F7F7F8;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"></path></svg>{{ it.upLbl }}<input type="file" accept="image/*" onChange="{{ it.onFile }}" style="display:none;"></label>
+                              <sc-if value="{{ it.has }}" hint-placeholder-val="{{ false }}"><button onClick="{{ it.remove }}" style="height:34px;padding:0 10px;border:none;border-radius:9px;background:transparent;font-size:12px;font-weight:700;color:#8A8A8A;" style-hover="background:#FDECEC;color:#C62828;">Sil</button></sc-if>
+                            </div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ f.hasAdd }}" hint-placeholder-val="{{ false }}"><button onClick="{{ f.add }}" style="align-self:flex-start;height:36px;padding:0 12px;border:1px dashed #D6D6D6;border-radius:10px;background:#FFFFFF;font-size:13px;font-weight:700;color:#4A4A4A;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s, color .15s;" style-hover="border-color:#FF0083;color:#FF0083;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>{{ f.addLbl }}</button></sc-if>
+                    <sc-if value="{{ f.hasHint }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:600;color:#8A8A8A;">{{ f.hint }}</span></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="padding:16px 24px;border-top:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#FCFCFC;border-radius:0 0 14px 14px;">
+                <button onClick="{{ ed.discard }}" style="height:40px;padding:0 4px;border:none;background:transparent;font-size:13px;font-weight:700;color:{{ ed.discardC }};">Dəyişiklikləri ləğv et</button>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <button onClick="{{ ed.save }}" style="height:40px;padding:0 16px;border:1px solid {{ ed.saveBd }};border-radius:10px;background:#FFFFFF;color:{{ ed.saveFg }};font-size:14px;font-weight:800;transition:background .15s;" style-hover="background:#F7F7F8;">Yadda saxla</button>
+                  <button onClick="{{ ed.publish }}" style="height:40px;padding:0 18px;border:none;border-radius:10px;background:{{ ed.pubBg }};color:{{ ed.pubFg }};font-size:14px;font-weight:800;transition:background .15s;">Dərc et</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+    </div>
+  </main>
+
+  <div onClick="{{ closeReg }}" style="position:fixed;inset:0;z-index:80;background:rgba(26,26,26,.28);opacity:{{ dr.scrimO }};pointer-events:{{ dr.pe }};transition:opacity .25s ease;"></div>
+  <aside role="dialog" aria-label="Müraciət detalları" aria-hidden="{{ dr.hidden }}" style="position:fixed;top:0;right:0;bottom:0;z-index:90;width:min(460px,100vw);background:#FFFFFF;box-shadow:-16px 0 48px rgba(26,26,26,.12);transform:{{ dr.x }};visibility:{{ dr.vis }};transition:transform .32s cubic-bezier(.2,.8,.2,1), visibility .32s;display:flex;flex-direction:column;">
+    <sc-if value="{{ dr.has }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:20px 24px;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:4px;min-width:0;">
+          <span style="font-size:12px;font-weight:700;color:#8A8A8A;">Müraciət {{ d.idLabel }} · {{ d.date }}, {{ d.time }}</span>
+          <span style="font-size:22px;font-weight:800;letter-spacing:-0.02em;line-height:1.2;">{{ d.parent }}</span>
+          <span style="align-self:flex-start;margin-top:4px;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:{{ d.st.bg }};color:{{ d.st.fg }};font-size:12px;font-weight:700;"><span style="width:6px;height:6px;border-radius:50%;background:{{ d.st.dot }};"></span>{{ d.st.l }}</span>
+        </div>
+        <button onClick="{{ closeReg }}" aria-label="Bağla" style="width:36px;height:36px;border:none;border-radius:10px;background:#F3F3F4;display:flex;align-items:center;justify-content:center;flex-shrink:0;" style-hover="background:#EAEAEA;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:26px;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#A3A3A3;">Valideyn</span>
+          <div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 14px;font-size:14px;"><span style="font-weight:600;color:#8A8A8A;">Ad, soyad</span><span style="font-weight:700;">{{ d.parent }}</span><span style="font-weight:600;color:#8A8A8A;">Telefon</span><span style="font-weight:700;">{{ d.phone }}</span></div>
+          <a href="{{ d.tel }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:10px;background:#FF0083;color:#FFFFFF;font-size:14px;font-weight:800;transition:background .15s;" style-hover="background:#E00073;color:#FFFFFF;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"></path></svg>Zəng et</a>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#A3A3A3;">Uşaq</span>
+          <div style="display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px 14px;font-size:14px;"><span style="font-weight:600;color:#8A8A8A;">Ad, soyad</span><span style="font-weight:700;">{{ d.child }}</span><span style="font-weight:600;color:#8A8A8A;">Yaş</span><span style="font-weight:700;">{{ d.ageTxt }}</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#A3A3A3;">Seçilmiş kurs</span>
+          <div style="padding:14px;border-radius:12px;background:#FAFAFA;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;"><span style="font-size:15px;font-weight:800;">{{ d.course }}</span><span style="font-size:12px;font-weight:800;color:{{ d.leftC }};white-space:nowrap;">{{ d.leftTxt }}</span></div>
+            <span style="font-size:13px;font-weight:600;color:#6B6B6B;">{{ d.courseMeta }}</span>
+            <div style="height:6px;border-radius:999px;background:#ECECEC;overflow:hidden;"><div style="height:100%;width:{{ d.pct }};background:{{ d.bar }};border-radius:999px;transition:width .4s ease;"></div></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#A3A3A3;">Status</span>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;">
+            <sc-for list="{{ d.opts }}" as="o" hint-placeholder-count="4">
+              <button onClick="{{ o.pick }}" aria-pressed="{{ o.on }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:52px;padding:10px 12px;border:1.5px solid {{ o.bd }};border-radius:10px;background:{{ o.bg }};color:{{ o.fg }};text-align:left;opacity:{{ o.op }};transition:background .15s, border-color .15s;">
+                <span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;"><span style="width:8px;height:8px;border-radius:50%;background:{{ o.dot }};"></span>{{ o.l }}</span>
+                <sc-if value="{{ o.blocked }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:700;color:#6B6B6B;">Kursda boş yer yoxdur</span></sc-if>
+              </button>
+            </sc-for>
+          </div>
+          <span style="font-size:12px;line-height:1.5;font-weight:600;color:#8A8A8A;">Yeni → Əlaqə saxlanılıb → Təsdiqlənib və ya İmtina edilib. Təsdiqlənmiş qeydiyyat kursda bir yer tutur.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#A3A3A3;">Daxili qeyd</span>
+          <textarea value="{{ noteDraft }}" onChange="{{ onNote }}" rows="3" placeholder="Məsələn: cümə günü yenidən zəng ediləcək" style="width:100%;padding:12px 14px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:500;line-height:1.5;resize:vertical;"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><span style="font-size:12px;font-weight:600;color:#A3A3A3;">Yalnız adminlər görür</span><button onClick="{{ saveNote }}" style="height:34px;padding:0 14px;border:none;border-radius:9px;background:{{ d.noteBg }};color:{{ d.noteFg }};font-size:13px;font-weight:800;transition:background .15s;">Qeydi saxla</button></div>
+        </div>
+      </div>
+      <div style="padding:14px 24px;border-top:1px solid #F0F0F0;">
+        <button onClick="{{ askDelete }}" style="height:40px;padding:0 12px;margin-left:-12px;border:none;border-radius:10px;background:transparent;color:#C62828;font-size:13px;font-weight:800;display:inline-flex;align-items:center;gap:8px;" style-hover="background:#FDECEC;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg>Müraciəti sil</button>
+      </div>
+    </sc-if>
+  </aside>
+
+  <sc-if value="{{ delOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cancelDelete }}" style="position:fixed;inset:0;z-index:120;background:rgba(26,26,26,.4);display:flex;align-items:center;justify-content:center;padding:16px;animation:kaFade .2s ease;">
+      <div onClick="{{ stop }}" role="alertdialog" aria-label="Silməni təsdiqlə" style="width:min(420px,100%);background:#FFFFFF;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 24px 64px rgba(26,26,26,.22);animation:kaIn .22s ease;">
+        <span style="width:44px;height:44px;border-radius:12px;background:#FDECEC;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></span>
+        <span style="font-size:18px;font-weight:800;">Müraciət silinsin?</span>
+        <span style="font-size:14px;line-height:1.55;font-weight:500;color:#4A4A4A;">{{ delTxt }}</span>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+          <button onClick="{{ cancelDelete }}" style="height:40px;padding:0 16px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:700;" style-hover="background:#F7F7F8;">Ləğv et</button>
+          <button onClick="{{ doDelete }}" style="height:40px;padding:0 16px;border:none;border-radius:10px;background:#C62828;color:#FFFFFF;font-size:14px;font-weight:800;" style-hover="background:#A91F1F;">Bəli, sil</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ udelOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ udelCancel }}" style="position:fixed;inset:0;z-index:120;background:rgba(26,26,26,.4);display:flex;align-items:center;justify-content:center;padding:16px;animation:kaFade .2s ease;">
+      <div onClick="{{ stop }}" role="alertdialog" aria-label="İstifadəçini sil" style="width:min(420px,100%);background:#FFFFFF;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 24px 64px rgba(26,26,26,.22);animation:kaIn .22s ease;">
+        <span style="width:44px;height:44px;border-radius:12px;background:#FDECEC;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C62828" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></span>
+        <span style="font-size:18px;font-weight:800;">İstifadəçi silinsin?</span>
+        <span style="font-size:14px;line-height:1.55;font-weight:500;color:#4A4A4A;">{{ udelTxt }}</span>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+          <button onClick="{{ udelCancel }}" style="height:40px;padding:0 16px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:700;" style-hover="background:#F7F7F8;">Ləğv et</button>
+          <button onClick="{{ udelDo }}" style="height:40px;padding:0 16px;border:none;border-radius:10px;background:#C62828;color:#FFFFFF;font-size:14px;font-weight:800;" style-hover="background:#A91F1F;">Bəli, sil</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ umOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ umClose }}" style="position:fixed;inset:0;z-index:110;background:rgba(26,26,26,.36);display:flex;align-items:center;justify-content:center;padding:16px;animation:kaFade .2s ease;">
+      <div onClick="{{ stop }}" role="dialog" aria-label="Yeni istifadəçi" style="width:min(560px,100%);max-height:calc(100vh - 32px);overflow-y:auto;background:#FFFFFF;border-radius:16px;box-shadow:0 24px 64px rgba(26,26,26,.2);animation:kaIn .25s ease;display:flex;flex-direction:column;">
+        <div style="padding:22px 24px 6px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+          <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">Yeni istifadəçi</span>
+          <button onClick="{{ umClose }}" aria-label="Bağla" style="width:36px;height:36px;border:none;border-radius:10px;background:#F3F3F4;display:flex;align-items:center;justify-content:center;" style-hover="background:#EAEAEA;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+        <div style="padding:16px 24px;display:flex;flex-direction:column;gap:16px;">
+          <label style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:13px;font-weight:800;">Ad və soyad</span><input value="{{ um.name }}" onChange="{{ um.onName }}" placeholder="Nərmin Həsənova" style="width:100%;height:44px;padding:0 14px;border:1px solid {{ um.bdName }};border-radius:10px;font-size:14px;font-weight:600;"><span style="font-size:12px;font-weight:700;color:#C62828;">{{ um.eName }}</span></label>
+          <label style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:13px;font-weight:800;">E-poçt</span><input type="email" value="{{ um.email }}" onChange="{{ um.onEmail }}" placeholder="ad@kidsup.az" style="width:100%;height:44px;padding:0 14px;border:1px solid {{ um.bdEmail }};border-radius:10px;font-size:14px;font-weight:600;"><span style="font-size:12px;font-weight:700;color:#C62828;">{{ um.eEmail }}</span></label>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <span style="font-size:13px;font-weight:800;">Rol</span>
+            <div role="radiogroup" aria-label="Rol" style="display:flex;flex-direction:column;gap:8px;">
+              <sc-for list="{{ um.roles }}" as="r" hint-placeholder-count="3">
+                <button onClick="{{ r.pick }}" role="radio" aria-checked="{{ r.aria }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid {{ r.bd }};border-radius:12px;background:{{ r.bg }};text-align:left;transition:border-color .15s, background .15s;">
+                  <span style="width:18px;height:18px;border-radius:50%;border:2px solid {{ r.dotBd }};display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="width:8px;height:8px;border-radius:50%;background:{{ r.dot }};"></span></span>
+                  <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:14px;font-weight:800;">{{ r.l }}</span><span style="font-size:12px;line-height:1.45;font-weight:600;color:#6B6B6B;">{{ r.desc }}</span></span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:#FAFAFA;font-size:12px;line-height:1.5;font-weight:600;color:#6B6B6B;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8A8A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M4 6h16v12H4zM4 7l8 6 8-6"></path></svg>
+            <span>İstifadəçi e-poçtuna dəvət linki alacaq və şifrəsini özü təyin edəcək. Backend qoşulana qədər dəvət yalnız prototipdə qeyd olunur.</span>
+          </div>
+        </div>
+        <div style="padding:16px 24px 22px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
+          <button onClick="{{ umClose }}" style="height:42px;padding:0 16px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:700;" style-hover="background:#F7F7F8;">Ləğv et</button>
+          <button onClick="{{ umSave }}" style="height:42px;padding:0 18px;border:none;border-radius:10px;background:#FF0083;color:#FFFFFF;font-size:14px;font-weight:800;" style-hover="background:#E00073;">Dəvət göndər</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ cmOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cmClose }}" style="position:fixed;inset:0;z-index:110;background:rgba(26,26,26,.36);display:flex;align-items:center;justify-content:center;padding:16px;animation:kaFade .2s ease;">
+      <div onClick="{{ stop }}" role="dialog" aria-label="{{ cm.title }}" style="width:min(580px,100%);max-height:calc(100vh - 32px);overflow-y:auto;background:#FFFFFF;border-radius:16px;box-shadow:0 24px 64px rgba(26,26,26,.2);animation:kaIn .25s ease;display:flex;flex-direction:column;">
+        <div style="padding:22px 24px 6px;display:flex;justify-content:space-between;align-items:center;gap:12px;">
+          <span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">{{ cm.title }}</span>
+          <button onClick="{{ cmClose }}" aria-label="Bağla" style="width:36px;height:36px;border:none;border-radius:10px;background:#F3F3F4;display:flex;align-items:center;justify-content:center;" style-hover="background:#EAEAEA;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+        <div style="padding:16px 24px;display:flex;flex-direction:column;gap:16px;">
+          <div style="display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:12px;background:#FAFAFA;"><span style="font-size:12px;font-weight:700;color:#8A8A8A;">Kursun adı (tarixlərdən avtomatik)</span><span style="font-size:16px;font-weight:800;">{{ cm.namePv }}</span><span style="font-size:12px;font-weight:600;color:#8A8A8A;">{{ cm.weeksPv }}</span></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:16px;">
+            <label style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:13px;font-weight:800;">Başlanğıc tarixi</span><input type="date" value="{{ cm.start }}" onChange="{{ cm.onStart }}" style="width:100%;height:44px;padding:0 14px;border:1px solid {{ cm.bdStart }};border-radius:10px;font-size:14px;font-weight:600;"><span style="font-size:12px;font-weight:700;color:#C62828;">{{ cm.eStart }}</span></label>
+            <label style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:13px;font-weight:800;">Bitmə tarixi</span><input type="date" value="{{ cm.end }}" onChange="{{ cm.onEnd }}" style="width:100%;height:44px;padding:0 14px;border:1px solid {{ cm.bdEnd }};border-radius:10px;font-size:14px;font-weight:600;"><span style="font-size:12px;font-weight:700;color:#C62828;">{{ cm.eEnd }}</span></label>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:13px;font-weight:800;">Cədvəl</span><input value="{{ cm.schedule }}" onChange="{{ cm.onSchedule }}" placeholder="Şənbə, 09:30–13:00" style="width:100%;height:44px;padding:0 14px;border:1px solid #E3E3E3;border-radius:10px;font-size:14px;font-weight:600;"></label>
+          <label style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:13px;font-weight:800;">Məkan</span><input value="{{ cm.location }}" onChange="{{ cm.onLocation }}" placeholder="Bakı" style="width:100%;height:44px;padding:0 14px;border:1px solid #E3E3E3;border-radius:10px;font-size:14px;font-weight:600;"></label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:16px;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:13px;font-weight:800;">Kursun qiyməti (AZN)</span>
+              <input type="number" min="0" value="{{ cm.price }}" onChange="{{ cm.onPrice }}" aria-label="Kursun qiyməti" style="width:100%;height:44px;padding:0 14px;border:1px solid {{ cm.bdPrice }};border-radius:10px;font-size:14px;font-weight:700;">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button onClick="{{ cm.p650 }}" style="height:30px;padding:0 10px;border:1px solid {{ cm.b650 }};border-radius:999px;background:{{ cm.bg650 }};font-size:12px;font-weight:700;">Standart · 650</button>
+                <button onClick="{{ cm.p500 }}" style="height:30px;padding:0 10px;border:1px solid {{ cm.b500 }};border-radius:999px;background:{{ cm.bg500 }};font-size:12px;font-weight:700;">Pilot · 500</button>
+              </div>
+              <span style="font-size:12px;font-weight:700;color:#C62828;">{{ cm.ePrice }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <span style="font-size:13px;font-weight:800;">Maksimum iştirakçı</span>
+              <input type="number" min="1" value="{{ cm.max }}" onChange="{{ cm.onMax }}" aria-label="Maksimum iştirakçı" style="width:100%;height:44px;padding:0 14px;border:1px solid {{ cm.bdMax }};border-radius:10px;font-size:14px;font-weight:700;">
+              <span style="font-size:12px;font-weight:600;color:#8A8A8A;">{{ cm.confTxt }}</span>
+              <span style="font-size:12px;font-weight:700;color:#C62828;">{{ cm.eMax }}</span>
+            </div>
+          </div>
+          <button onClick="{{ cm.toggleOpen }}" role="switch" aria-checked="{{ cm.aria }}" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;border:1px solid #EDEDED;border-radius:12px;background:#FAFAFA;text-align:left;">
+            <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:14px;font-weight:800;">Saytda aktiv kurs</span><span style="font-size:12px;line-height:1.45;font-weight:600;color:#8A8A8A;">{{ cm.openHint }}</span></span>
+            <span style="position:relative;width:40px;height:22px;border-radius:999px;background:{{ cm.swBg }};flex-shrink:0;transition:background .2s;"><span style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 3px rgba(0,0,0,.2);transform:{{ cm.swX }};transition:transform .2s ease;"></span></span>
+          </button>
+        </div>
+        <div style="padding:16px 24px 22px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;">
+          <button onClick="{{ cmClose }}" style="height:42px;padding:0 16px;border:1px solid #E3E3E3;border-radius:10px;background:#FFFFFF;font-size:14px;font-weight:700;" style-hover="background:#F7F7F8;">Ləğv et</button>
+          <button onClick="{{ cmSave }}" style="height:42px;padding:0 18px;border:none;border-radius:10px;background:#FF0083;color:#FFFFFF;font-size:14px;font-weight:800;" style-hover="background:#E00073;">{{ cm.saveLbl }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pmOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ pmClose }}" style="position:fixed;inset:0;z-index:110;background:rgba(26,26,26,.36);display:flex;align-items:center;justify-content:center;padding:16px;animation:kaFade .2s ease;">
+      <div onClick="{{ stop }}" role="dialog" aria-label="İştirakçılar" style="width:min(560px,100%);max-height:calc(100vh - 32px);background:#FFFFFF;border-radius:16px;box-shadow:0 24px 64px rgba(26,26,26,.2);animation:kaIn .25s ease;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:22px 24px 16px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid #F0F0F0;">
+          <div style="display:flex;flex-direction:column;gap:4px;"><span style="font-size:20px;font-weight:800;letter-spacing:-0.02em;">{{ pm.name }}</span><span style="font-size:13px;font-weight:600;color:#8A8A8A;">{{ pm.sub }}</span></div>
+          <button onClick="{{ pmClose }}" aria-label="Bağla" style="width:36px;height:36px;border:none;border-radius:10px;background:#F3F3F4;display:flex;align-items:center;justify-content:center;flex-shrink:0;" style-hover="background:#EAEAEA;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+        <div style="overflow-y:auto;display:flex;flex-direction:column;">
+          <sc-for list="{{ pm.items }}" as="p" hint-placeholder-count="6">
+            <button onClick="{{ p.open }}" style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 24px;border:none;border-bottom:1px solid #F4F4F4;background:#FFFFFF;text-align:left;transition:background .12s;" style-hover="background:#FAFAFA;">
+              <span style="display:flex;flex-direction:column;gap:2px;min-width:0;"><span style="font-size:14px;font-weight:800;">{{ p.child }} <span style="font-weight:600;color:#8A8A8A;">· {{ p.ageTxt }}</span></span><span style="font-size:12px;font-weight:600;color:#8A8A8A;">Valideyn: {{ p.parent }}</span></span>
+              <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ p.st.bg }};color:{{ p.st.fg }};font-size:11px;font-weight:700;white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.st.dot }};"></span>{{ p.st.l }}</span>
+            </button>
+          </sc-for>
+          <sc-if value="{{ pm.empty }}" hint-placeholder-val="{{ false }}"><div style="padding:40px 24px;text-align:center;font-size:14px;font-weight:600;color:#8A8A8A;">Bu kurs üçün hələ müraciət yoxdur.</div></sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pvOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ pvClose }}" style="position:fixed;inset:0;z-index:130;background:rgba(26,26,26,.5);display:flex;align-items:center;justify-content:center;padding:16px;animation:kaFade .2s ease;">
+      <div onClick="{{ stop }}" role="dialog" aria-label="Saytın önizləməsi" style="width:min(1100px,100%);height:calc(100vh - 32px);max-height:860px;background:#FFFFFF;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.3);animation:kaIn .25s ease;">
+        <div style="height:52px;flex-shrink:0;background:#F3F3F4;border-bottom:1px solid #E6E6E6;display:flex;align-items:center;gap:12px;padding:0 14px;">
+          <span style="display:flex;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:#D6D6D6;"></span><span style="width:10px;height:10px;border-radius:50%;background:#D6D6D6;"></span><span style="width:10px;height:10px;border-radius:50%;background:#D6D6D6;"></span></span>
+          <span style="flex:1;max-width:340px;height:30px;border-radius:8px;background:#FFFFFF;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:600;color:#6B6B6B;">kidsup.az</span>
+          <span style="padding:5px 10px;border-radius:999px;background:#FFF0F7;color:#C2006A;font-size:11px;font-weight:800;white-space:nowrap;">Önizləmə · dərc olunmayıb</span>
+          <span style="flex:1;"></span>
+          <button onClick="{{ pvClose }}" aria-label="Önizləməni bağla" style="width:34px;height:34px;border:none;border-radius:8px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+        </div>
+        <div ref="{{ pvRef }}" style="position:relative;flex:1;overflow-y:auto;background:#FFFFFF;">
+          <div style="height:64px;border-bottom:1px solid #EAEAEA;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(16px,4vw,40px);">
+            <span style="font-weight:800;font-size:22px;letter-spacing:-0.03em;">Kids<span style="color:#FF0083;">Up</span></span>
+            <span style="padding:10px 18px;border-radius:6px;background:#FF0083;color:#FFFFFF;font-weight:700;font-size:14px;">{{ pv.cta.primary }}</span>
+          </div>
+          <div id="pv-hero" style="outline:{{ pv.hl.hero }};outline-offset:-6px;padding:64px clamp(16px,4vw,40px) 40px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:22px;">
+            <h1 style="margin:0;max-width:820px;font-weight:800;font-size:clamp(34px,5.4vw,64px);line-height:1;letter-spacing:-0.045em;text-wrap:balance;">{{ pv.hero.title }}</h1>
+            <p style="margin:0;max-width:620px;font-size:17px;line-height:1.55;color:#4A4A4A;text-wrap:pretty;">{{ pv.hero.desc }}</p>
+            <div id="pv-cta" style="outline:{{ pv.hl.cta }};outline-offset:6px;border-radius:8px;display:flex;align-items:center;gap:22px;flex-wrap:wrap;justify-content:center;"><span style="padding:16px 30px;border-radius:6px;background:#FF0083;color:#FFFFFF;font-weight:800;font-size:16px;">{{ pv.cta.primary }}</span><span style="font-weight:700;font-size:15px;border-bottom:2px solid #FF0083;padding-bottom:3px;">{{ pv.cta.secondary }}</span></div>
+          </div>
+          <div id="pv-images" style="outline:{{ pv.hl.images }};outline-offset:-6px;padding:8px clamp(16px,4vw,40px) 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;">
+            <sc-for list="{{ pv.imgs }}" as="im" hint-placeholder-count="3">
+              <div style="aspect-ratio:4/3;border-radius:8px;background:#F6F6F6;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                <sc-if value="{{ im.has }}" hint-placeholder-val="{{ false }}"><div role="img" aria-label="{{ im.label }}" style="width:100%;height:100%;background-image:{{ im.bgi }};background-size:cover;background-position:center;"></div></sc-if>
+                <sc-if value="{{ im.none }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;font-weight:700;color:#A3A3A3;">{{ im.label }}</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div id="pv-about" style="outline:{{ pv.hl.about }};outline-offset:-6px;background:#F6F6F6;padding:48px clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:14px;">
+            <h2 style="margin:0;font-weight:800;font-size:32px;letter-spacing:-0.04em;">{{ pv.about.title }}</h2>
+            <p style="margin:0;max-width:720px;font-size:16px;line-height:1.6;color:#4A4A4A;">{{ pv.about.text }}</p>
+          </div>
+          <div id="pv-benefits" style="outline:{{ pv.hl.benefits }};outline-offset:-6px;padding:48px clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:22px;">
+            <span style="font-size:13px;font-weight:800;color:#FF0083;">Uşaqlar nə öyrənəcək?</span>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;">
+              <sc-for list="{{ pv.benefits }}" as="bn" hint-placeholder-count="5">
+                <div style="display:flex;gap:12px;align-items:flex-start;padding:16px;border:1px solid #EAEAEA;border-radius:6px;"><span style="font-weight:800;color:#FF0083;font-size:15px;">{{ bn.n }}</span><span style="font-weight:800;font-size:16px;line-height:1.3;">{{ bn.t }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="padding:0 clamp(16px,4vw,40px) 48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;">
+            <div id="pv-pricing" style="outline:{{ pv.hl.pricing }};outline-offset:4px;border:1px solid #1A1A1A;border-radius:6px;padding:28px;display:flex;flex-direction:column;gap:12px;">
+              <span style="font-size:15px;font-weight:700;color:#6B6B6B;">1 uşaq üçün</span>
+              <span style="font-size:48px;font-weight:800;letter-spacing:-0.04em;line-height:1;">{{ pv.pricing.price }} <span style="font-size:22px;">AZN</span></span>
+              <span style="font-size:15px;line-height:1.5;color:#4A4A4A;">İkinci uşaq üçün <b style="color:#1A1A1A;">{{ pv.pricing.second }} AZN</b></span>
+              <span style="font-size:14px;line-height:1.5;color:#4A4A4A;">{{ pv.pricing.note }}</span>
+            </div>
+            <div id="pv-course" style="outline:{{ pv.hl.course }};outline-offset:4px;background:#F6F6F6;border-radius:6px;padding:28px;display:flex;flex-direction:column;gap:0;">
+              <sc-for list="{{ pv.courseRows }}" as="cr" hint-placeholder-count="6">
+                <div style="display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid #DADADA;font-size:14px;"><span style="font-weight:600;color:#6B6B6B;">{{ cr.l }}</span><span style="font-weight:800;text-align:right;">{{ cr.v }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div id="pv-faq" style="outline:{{ pv.hl.faq }};outline-offset:-6px;padding:48px clamp(16px,4vw,40px);display:flex;flex-direction:column;gap:18px;">
+            <h2 style="margin:0;font-weight:800;font-size:32px;letter-spacing:-0.04em;">Tez-tez verilən suallar</h2>
+            <div style="display:flex;flex-direction:column;border-top:1px solid #1A1A1A;">
+              <sc-for list="{{ pv.faq }}" as="fq" hint-placeholder-count="3">
+                <div style="border-bottom:1px solid #1A1A1A;padding:18px 0;display:flex;flex-direction:column;gap:8px;"><span style="font-weight:800;font-size:17px;">{{ fq.q }}</span><span style="font-size:15px;line-height:1.55;color:#4A4A4A;">{{ fq.a }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div id="pv-contact" style="outline:{{ pv.hl.contact }};outline-offset:-6px;background:#1A1A1A;color:#FFFFFF;padding:40px clamp(16px,4vw,40px);display:flex;flex-wrap:wrap;gap:12px 32px;align-items:center;font-size:15px;font-weight:600;">
+            <span style="font-weight:800;font-size:22px;letter-spacing:-0.03em;margin-right:auto;">Kids<span style="color:#FF0083;">Up</span></span>
+            <sc-for list="{{ pv.contact }}" as="ct" hint-placeholder-count="3"><span>{{ ct.v }}</span></sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div aria-live="polite" style="position:fixed;right:20px;bottom:20px;left:{{ toastLeft }};z-index:200;display:flex;flex-direction:column;gap:10px;align-items:flex-end;pointer-events:none;">
+    <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="0">
+      <div style="pointer-events:auto;width:min(380px,100%);background:#1A1A1A;color:#FFFFFF;border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;box-shadow:0 14px 36px rgba(26,26,26,.28);animation:kaIn .25s ease;">
+        <span style="width:22px;height:22px;border-radius:50%;background:{{ t.ibg }};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="{{ t.d }}"></path></svg></span>
+        <span style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;"><span style="font-size:14px;font-weight:800;">{{ t.title }}</span><span style="font-size:13px;line-height:1.45;font-weight:500;color:#CFCFCF;">{{ t.sub }}</span></span>
+        <button onClick="{{ t.close }}" aria-label="Bağla" style="width:24px;height:24px;border:none;border-radius:6px;background:transparent;color:#8A8A8A;display:flex;align-items:center;justify-content:center;flex-shrink:0;" style-hover="color:#FFFFFF;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+      </div>
+    </sc-for>
+  </div>
+
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;sidebarTone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'light'|'dark'&quot;,&quot;section&quot;:&quot;Görünüş&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;compact&quot;,&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;Görünüş&quot;}}">
+class Component extends DCLogic {
+  static MON = ['yan','fev','mar','apr','may','iyn','iyl','avq','sen','okt','noy','dek'];
+  static MONF = ['yanvar','fevral','mart','aprel','may','iyun','iyul','avqust','sentyabr','oktyabr','noyabr','dekabr'];
+  static NOW = new Date(2026, 9, 18, 15, 30).getTime();
+  static DAY = 86400000;
+  static ORDER = ['new','contacted','confirmed','rejected'];
+  static ST = {
+    new: { l: 'Yeni', fg: '#C2006A', bg: '#FFEFF7', dot: '#FF0083' },
+    contacted: { l: 'Əlaqə saxlanılıb', fg: '#8F5400', bg: '#FFF4E2', dot: '#F29900' },
+    confirmed: { l: 'Təsdiqlənib', fg: '#0F6B43', bg: '#E8F6EE', dot: '#1F9D66' },
+    rejected: { l: 'İmtina edilib', fg: '#5C5C5C', bg: '#F1F1F1', dot: '#A3A3A3' }
+  };
+  static ROLES = {
+    admin: { l: 'Admin', desc: 'Tam giriş: qeydiyyatlar, kurslar, sayt məzmunu və istifadəçilər.', bg: '#1A1A1A', fg: '#FFFFFF', d: 'M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6zM9 12l2 2 4-4' },
+    manager: { l: 'Menecer', desc: 'Qeydiyyatlar və kurslar. Valideynlərlə əlaqə, status dəyişmə.', bg: '#FFF0F7', fg: '#C2006A', d: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1' },
+    editor: { l: 'Redaktor', desc: 'Yalnız saytın məzmunu: mətnlər, şəkillər, FAQ.', bg: '#FFF4E2', fg: '#8F5400', d: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4' }
+  };
+  static USERS = [
+    { id: 'u1', name: 'KidsUp Admin', email: 'admin@kidsup.az', role: 'admin', status: 'active', last: 0, me: true },
+    { id: 'u2', name: 'Leyla Məmmədova', email: 'leyla@kidsup.az', role: 'manager', status: 'active', last: 3 },
+    { id: 'u3', name: 'Orxan Əliyev', email: 'orxan@kidsup.az', role: 'editor', status: 'active', last: 52 },
+    { id: 'u4', name: 'Günel Rzayeva', email: 'gunel@kidsup.az', role: 'manager', status: 'invited', last: null }
+  ];
+  static D = {
+    team: 'M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6zM9 12l2 2 4-4',
+    dash: 'M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z',
+    users: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M16 3.5a4 4 0 0 1 0 7.5M22 21v-1a6 6 0 0 0-4-5.6',
+    book: 'M4 19.5V5a2 2 0 0 1 2-2h14v18H6.5A2.5 2.5 0 0 1 4 18.5zM8 7h8M8 11h6',
+    site: 'M3 5h18v14H3zM3 9h18M6 7h.01M9 7h.01',
+    inbox: 'M4 13l3-8h10l3 8v6H4zM4 13h5l1 2h4l1-2h5',
+    checkC: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8 12l3 3 5-6',
+    seat: 'M6 11V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5M3 11h18v5H3zM6 16v4M18 16v4',
+    check: 'M5 12l5 5L20 7',
+    alert: 'M12 6v8M12 18.5v.01'
+  };
+  static SECTIONS = [
+    { k: 'hero', t: 'Hero bölməsi', sub: 'Əsas başlıq və təsvir', icon: 'M4 5h16v14H4zM8 10h8M8 14h5', fields: [{ k: 'title', l: 'Başlıq', type: 'text' }, { k: 'desc', l: 'Təsvir', type: 'area' }] },
+    { k: 'cta', t: 'Əsas çağırış (CTA)', sub: 'Düymə mətnləri', icon: 'M4 8h16v8H4zM9 12h6', fields: [{ k: 'primary', l: 'Əsas düymə', type: 'text' }, { k: 'secondary', l: 'İkinci keçid', type: 'text' }] },
+    { k: 'about', t: 'KidsUp haqqında', sub: 'Proqramın qısa təsviri', icon: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8v.01', fields: [{ k: 'title', l: 'Başlıq', type: 'text' }, { k: 'text', l: 'Mətn', type: 'area' }] },
+    { k: 'benefits', t: 'Proqramın faydaları', sub: 'Uşaqlar nə öyrənəcək', icon: 'M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.3l6-.7z', fields: [{ k: 'items', l: 'Faydalar', type: 'list', add: 'Fayda əlavə et' }] },
+    { k: 'course', t: 'Kurs məlumatı', sub: 'Tarix, vaxt, yaş, məkan', icon: 'M4 19.5V5a2 2 0 0 1 2-2h14v18H6.5A2.5 2.5 0 0 1 4 18.5zM8 7h8M8 11h6', fields: [{ k: 'start', l: 'Başlanğıc', type: 'text' }, { k: 'duration', l: 'Müddət', type: 'text' }, { k: 'time', l: 'Vaxt', type: 'text' }, { k: 'age', l: 'Yaş', type: 'text' }, { k: 'group', l: 'Qrup', type: 'text' }, { k: 'place', l: 'Məkan', type: 'text' }] },
+    { k: 'pricing', t: 'Qiymət məlumatı', sub: 'Standart və ailə qiyməti', icon: 'M3 12V4h8l10 10-8 8zM7.5 8.5v.01', fields: [{ k: 'price', l: 'Bir uşaq üçün (AZN)', type: 'text' }, { k: 'second', l: 'İkinci uşaq üçün (AZN)', type: 'text' }, { k: 'note', l: 'Qiymətə daxildir', type: 'area' }] },
+    { k: 'images', t: 'Şəkillər', sub: 'Saytdakı fotolar', icon: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9v.01', fields: [{ k: 'items', l: 'Şəkillər', type: 'images', hint: 'JPG və ya PNG, maksimum 3 MB.' }] },
+    { k: 'faq', t: 'Tez-tez verilən suallar', sub: 'Sual və cavablar', icon: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.01', fields: [{ k: 'items', l: 'Suallar', type: 'faq', add: 'Sual əlavə et' }] },
+    { k: 'contact', t: 'Əlaqə məlumatları', sub: 'Telefon, WhatsApp, e-poçt', icon: 'M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2', fields: [{ k: 'phone', l: 'Telefon', type: 'text' }, { k: 'whatsapp', l: 'WhatsApp', type: 'text' }, { k: 'email', l: 'E-poçt', type: 'text', ph: 'info@kidsup.az' }, { k: 'address', l: 'Ünvan', type: 'text' }] }
+  ];
+  static DEF = {
+    hero: { title: 'Kiçik ideyalar. Böyük başlanğıclar.', desc: '8–13 yaşlı uşaqlar üçün praktiki sahibkarlıq proqramı. Uşaqlar ideya yaradır, məhsul hazırlayıb sınayır və öz layihələrini təqdim edirlər.' },
+    cta: { primary: 'Müraciət et', secondary: 'Proqramla tanış ol' },
+    about: { title: 'KidsUp nədir?', text: 'KidsUp 8–13 yaşlı uşaqlar üçün 6 həftəlik praktiki sahibkarlıq proqramıdır. Həftədə bir görüş, hər görüşdə bir modul və ona uyğun praktiki tapşırıqlar.' },
+    benefits: { items: ['Problemləri görmək və həll düşünmək', 'Düzgün sual vermək və insanları dinləmək', 'Komandada işləmək', 'Xərc və gəliri hesablamaq'] },
+    course: { start: '5 dekabr 2026', duration: '6 həftə · 6 modul', time: 'şənbə, 09:30–13:00', age: '8–13', group: 'maksimum 20 uşaq', place: 'Bakı, dəqiq ünvan qeydiyyatdan əvvəl bildiriləcək' },
+    pricing: { price: '650', second: '500', note: 'Dərs materialları, Demo Day və sertifikat qiymətə daxildir.' },
+    images: { items: [{ label: 'Hero şəkli', src: '' }, { label: 'Proqram bölməsi', src: '' }, { label: 'Demo Day', src: '' }] },
+    faq: { items: [
+      { q: '650 AZN ödənişə nələr daxildir?', a: 'Ödəniş bütün 6 həftəlik proqramı, dərslərdə istifadə ediləcək materialları, Demo Day tədbirini və sertifikatı əhatə edir.' },
+      { q: 'İki övladımı qeydiyyatdan keçirsəm, endirim varmı?', a: 'Bəli. Birinci uşaq üçün qiymət 650 AZN, ikinci uşaq üçün 500 AZN-dir.' },
+      { q: 'Övladımın gördüyü işləri mən də görə biləcəyəm?', a: 'Bəli. Proqramın sonundakı Demo Day tədbirində uşaqlar hazırladıqları layihələri valideynlərə təqdim edəcəklər.' }
+    ] },
+    contact: { phone: '+994 50 998 87 07', whatsapp: '+994 50 998 87 07', email: '', address: 'Bakı' }
+  };
+  static COURSES = [
+    { id: 'c1', start: '2026-12-05', end: '2027-01-10', schedule: 'Şənbə, 09:30–13:00', location: 'Bakı, dəqiq ünvan qeydiyyatdan əvvəl bildiriləcək', price: 650, max: 20, open: true },
+    { id: 'c2', start: '2027-01-16', end: '2027-02-21', schedule: 'Şənbə, 09:30–13:00', location: 'Bakı, dəqiq ünvan qeydiyyatdan əvvəl bildiriləcək', price: 650, max: 20, open: false },
+    { id: 'c3', start: '2027-02-27', end: '2027-04-04', schedule: 'Şənbə, 09:30–13:00', location: 'Bakı, dəqiq ünvan qeydiyyatdan əvvəl bildiriləcək', price: 650, max: 20, open: false }
+  ];
+
+  pvRef = React.createRef();
+  state = this.init();
+
+  clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  seedRegs() {
+    const K = this.constructor;
+    let x = 20261018;
+    const r = () => { x = (x * 48271) % 2147483647; return x / 2147483647; };
+    const pick = a => a[Math.floor(r() * a.length)];
+    const mom = ['Aynur','Leyla','Günel','Səbinə','Nigar','Aysel','Könül','Ülviyyə','Fidan','Nərmin','Lalə','Sevinc','Türkan','Aytən','Zəhra'];
+    const dad = ['Rəşad','Elvin','Orxan','Tural','Kamran','Fərid','Vüsal','Anar','Səməd','Ramil','Elçin','Rüfət'];
+    const sur = ['Məmmədov','Əliyev','Həsənov','Hüseynov','Quliyev','İsmayılov','Abbasov','Rzayev','Nəsirov','Cəfərov','Səfərov','Mustafayev','Kərimov','Babayev','Zeynalov','Əhmədov'];
+    const boy = ['Murad','Kənan','Emil','Ayxan','Tunar','Nihad','Rəvan','Yusif','Ömər','Elnur','Toğrul','Fuad'];
+    const girl = ['Ayan','Nərgiz','Aylin','Mədinə','Fatimə','Lamiyə','Selin','Ayla','Sara','Nilay','Xədicə','Jalə'];
+    const notes = {
+      new: [''],
+      contacted: ['Cümə günü yenidən zəng ediləcək.', 'Valideyn şənbə cədvəlini dəqiqləşdirir.', 'WhatsApp-da proqram haqqında məlumat göndərildi.', ''],
+      confirmed: ['', '', 'Ailə endirimi barədə məlumat verildi.', ''],
+      rejected: ['Cədvəl uyğun gəlmədi.', 'Növbəti qrupa maraq göstərdi.']
+    };
+    const plan = [['c1','confirmed',16,8,29],['c1','new',9,0,4],['c1','contacted',6,1,10],['c1','rejected',3,6,20]];
+    const out = [];
+    plan.forEach(([c, s, n, a, b]) => {
+      for (let i = 0; i < n; i++) {
+        const fem = r() < 0.7, sn = pick(sur), boyK = r() < 0.5;
+        const ts = K.NOW - Math.floor((a + r() * (b - a)) * K.DAY) - Math.floor(r() * 9) * 3600000;
+        const d2 = () => String(Math.floor(r() * 100)).padStart(2, '0');
+        out.push({ parent: (fem ? pick(mom) : pick(dad)) + ' ' + sn + (fem ? 'a' : ''), phone: '+994 ' + pick(['50','51','55','70','77','99']) + ' ' + (100 + Math.floor(r() * 900)) + ' ' + d2() + ' ' + d2(), child: (boyK ? pick(boy) : pick(girl)) + ' ' + sn + (boyK ? '' : 'a'), age: 8 + Math.floor(r() * 6), course: c, ts, status: s, note: pick(notes[s]) });
+      }
+    });
+    out.sort((p, q) => q.ts - p.ts);
+    out.forEach((o, i) => { o.id = 1000 + out.length - i; });
+    return out;
+  }
+
+  init() {
+    const K = this.constructor;
+    const cms = {}, drafts = {}, pubAt = {};
+    K.SECTIONS.forEach((sec, i) => {
+      cms[sec.k] = { pub: this.clone(K.DEF[sec.k]), saved: this.clone(K.DEF[sec.k]) };
+      drafts[sec.k] = this.clone(K.DEF[sec.k]);
+      pubAt[sec.k] = K.NOW - (2 + (i % 4)) * K.DAY - i * 3600000;
+    });
+    return { users: K.USERS.map(u => Object.assign({}, u, { last: u.last == null ? null : K.NOW - u.last * 3600000 })), um: null, udel: null, w: typeof window !== 'undefined' ? window.innerWidth : 1440, page: 'dash', menu: false, regs: this.seedRegs(), courses: K.COURSES.map(c => Object.assign({}, c, { name: this.rangeName(c.start, c.end) })), q: '', filter: 'all', selId: null, drawer: false, noteDraft: '', del: null, cm: null, pm: null, cms, drafts, pubAt, cmsKey: null, preview: false, toasts: [], hover: -1, out: false };
+  }
+
+  componentDidMount() {
+    this._rs = () => this.setState({ w: window.innerWidth });
+    this._kd = e => {
+      if (e.key !== 'Escape') return;
+      const s = this.state;
+      if (s.preview) this.setState({ preview: false });
+      else if (s.del != null) this.setState({ del: null });
+      else if (s.cm) this.setState({ cm: null });
+      else if (s.pm) this.setState({ pm: null });
+      else if (s.drawer) this.setState({ drawer: false });
+      else if (s.menu) this.setState({ menu: false });
+    };
+    window.addEventListener('resize', this._rs);
+    window.addEventListener('keydown', this._kd);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this._rs);
+    window.removeEventListener('keydown', this._kd);
+    (this._timers || []).forEach(clearTimeout);
+  }
+
+  fmtD(ts) { const K = this.constructor, d = new Date(ts); return d.getDate() + ' ' + K.MON[d.getMonth()] + ' ' + d.getFullYear(); }
+  fmtT(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  fmtISO(iso) { const K = this.constructor; if (!iso) return '—'; const p = iso.split('-').map(Number); return p[2] + ' ' + K.MONF[p[1] - 1] + ' ' + p[0]; }
+  rangeName(a, b) {
+    const K = this.constructor; if (!a || !b) return 'Tarix seçilməyib';
+    const p = a.split('-').map(Number), q = b.split('-').map(Number);
+    return p[0] === q[0] ? p[2] + ' ' + K.MONF[p[1] - 1] + ' – ' + q[2] + ' ' + K.MONF[q[1] - 1] + ' ' + q[0] : p[2] + ' ' + K.MONF[p[1] - 1] + ' ' + p[0] + ' – ' + q[2] + ' ' + K.MONF[q[1] - 1] + ' ' + q[0];
+  }
+  addDays(iso, n) { const p = iso.split('-').map(Number), d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + n)); return d.toISOString().slice(0, 10); }
+  weeks(a, b) { if (!a || !b) return '—'; const n = Math.round((Date.parse(b) - Date.parse(a)) / 86400000 / 7) + 1; return n + ' həftə'; }
+  norm(t) { return String(t || '').toLocaleLowerCase('tr'); }
+  confOf(cid, regs) { return (regs || this.state.regs).filter(r => r.course === cid && r.status === 'confirmed').length; }
+
+  toast(kind, title, sub) {
+    this._tid = (this._tid || 0) + 1;
+    const id = this._tid;
+    this.setState(s => ({ toasts: s.toasts.concat({ id, kind, title, sub: sub || '' }).slice(-3) }));
+    this._timers = this._timers || [];
+    this._timers.push(setTimeout(() => this.dismiss(id), 3800));
+  }
+  dismiss(id) { this.setState(s => ({ toasts: s.toasts.filter(t => t.id !== id) })); }
+
+  saveUser() {
+    const s = this.state, um = s.um, err = {}, name = um.name.trim(), email = um.email.trim().toLowerCase();
+    if (name.length < 3) err.name = 'Ad və soyadı daxil edin.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) err.email = 'Düzgün e-poçt ünvanı daxil edin.';
+    else if (s.users.some(u => u.email === email)) err.email = 'Bu e-poçtla istifadəçi artıq var.';
+    if (Object.keys(err).length) { this.setState({ um: Object.assign({}, um, { err }) }); return; }
+    this.setState({ users: s.users.concat({ id: 'u' + Date.now(), name, email, role: um.role, status: 'invited', last: null }), um: null });
+    this.toast('ok', 'Dəvət göndərildi', name + ' · ' + this.constructor.ROLES[um.role].l + '. Backend qoşulduqdan sonra dəvət e-poçtla gedəcək.');
+  }
+  setRole(id, role) {
+    const s = this.state, u = s.users.find(x => x.id === id);
+    if (u.role === 'admin' && role !== 'admin' && s.users.filter(x => x.role === 'admin').length < 2) { this.toast('error', 'Rol dəyişmədi', 'Paneldə ən azı bir admin qalmalıdır.'); this.setState(ss => ({ rv: (ss.rv || 0) + 1 })); return; }
+    this.setState({ users: s.users.map(x => x.id === id ? Object.assign({}, x, { role }) : x) });
+    this.toast('ok', 'Rol yeniləndi', u.name + ' — ' + this.constructor.ROLES[role].l);
+  }
+  go(k) { this.setState({ page: k, menu: false, drawer: false }); if (typeof window !== 'undefined') window.scrollTo(0, 0); }
+  openReg(id) { const r = this.state.regs.find(x => x.id === id); if (!r) return; this.setState({ selId: id, drawer: true, noteDraft: r.note || '' }); }
+
+  setStatus(id, k) {
+    const s = this.state, K = this.constructor;
+    const reg = s.regs.find(r => r.id === id);
+    if (!reg || reg.status === k) return;
+    const c = s.courses.find(x => x.id === reg.course);
+    const conf = this.confOf(reg.course);
+    if (k === 'confirmed' && c && conf >= c.max) { this.toast('error', 'Təsdiq mümkün deyil', c.name + ' tam doludur (' + conf + ' / ' + c.max + '). Əvvəlcə kursda yer açın.'); return; }
+    const was = reg.status;
+    this.setState({ regs: s.regs.map(r => r.id === id ? Object.assign({}, r, { status: k }) : r) });
+    if (k === 'confirmed') { const left = c.max - conf - 1; this.toast('ok', 'Qeydiyyat təsdiqləndi', reg.child + ' kursa əlavə olundu. ' + c.name + ': ' + left + ' boş yer qaldı.'); }
+    else if (was === 'confirmed') this.toast('ok', 'Status: ' + K.ST[k].l, 'Təsdiq ləğv olundu, ' + (c ? c.name : 'kursda') + ' 1 yer boşaldı.');
+    else this.toast('ok', 'Status yeniləndi', reg.parent + ' — ' + K.ST[k].l);
+  }
+
+  openCourse(c) {
+    this.setState({ cm: c ? { mode: 'edit', id: c.id, start: c.start, end: c.end || '', schedule: c.schedule, location: c.location, price: String(c.price), max: String(c.max), open: c.open, err: {} } : { mode: 'new', id: null, start: '', end: '', schedule: 'Şənbə, 09:30–13:00', location: 'Bakı', price: '650', max: '20', open: !this.state.courses.some(x => x.open), err: {} } });
+  }
+  setCm(patch) { this.setState(s => ({ cm: Object.assign({}, s.cm, patch, { err: Object.assign({}, s.cm.err, Object.keys(patch).reduce((a, k) => { a[k] = ''; return a; }, {})) }) })); }
+  saveCourse() {
+    const s = this.state, cm = s.cm, err = {};
+    const price = Number(cm.price), max = Number(cm.max);
+    const conf = cm.id ? this.confOf(cm.id) : 0;
+    if (!cm.start) err.start = 'Başlanğıc tarixini seçin.';
+    if (!cm.end) err.end = 'Bitmə tarixini seçin.'; else if (cm.start && cm.end <= cm.start) err.end = 'Bitmə tarixi başlanğıcdan sonra olmalıdır.';
+    if (!cm.price || !(price > 0)) err.price = 'Qiymət 0-dan böyük olmalıdır.';
+    if (!Number.isInteger(max) || max < 1) err.max = 'Ən azı 1 iştirakçı olmalıdır.';
+    else if (max < conf) err.max = 'Bu kursda artıq ' + conf + ' təsdiqlənmiş iştirakçı var.';
+    if (Object.keys(err).length) { this.setState({ cm: Object.assign({}, cm, { err }) }); this.toast('error', 'Formada xəta var', 'Qırmızı ilə qeyd olunan sahələri düzəldin.'); return; }
+    const data = { name: this.rangeName(cm.start, cm.end), start: cm.start, end: cm.end, schedule: cm.schedule.trim(), location: cm.location.trim(), price, max, open: cm.open };
+    const others = cm.open ? s.courses.map(c => c.id === cm.id ? c : Object.assign({}, c, { open: false })) : s.courses;
+    const prev = cm.open ? s.courses.find(c => c.open && c.id !== cm.id) : null;
+    if (prev) setTimeout(() => this.toast('ok', prev.name + ' üçün qeydiyyat bağlandı', 'Saytdakı forma yalnız bir aktiv kursa bağlı ola bilər.'), 0);
+    if (cm.mode === 'new') {
+      this.setState({ courses: others.concat(Object.assign({ id: 'c' + Date.now() }, data)), cm: null });
+      this.toast('ok', 'Kurs yaradıldı', data.name + ' · ' + max + ' yer · ' + price + ' AZN');
+    } else {
+      this.setState({ courses: others.map(c => c.id === cm.id ? Object.assign({}, c, data) : c), cm: null });
+      this.toast('ok', 'Kurs yeniləndi', data.name + ': ' + (max - conf) + ' boş yer');
+    }
+  }
+  toggleCourse(id) {
+    const s = this.state, c = s.courses.find(x => x.id === id);
+    if (c.open) {
+      this.setState({ courses: s.courses.map(x => x.id === id ? Object.assign({}, x, { open: false }) : x) });
+      this.toast('ok', 'Qeydiyyat bağlandı', 'Saytda aktiv kurs yoxdur. Formdan gələn müraciətlər heç bir kursa bağlanmayacaq.');
+      return;
+    }
+    const prev = s.courses.find(x => x.open && x.id !== id);
+    this.setState({ courses: s.courses.map(x => Object.assign({}, x, { open: x.id === id })) });
+    this.toast('ok', c.name + ' aktivdir', 'Saytdakı qeydiyyat formu artıq bu kursa bağlıdır.' + (prev ? ' ' + prev.name + ' üçün qeydiyyat bağlandı.' : ''));
+  }
+
+  secState(k) {
+    const s = this.state;
+    const dirty = JSON.stringify(s.drafts[k]) !== JSON.stringify(s.cms[k].saved);
+    const pending = JSON.stringify(s.cms[k].saved) !== JSON.stringify(s.cms[k].pub);
+    if (dirty) return { l: 'Yadda saxlanmayıb', dot: '#F29900', fg: '#8F5400', bg: '#FFF4E2', dirty, pending };
+    if (pending) return { l: 'Dərc gözləyir', dot: '#FF0083', fg: '#C2006A', bg: '#FFEFF7', dirty, pending };
+    return { l: 'Dərc olunub', dot: '#1F9D66', fg: '#0F6B43', bg: '#E8F6EE', dirty, pending };
+  }
+  updDraft(k, fn) { this.setState(s => { const d = this.clone(s.drafts[k]); fn(d); return { drafts: Object.assign({}, s.drafts, { [k]: d }) }; }); }
+  saveSec(k) {
+    if (!this.secState(k).dirty) return;
+    this.setState(s => ({ cms: Object.assign({}, s.cms, { [k]: { pub: s.cms[k].pub, saved: this.clone(s.drafts[k]) } }) }));
+    this.toast('ok', 'Yadda saxlanıldı', 'Dəyişikliklər qaralama kimi saxlanıldı. Sayta göndərmək üçün "Dərc et" düyməsini basın.');
+  }
+  publishSec(k) {
+    const st = this.secState(k);
+    if (!st.dirty && !st.pending) { this.toast('ok', 'Dəyişiklik yoxdur', 'Bu bölmə artıq dərc olunub.'); return; }
+    this.setState(s => ({ cms: Object.assign({}, s.cms, { [k]: { pub: this.clone(s.drafts[k]), saved: this.clone(s.drafts[k]) } }), pubAt: Object.assign({}, s.pubAt, { [k]: Date.now() }) }));
+    this.toast('ok', 'Dərc olundu', 'Prototipdə yadda saxlanıldı. Sayt inteqrasiyasından sonra dəyişiklik canlı sayta ötürüləcək.');
+  }
+  publishAll() {
+    const K = this.constructor;
+    const keys = K.SECTIONS.map(x => x.k).filter(k => { const st = this.secState(k); return st.dirty || st.pending; });
+    if (!keys.length) return;
+    this.setState(s => { const cms = Object.assign({}, s.cms), pubAt = Object.assign({}, s.pubAt); keys.forEach(k => { cms[k] = { pub: this.clone(s.drafts[k]), saved: this.clone(s.drafts[k]) }; pubAt[k] = Date.now(); }); return { cms, pubAt }; });
+    this.toast('ok', keys.length + ' bölmə dərc olundu', 'Sayt inteqrasiyasından sonra dəyişikliklər canlı sayta ötürüləcək.');
+  }
+  upload(k, i, e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^image\//.test(file.type)) { this.toast('error', 'Fayl formatı uyğun deyil', 'Yalnız JPG, PNG və ya WEBP şəkil yükləyin.'); return; }
+    if (file.size > 3 * 1024 * 1024) { this.toast('error', 'Şəkil çox böyükdür', 'Maksimum ölçü 3 MB-dır.'); return; }
+    const rd = new FileReader();
+    rd.onload = () => { this.updDraft(k, d => { d.items[i].src = rd.result; }); this.toast('ok', 'Şəkil yükləndi', 'Dəyişikliyi saxlamağı və dərc etməyi unutmayın.'); };
+    rd.readAsDataURL(file);
+  }
+  openPreview(key) {
+    this.setState({ preview: true }, () => setTimeout(() => {
+      const box = this.pvRef.current; const el = typeof document !== 'undefined' && document.getElementById('pv-' + key);
+      if (box && el) box.scrollTop = Math.max(0, el.offsetTop - 24);
+    }, 80));
+  }
+
+  renderVals() {
+    const s = this.state, K = this.constructor, w = s.w;
+    const mode = w >= 1100 ? 'full' : w >= 760 ? 'rail' : 'mobile';
+    const labels = mode !== 'rail';
+    const dark = this.props.sidebarTone === 'dark';
+    const tone = dark
+      ? { bg: '#1A1A1A', line: '#2A2A2A', logo: '#FFFFFF', fg: '#BDBDBD', muted: '#8A8A8A', chip: '#2A2A2A', hover: '#262626', actBg: 'rgba(255,0,131,.16)', actFg: '#FF5CAA' }
+      : { bg: '#FFFFFF', line: '#EDEDED', logo: '#1A1A1A', fg: '#4A4A4A', muted: '#8A8A8A', chip: '#F3F3F4', hover: '#F7F7F8', actBg: '#FFF0F7', actFg: '#FF0083' };
+    const sb = {
+      w: mode === 'rail' ? '76px' : mode === 'full' ? '248px' : '272px',
+      padX: mode === 'rail' ? '12px' : '14px',
+      x: mode === 'mobile' && !s.menu ? 'translateX(-105%)' : 'none',
+      ml: mode === 'full' ? '248px' : mode === 'rail' ? '76px' : '0',
+      just: labels ? 'flex-start' : 'center', labels,
+      logoA: labels ? 'Kids' : 'K', logoB: labels ? 'Up' : 'U',
+      profDir: labels ? 'row' : 'column',
+      scrimO: s.menu && mode === 'mobile' ? 1 : 0, scrimPe: s.menu && mode === 'mobile' ? 'auto' : 'none'
+    };
+
+    const counts = { new: 0, contacted: 0, confirmed: 0, rejected: 0 };
+    s.regs.forEach(r => { counts[r.status]++; });
+    const courseById = {}; s.courses.forEach(c => { courseById[c.id] = c; });
+    const confBy = {}; s.regs.forEach(r => { if (r.status === 'confirmed') confBy[r.course] = (confBy[r.course] || 0) + 1; });
+
+    const navItems = [['dash', 'İdarəetmə paneli', K.D.dash], ['reg', 'Qeydiyyatlar', K.D.users], ['courses', 'Kurslar', K.D.book], ['cms', 'Saytın idarə edilməsi', K.D.site], ['users', 'İstifadəçilər', K.D.team]].map(([k, label, d]) => {
+      const on = s.page === k;
+      return { label, d, cur: on ? 'page' : 'false', bg: on ? tone.actBg : 'transparent', fg: on ? tone.actFg : tone.fg, fw: on ? 800 : 600, go: () => this.go(k), hasBadge: k === 'reg' && counts.new > 0, badge: counts.new, bPos: labels ? 'static' : 'absolute', bMl: labels ? 'auto' : '0' };
+    });
+
+    const titles = {
+      dash: ['İdarəetmə paneli', 'Müraciətlər və kurslar üzrə ümumi vəziyyət.'],
+      reg: ['Qeydiyyatlar', 'Saytdakı formadan gələn valideyn müraciətləri. Backend qoşulduqdan sonra yeni müraciətlər avtomatik "Yeni" statusu ilə və saytda aktiv olan kursa bağlı şəkildə görünəcək.'],
+      courses: ['Kurslar', 'Saytdakı qeydiyyat formu eyni anda yalnız bir aktiv kursa bağlıdır. Hansı kurs aktivdirsə, yeni müraciətlər ona düşür. Digər kurslar keçmiş və ya gələcək qruplardır.'],
+      users: ['İstifadəçilər', 'Admin panelə kimlərin daxil ola biləcəyini və nəyi idarə edəcəyini təyin edin.'],
+      cms: ['Saytın idarə edilməsi', 'Landing səhifənin mətnlərini və şəkillərini kod yazmadan dəyişin. Dəyişikliklər hələlik yalnız bu prototipdə saxlanılır.']
+    };
+
+    const rowV = r => {
+      const c = courseById[r.course];
+      return { id: r.id, idLabel: '#' + r.id, parent: r.parent, phone: r.phone, tel: 'tel:+' + r.phone.replace(/\D/g, ''), child: r.child, age: r.age, ageTxt: r.age + ' yaş', course: c ? c.name : '—', date: this.fmtD(r.ts), time: this.fmtT(r.ts), st: K.ST[r.status], open: () => this.openReg(r.id), stop: e => e.stopPropagation(), bg: s.drawer && s.selId === r.id ? '#FFF7FB' : 'transparent' };
+    };
+
+    const d0 = new Date(K.NOW); d0.setHours(0, 0, 0, 0);
+    const base = d0.getTime() - 29 * K.DAY;
+    const daily = new Array(30).fill(0);
+    s.regs.forEach(r => { const i = Math.floor((r.ts - base) / K.DAY); if (i >= 0 && i < 30) daily[i]++; });
+    const cmax = Math.max(4, ...daily);
+    const last30 = daily.reduce((a, b) => a + b, 0);
+    const chart = {
+      total: last30, gap: mode === 'mobile' ? '3px' : '6px',
+      caption: s.hover >= 0 ? this.fmtD(base + s.hover * K.DAY) + ' · ' + daily[s.hover] + ' müraciət' : 'Gündəlik daxil olan müraciətlər',
+      capC: s.hover >= 0 ? '#FF0083' : '#8A8A8A',
+      bars: daily.map((n, i) => ({ n, hot: i === s.hover, h: (n / cmax * 100) + '%', c: i === s.hover ? '#FF0083' : i === 29 ? '#1A1A1A' : n ? '#FFC7E1' : '#F1F1F3', tip: this.fmtD(base + i * K.DAY) + ': ' + n, enter: () => { if (this.state.hover !== i) this.setState({ hover: i }); } })),
+      leave: () => this.setState({ hover: -1 }),
+      a: this.fmtD(base), m: this.fmtD(base + 15 * K.DAY), z: 'Bu gün',
+      week: daily.slice(23).reduce((x, y) => x + y, 0), avgPos: 'calc((100% - 22px) * ' + (last30 / 30 / cmax).toFixed(3) + ')', avgTxt: 'orta ' + (last30 / 30).toFixed(1).replace('.', ',') + '/gün'
+    };
+
+    const coursesV = s.courses.map(c => {
+      const conf = confBy[c.id] || 0, left = Math.max(0, c.max - conf), full = left === 0;
+      const stat = full && c.open ? { l: 'Saytda aktiv · dolub', fg: '#FFFFFF', bg: '#1A1A1A', dot: '#1F9D66' } : full ? { l: 'Dolub', fg: '#FFFFFF', bg: '#1A1A1A', dot: '#FFFFFF' } : c.open ? { l: 'Saytda aktiv', fg: '#0F6B43', bg: '#E8F6EE', dot: '#1F9D66' } : { l: 'Qeydiyyat bağlı', fg: '#5C5C5C', bg: '#F1F1F1', dot: '#A3A3A3' };
+      const pilot = c.price === 500, std = c.price === 650;
+      return { id: c.id, name: c.name, schedule: c.schedule || '—', location: c.location || '—', startTxt: this.fmtISO(c.start), weeksTxt: this.weeks(c.start, c.end), price: c.price, priceTag: pilot ? 'Pilot qiymət' : std ? 'Standart qiymət' : 'Xüsusi qiymət', tagBg: pilot ? '#FFF0F7' : '#F3F3F4', tagFg: pilot ? '#C2006A' : '#4A4A4A', conf, max: c.max, left, leftTxt: full ? 'Boş yer yoxdur' : left + ' boş yer', leftC: full ? '#1A1A1A' : '#FF0083', pct: Math.min(100, conf / c.max * 100) + '%', bar: full ? '#1A1A1A' : '#FF0083', stat, regCount: s.regs.filter(r => r.course === c.id).length, edit: () => this.openCourse(c), toggle: () => this.toggleCourse(c.id), people: () => this.setState({ pm: c.id }), swBg: c.open ? '#1F9D66' : '#D6D6D6', swX: c.open ? 'translateX(18px)' : 'none', swLbl: c.open ? 'Saytda aktiv' : 'Saytda deyil', aria: c.open ? 'true' : 'false' };
+    });
+    const activeC = coursesV.find(c => s.courses.find(x => x.id === c.id).open);
+    const empty = activeC ? activeC.left : 0;
+
+    const total = s.regs.length || 1;
+    const week7 = daily.slice(23).reduce((x, y) => x + y, 0), prev7 = daily.slice(16, 23).reduce((x, y) => x + y, 0);
+    const conv = Math.round(counts.confirmed / total * 100);
+    const goF = k => () => { this.go('reg'); this.setState({ filter: k }); };
+    const kpis = [
+      { l: 'Ümumi müraciətlər', v: s.regs.length, chip: (week7 >= prev7 ? '+' : '') + (week7 - prev7) + ' həftəlik', chipBg: week7 >= prev7 ? '#E8F6EE' : '#F1F1F1', chipFg: week7 >= prev7 ? '#0F6B43' : '#5C5C5C', sub: 'Son 30 gündə ' + last30 + ' müraciət', pct: '100%', dot: '#1A1A1A', go: goF('all') },
+      { l: 'Yeni', v: counts.new, chip: Math.round(counts.new / total * 100) + '%', chipBg: '#FFEFF7', chipFg: '#C2006A', sub: 'Baxılmağı gözləyir', pct: (counts.new / total * 100) + '%', dot: '#FF0083', go: goF('new') },
+      { l: 'Əlaqə saxlanılıb', v: counts.contacted, chip: Math.round(counts.contacted / total * 100) + '%', chipBg: '#FFF4E2', chipFg: '#8F5400', sub: 'Qərar mərhələsində', pct: (counts.contacted / total * 100) + '%', dot: '#F29900', go: goF('contacted') },
+      { l: 'Təsdiqlənib', v: counts.confirmed, chip: conv + '% konversiya', chipBg: '#E8F6EE', chipFg: '#0F6B43', sub: 'Bütün kurslar üzrə', pct: conv + '%', dot: '#1F9D66', go: goF('confirmed') }
+    ];
+    const AV = [['#FFF0F7', '#C2006A'], ['#E8F6EE', '#0F6B43'], ['#FFF4E2', '#8F5400'], ['#F1F1F3', '#4A4A4A']];
+    const ini = n => n.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
+    const av = id => AV[(typeof id === 'number' ? id : String(id).length) % AV.length];
+    const rel = ts => { const d = Math.floor((d0.getTime() + K.DAY - ts) / K.DAY); return d <= 0 ? 'Bu gün, ' + this.fmtT(ts) : d === 1 ? 'Dünən, ' + this.fmtT(ts) : d + ' gün əvvəl'; };
+    const newList = s.regs.filter(r => r.status === 'new').sort((x, y) => x.ts - y.ts);
+    const waiting = newList.slice(0, 5).map(r => { const d = Math.floor((K.NOW - r.ts) / K.DAY), c = av(r.id); return { parent: r.parent, ini: ini(r.parent), avBg: c[0], avFg: c[1], wait: d <= 0 ? 'Bu gün gəlib' : d + ' gündür gözləyir', waitC: d >= 3 ? '#C2006A' : '#8A8A8A', tel: 'tel:+' + r.phone.replace(/\D/g, ''), open: () => this.openReg(r.id), stop: e => e.stopPropagation() }; });
+    const activeRaw = s.courses.find(c => c.open);
+    const hero = {
+      pad: mode === 'mobile' ? '24px 22px' : '32px 34px', cols: w >= 1100 ? 'minmax(0,1.25fr) minmax(0,1fr)' : 'minmax(0,1fr)', fs: mode === 'mobile' ? '26px' : '34px',
+      title: counts.new ? counts.new + ' yeni müraciət cavab gözləyir' : 'Bütün müraciətlərə baxılıb',
+      sub: activeC ? 'Saytdakı qeydiyyat formu "' + activeC.name + '" kursuna bağlıdır. Bu həftə ' + week7 + ' yeni müraciət gəlib.' : 'Saytda aktiv kurs seçilməyib.',
+      newN: counts.new, goNew: goF('new'), hasActive: !!activeC, noActive: !activeC
+    };
+    if (activeC) {
+      const deg = Math.round(activeC.conf / activeC.max * 360);
+      Object.assign(hero, { name: activeC.name, schedule: (activeRaw && activeRaw.schedule) || '', conf: activeC.conf, max: activeC.max, ring: 'conic-gradient(#FF0083 ' + deg + 'deg, #333333 0)', leftTxt: activeC.leftTxt, leftBg: activeC.left ? 'rgba(255,0,131,.18)' : '#FFFFFF', leftFg: activeC.left ? '#FF7AB8' : '#1A1A1A' });
+    }
+    const seatsV = s.courses.map(c => {
+      const conf = confBy[c.id] || 0, pend = Math.min(Math.max(0, c.max - conf), s.regs.filter(r => r.course === c.id && (r.status === 'new' || r.status === 'contacted')).length);
+      const seats = []; for (let i = 0; i < c.max; i++) seats.push(i < conf ? { c: '#FF0083', bd: '#FF0083', t: 'Təsdiqlənib' } : i < conf + pend ? { c: '#FFD1E6', bd: '#FFD1E6', t: 'Gözləyir' } : { c: '#F4F4F6', bd: '#E6E6EA', t: 'Boş' });
+      const full = conf >= c.max;
+      return { name: c.name, conf, max: c.max, seats, tag: full ? 'Dolub' : c.open ? 'Aktiv' : (c.max - conf) + ' boş', tagBg: full ? '#1A1A1A' : c.open ? '#E8F6EE' : '#F1F1F3', tagFg: full ? '#FFFFFF' : c.open ? '#0F6B43' : '#5C5C5C' };
+    });
+
+    const qn = this.norm(s.q.trim()), qd = s.q.replace(/\D/g, '');
+    const filtered = s.regs.filter(r => (s.filter === 'all' || r.status === s.filter) && (!qn || this.norm(r.parent).includes(qn) || this.norm(r.child).includes(qn) || (qd.length >= 3 && r.phone.replace(/\D/g, '').includes(qd))));
+    const filters = [['all', 'Hamısı', s.regs.length]].concat(K.ORDER.map(k => [k, K.ST[k].l, counts[k]])).map(([k, l, n]) => {
+      const on = s.filter === k;
+      return { l, n, on: on ? 'true' : 'false', bg: on ? '#1A1A1A' : '#FFFFFF', fg: on ? '#FFFFFF' : '#4A4A4A', bd: on ? '#1A1A1A' : '#E3E3E3', cbg: on ? 'rgba(255,255,255,.18)' : '#F3F3F4', pick: () => this.setState({ filter: k }) };
+    });
+
+    const sel = s.regs.find(r => r.id === s.selId);
+    let d = { st: K.ST.new, opts: [] };
+    if (sel) {
+      const c = courseById[sel.course], conf = confBy[sel.course] || 0, left = c ? Math.max(0, c.max - conf) : 0;
+      const dirty = s.noteDraft !== (sel.note || '');
+      d = Object.assign(rowV(sel), {
+        courseMeta: c ? c.schedule + ' · ' + c.price + ' AZN' : '',
+        leftTxt: c ? (left ? left + ' boş yer · ' + conf + '/' + c.max : 'Dolub · ' + conf + '/' + c.max) : '', leftC: left ? '#FF0083' : '#1A1A1A',
+        pct: c ? Math.min(100, conf / c.max * 100) + '%' : '0%', bar: left ? '#FF0083' : '#1A1A1A',
+        noteBg: dirty ? '#1A1A1A' : '#EFEFEF', noteFg: dirty ? '#FFFFFF' : '#A3A3A3',
+        opts: K.ORDER.map(k => { const on = sel.status === k, blocked = k === 'confirmed' && !on && c && conf >= c.max; const S = K.ST[k]; return { l: S.l, dot: S.dot, on: on ? 'true' : 'false', blocked, bd: on ? S.dot : '#E3E3E3', bg: on ? S.bg : '#FFFFFF', fg: on ? S.fg : '#1A1A1A', op: blocked ? 0.55 : 1, pick: () => this.setStatus(sel.id, k) }; })
+      });
+    }
+
+    const cmc = s.cm;
+    let cm = {};
+    if (cmc) {
+      const err = cmc.err || {}, bd = k => err[k] ? '#C62828' : '#E3E3E3';
+      const conf = cmc.id ? (confBy[cmc.id] || 0) : 0;
+      cm = Object.assign({}, cmc, {
+        title: cmc.mode === 'new' ? 'Yeni kurs' : 'Kursu redaktə et', saveLbl: cmc.mode === 'new' ? 'Kursu yarat' : 'Dəyişiklikləri saxla',
+        eEnd: err.end || '', eStart: err.start || '', namePv: this.rangeName(cmc.start, cmc.end), weeksPv: this.weeks(cmc.start, cmc.end), ePrice: err.price || '', eMax: err.max || '',
+        bdEnd: bd('end'), bdStart: bd('start'), bdPrice: bd('price'), bdMax: bd('max'),
+        confTxt: cmc.mode === 'edit' ? 'Hazırda ' + conf + ' təsdiqlənmiş iştirakçı · ' + Math.max(0, (Number(cmc.max) || 0) - conf) + ' boş yer' : 'Tövsiyə olunan: 20 uşaq',
+        b650: cmc.price === '650' ? '#FF0083' : '#E3E3E3', bg650: cmc.price === '650' ? '#FFF0F7' : '#FFFFFF',
+        b500: cmc.price === '500' ? '#FF0083' : '#E3E3E3', bg500: cmc.price === '500' ? '#FFF0F7' : '#FFFFFF',
+        swBg: cmc.open ? '#1F9D66' : '#D6D6D6', swX: cmc.open ? 'translateX(18px)' : 'none', aria: cmc.open ? 'true' : 'false',
+        openHint: (() => { const o = s.courses.find(x => x.open && x.id !== cmc.id); return o ? 'Saytdakı qeydiyyat formu bu kursa bağlanacaq. Hazırda aktiv olan "' + o.name + '" avtomatik bağlanacaq.' : 'Saytdakı qeydiyyat formu bu kursa bağlanacaq. Eyni anda yalnız bir kurs aktiv ola bilər.'; })(),
+        onEnd: e => this.setCm({ end: e.target.value }), onStart: e => { const v = e.target.value; this.setCm(!cmc.end && v ? { start: v, end: this.addDays(v, 36) } : { start: v }); },
+        onSchedule: e => this.setCm({ schedule: e.target.value }), onLocation: e => this.setCm({ location: e.target.value }),
+        onPrice: e => this.setCm({ price: e.target.value }), onMax: e => this.setCm({ max: e.target.value }),
+        p650: () => this.setCm({ price: '650' }), p500: () => this.setCm({ price: '500' }),
+        toggleOpen: () => this.setCm({ open: !cmc.open })
+      });
+    }
+
+    let pm = { items: [] };
+    if (s.pm) {
+      const c = courseById[s.pm];
+      const list = s.regs.filter(r => r.course === s.pm).sort((a, b) => K.ORDER.indexOf(b.status === 'confirmed' ? 'new' : b.status) - K.ORDER.indexOf(a.status === 'confirmed' ? 'new' : a.status) || b.ts - a.ts);
+      const ord = { confirmed: 0, contacted: 1, new: 2, rejected: 3 };
+      list.sort((a, b) => ord[a.status] - ord[b.status] || b.ts - a.ts);
+      pm = { name: c ? c.name : '', sub: (confBy[s.pm] || 0) + ' / ' + (c ? c.max : 0) + ' təsdiqlənib · ' + list.length + ' müraciət', empty: !list.length, items: list.map(r => ({ child: r.child, parent: r.parent, ageTxt: r.age + ' yaş', st: K.ST[r.status], open: () => { this.setState({ pm: null, page: 'reg', menu: false }); this.openReg(r.id); } })) };
+    }
+
+    const wideCms = w >= 1180;
+    const activeKey = s.cmsKey || (wideCms ? 'hero' : null);
+    const cmsList = K.SECTIONS.map(sec => { const st = this.secState(sec.k), on = activeKey === sec.k; return { t: sec.t, sub: sec.sub, d: sec.icon, stl: st.l, dot: st.dot, bg: on ? '#FFF0F7' : 'transparent', hov: on ? '#FFF0F7' : '#F7F7F8', ibg: on ? '#FF0083' : '#F3F3F4', ifg: on ? '#FFFFFF' : '#4A4A4A', pick: () => this.setState({ cmsKey: sec.k }) }; });
+    let pendingN = 0; K.SECTIONS.forEach(sec => { const st = this.secState(sec.k); if (st.dirty || st.pending) pendingN++; });
+    let ed = { st: {}, fields: [] };
+    if (activeKey) {
+      const sec = K.SECTIONS.find(x => x.k === activeKey), k = sec.k, draft = s.drafts[k], st = this.secState(k);
+      const fields = sec.fields.map(f => {
+        const v = draft[f.k];
+        const o = { l: f.l, ph: f.ph || '', isText: f.type === 'text', isArea: f.type === 'area', isList: f.type === 'list', isFaq: f.type === 'faq', isImg: f.type === 'images', hasAdd: !!f.add, addLbl: f.add || '', hasHint: !!f.hint, hint: f.hint || '', items: [] };
+        if (o.isText || o.isArea) { o.val = v; o.onChange = e => { const val = e.target.value; this.updDraft(k, dd => { dd[f.k] = val; }); }; }
+        if (o.isList) { o.items = v.map((t, i) => ({ v: t, n: i + 1, onChange: e => { const val = e.target.value; this.updDraft(k, dd => { dd[f.k][i] = val; }); }, remove: () => this.updDraft(k, dd => { dd[f.k].splice(i, 1); }) })); o.add = () => this.updDraft(k, dd => { dd[f.k].push(''); }); }
+        if (o.isFaq) { o.items = v.map((it, i) => ({ q: it.q, a: it.a, n: i + 1, onQ: e => { const val = e.target.value; this.updDraft(k, dd => { dd[f.k][i].q = val; }); }, onA: e => { const val = e.target.value; this.updDraft(k, dd => { dd[f.k][i].a = val; }); }, remove: () => this.updDraft(k, dd => { dd[f.k].splice(i, 1); }) })); o.add = () => this.updDraft(k, dd => { dd[f.k].push({ q: '', a: '' }); }); }
+        if (o.isImg) { o.items = v.map((it, i) => ({ label: it.label, bgi: it.src ? 'url("' + it.src + '")' : 'none', has: !!it.src, none: !it.src, upLbl: it.src ? 'Dəyiş' : 'Şəkil yüklə', onFile: e => this.upload(k, i, e), remove: () => this.updDraft(k, dd => { dd[f.k][i].src = ''; }) })); }
+        return o;
+      });
+      ed = {
+        t: sec.t, st, fields, pubTxt: 'Son dərc: ' + this.fmtD(s.pubAt[k]) + ', ' + this.fmtT(s.pubAt[k]),
+        discardC: st.dirty ? '#4A4A4A' : '#C9C9C9', saveBd: st.dirty ? '#1A1A1A' : '#E3E3E3', saveFg: st.dirty ? '#1A1A1A' : '#A3A3A3',
+        pubBg: st.dirty || st.pending ? '#FF0083' : '#F3F3F4', pubFg: st.dirty || st.pending ? '#FFFFFF' : '#A3A3A3',
+        save: () => this.saveSec(k), publish: () => this.publishSec(k), preview: () => this.openPreview(k),
+        discard: () => { if (!st.dirty) return; this.setState(ss => ({ drafts: Object.assign({}, ss.drafts, { [k]: this.clone(ss.cms[k].saved) }) })); this.toast('ok', 'Dəyişikliklər ləğv olundu', 'Son yadda saxlanılmış versiya bərpa edildi.'); }
+      };
+    }
+
+    const dr = s.drafts, hl = {};
+    K.SECTIONS.forEach(sec => { hl[sec.k] = activeKey === sec.k ? '2px dashed #FF0083' : '2px solid transparent'; });
+    const pv = {
+      hero: dr.hero, cta: dr.cta, about: dr.about, pricing: dr.pricing, hl,
+      imgs: dr.images.items.map(it => ({ label: it.label, bgi: it.src ? 'url("' + it.src + '")' : 'none', has: !!it.src, none: !it.src })),
+      benefits: dr.benefits.items.filter(t => t.trim()).map((t, i) => ({ t, n: String(i + 1).padStart(2, '0') })),
+      courseRows: [['Başlanğıc', dr.course.start], ['Müddət', dr.course.duration], ['Vaxt', dr.course.time], ['Yaş', dr.course.age], ['Qrup', dr.course.group], ['Məkan', dr.course.place]].map(([l, v]) => ({ l, v: v || '—' })),
+      faq: dr.faq.items.filter(f => f.q.trim()),
+      contact: [dr.contact.phone, dr.contact.whatsapp ? 'WhatsApp: ' + dr.contact.whatsapp : '', dr.contact.email, dr.contact.address].filter(Boolean).map(v => ({ v }))
+    };
+
+    const UAV = [['#FFF0F7', '#C2006A'], ['#E8F6EE', '#0F6B43'], ['#FFF4E2', '#8F5400'], ['#F1F1F3', '#4A4A4A']];
+    const adminN = s.users.filter(u => u.role === 'admin').length;
+    const lastTxt = t => { if (t == null) return 'Hələ daxil olmayıb'; const hr = Math.floor((K.NOW - t) / 3600000); return hr < 1 ? 'İndi aktivdir' : hr < 24 ? hr + ' saat əvvəl' : Math.floor(hr / 24) + ' gün əvvəl'; };
+    const usersV = s.users.map((u, i) => {
+      const inv = u.status === 'invited', lastAdmin = u.role === 'admin' && adminN < 2, lock = !!u.me;
+      return { name: u.name, email: u.email, role: u.role, selKey: u.id + '-' + u.role + '-' + (this.state.rv || 0), selAdmin: u.role === 'admin', selManager: u.role === 'manager', selEditor: u.role === 'editor', isMe: !!u.me, ini: u.name.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase(), avBg: UAV[i % 4][0], avFg: UAV[i % 4][1],
+        stL: inv ? 'Dəvət göndərilib' : 'Aktiv', stBg: inv ? '#FFF4E2' : '#E8F6EE', stFg: inv ? '#8F5400' : '#0F6B43', stDot: inv ? '#F29900' : '#1F9D66', last: lastTxt(u.last), isInvite: inv,
+        lock, lockOp: lock ? .45 : 1, lockTip: lock ? 'Öz rolunuzu dəyişə bilməzsiniz' : 'Rolu dəyiş', rmTip: lock ? 'Öz hesabınızı silə bilməzsiniz' : 'İstifadəçini sil',
+        onRole: e => this.setRole(u.id, e.target.value),
+        resend: () => this.toast('ok', 'Dəvət yenidən göndərildi', u.email),
+        remove: () => { if (lock) return; if (lastAdmin) { this.toast('error', 'Silmək mümkün deyil', 'Paneldə ən azı bir admin qalmalıdır.'); return; } this.setState({ udel: u.id }); } };
+    });
+    const roleCards = Object.keys(K.ROLES).map(k => Object.assign({ n: s.users.filter(u => u.role === k).length }, K.ROLES[k]));
+    let um = {};
+    if (s.um) {
+      const m = s.um, e = m.err || {}, set = p => this.setState(ss => ({ um: Object.assign({}, ss.um, p, { err: Object.assign({}, ss.um.err, Object.keys(p).reduce((a, k) => { a[k] = ''; return a; }, {})) }) }));
+      um = { name: m.name, email: m.email, eName: e.name || '', eEmail: e.email || '', bdName: e.name ? '#C62828' : '#E3E3E3', bdEmail: e.email ? '#C62828' : '#E3E3E3',
+        onName: ev => set({ name: ev.target.value }), onEmail: ev => set({ email: ev.target.value }),
+        roles: Object.keys(K.ROLES).map(k => { const on = m.role === k; return { l: K.ROLES[k].l, desc: K.ROLES[k].desc, aria: on ? 'true' : 'false', bd: on ? '#FF0083' : '#ECECEE', bg: on ? '#FFF7FB' : '#FFFFFF', dotBd: on ? '#FF0083' : '#C9C9C9', dot: on ? '#FF0083' : 'transparent', pick: () => set({ role: k }) }; }) };
+    }
+    const udelU = s.users.find(u => u.id === s.udel);
+    const toasts = s.toasts.map(t => ({ title: t.title, sub: t.sub, ibg: t.kind === 'error' ? '#E5484D' : '#1F9D66', d: t.kind === 'error' ? K.D.alert : K.D.check, close: () => this.dismiss(t.id) }));
+    const rowPad = this.props.density === 'compact' ? '9px' : '14px';
+    const delReg = s.regs.find(r => r.id === s.del);
+
+    return {
+      out: s.out, inside: !s.out, login: () => this.setState({ out: false }), logout: () => this.setState({ out: true, drawer: false, menu: false }),
+      isMobile: mode === 'mobile', tone, sb, navItems,
+      toggleMenu: () => this.setState({ menu: !s.menu }), closeMenu: () => this.setState({ menu: false }),
+      mainPad: mode === 'mobile' ? '20px 16px 96px' : '32px 32px 64px',
+      pageTitle: titles[s.page][0], pageSub: titles[s.page][1],
+      isDash: s.page === 'dash', isReg: s.page === 'reg', isCourses: s.page === 'courses', isCms: s.page === 'cms', isUsers: s.page === 'users',
+      usersV, roleCards, roleCols: w >= 1000 ? 'repeat(3,minmax(0,1fr))' : 'minmax(0,1fr)', uWrap: w >= 900 ? 'nowrap' : 'wrap',
+      usersSub: s.users.length + ' istifadəçi · ' + s.users.filter(u => u.status === 'invited').length + ' dəvət gözləyir',
+      newUser: () => this.setState({ um: { name: '', email: '', role: 'manager', err: {} } }), umOpen: !!s.um, um, umClose: () => this.setState({ um: null }), umSave: () => this.saveUser(),
+      udelOpen: !!udelU, udelTxt: udelU ? udelU.name + ' (' + udelU.email + ') admin panelə girişini itirəcək.' : '', udelCancel: () => this.setState({ udel: null }),
+      udelDo: () => { const u = udelU; if (!u) return; this.setState({ users: s.users.filter(x => x.id !== u.id), udel: null }); this.toast('ok', 'İstifadəçi silindi', u.name); },
+      active: activeC ? { name: activeC.name, meta: activeC.conf + ' / ' + activeC.max + ' təsdiqlənib · ' + activeC.leftTxt, bg: '#FFFFFF', bd: '#EDEDED', fg: '#1A1A1A', dot: '#1F9D66' } : { name: 'Aktiv kurs yoxdur', meta: 'Kurs kartında "Saytda aktiv" açarını yandırın', bg: '#FFF4E2', bd: '#F5DDB4', fg: '#8F5400', dot: '#F29900' },
+      kpis, kpiCols: w >= 1240 ? 'repeat(4,minmax(0,1fr))' : w >= 480 ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)', chart, coursesV, dashCols: w >= 1100 ? 'minmax(0,1.7fr) minmax(0,1fr)' : 'minmax(0,1fr)',
+      latest: s.regs.slice(0, 7).map(r => { const c = av(r.id); return Object.assign(rowV(r), { ini: ini(r.parent), avBg: c[0], avFg: c[1], rel: rel(r.ts) }); }), hero, waiting, waitN: newList.length, noWaiting: !newList.length, seatsV, wideDash: w >= 820, narrowDash: w < 820, rowPad,
+      goCourses: () => this.go('courses'), goRegs: () => this.go('reg'),
+      q: s.q, onQ: e => this.setState({ q: e.target.value }), hasQ: !!s.q, clearQ: () => this.setState({ q: '' }),
+      filters, rows: filtered.map(rowV), regWide: w >= 1024 && filtered.length > 0, regNarrow: w < 1024 && filtered.length > 0, noRows: !filtered.length,
+      resetFilters: () => this.setState({ q: '', filter: 'all' }),
+      regCountTxt: filtered.length === s.regs.length ? s.regs.length + ' müraciət' : s.regs.length + ' müraciətdən ' + filtered.length + ' göstərilir',
+      dr: { x: s.drawer ? 'none' : 'translateX(105%)', vis: s.drawer ? 'visible' : 'hidden', hidden: s.drawer ? 'false' : 'true', scrimO: s.drawer ? 1 : 0, pe: s.drawer ? 'auto' : 'none', has: !!sel },
+      d, closeReg: () => this.setState({ drawer: false }),
+      noteDraft: s.noteDraft, onNote: e => this.setState({ noteDraft: e.target.value }),
+      saveNote: () => { if (!sel || s.noteDraft === (sel.note || '')) return; this.setState({ regs: s.regs.map(r => r.id === sel.id ? Object.assign({}, r, { note: s.noteDraft }) : r) }); this.toast('ok', 'Qeyd yadda saxlanıldı', sel.parent); },
+      askDelete: () => this.setState({ del: s.selId }),
+      delOpen: s.del != null, delTxt: delReg ? delReg.parent + ' (' + delReg.child + ') müraciəti birdəfəlik silinəcək. Bu əməliyyatı geri qaytarmaq olmur.' : '',
+      cancelDelete: () => this.setState({ del: null }),
+      doDelete: () => { const r = delReg; if (!r) return; this.setState({ regs: s.regs.filter(x => x.id !== r.id), del: null, drawer: false }); this.toast('ok', 'Müraciət silindi', r.parent + ' — ' + r.child + (r.status === 'confirmed' ? '. Kursda 1 yer boşaldı.' : '')); },
+      stop: e => e.stopPropagation(),
+      newCourse: () => this.openCourse(null), cmOpen: !!cmc, cm, cmClose: () => this.setState({ cm: null }), cmSave: () => this.saveCourse(),
+      pmOpen: !!s.pm, pm, pmClose: () => this.setState({ pm: null }),
+      cmsCols: wideCms ? '320px minmax(0,1fr)' : 'minmax(0,1fr)', cmsShowList: wideCms || !activeKey, cmsShowEditor: !!activeKey,
+      cmsBack: !wideCms, cmsBackFn: () => this.setState({ cmsKey: null }), cmsList, ed,
+      showPublishAll: s.page === 'cms' && pendingN > 0, pendingN, publishAll: () => this.publishAll(),
+      pvOpen: s.preview, pvClose: () => this.setState({ preview: false }), pv, pvRef: this.pvRef,
+      toasts, toastLeft: mode === 'mobile' ? '16px' : 'auto'
+    };
+  }
+}
+</script>
+</body>
+</html>

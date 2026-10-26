@@ -63,6 +63,7 @@ PANEL_GRANTS = (
         writable_columns=(
             "title",
             "start_date",
+            "end_date",
             "schedule",
             "location",
             "age_min",

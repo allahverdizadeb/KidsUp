@@ -15,6 +15,7 @@ only: no password, no code, no secret and no personal data. Exits 1 if any check
 import argparse
 import io
 import json
+import re
 import secrets
 import subprocess
 import sys
@@ -158,6 +159,62 @@ def picture() -> bytes:
     return out.getvalue()
 
 
+def admin_screens(stack: Stack) -> None:
+    """The admin origin serves the built screens, from its own origin only, under the strict headers."""
+    page = httpx.get(f"{stack.admin}/")
+    check(
+        "the admin origin serves the screens (the page the React app starts from)",
+        page.status_code == 200 and '<div id="root">' in page.text,
+        str(page.status_code),
+    )
+    scripts = re.findall(r'<script[^>]*\bsrc="(/[^"]+)"', page.text)
+    check(
+        "the page has one script, of its own origin, and none inline",
+        len(scripts) == 1 and not re.search(r"<script(?![^>]*\bsrc=)", page.text),
+        str(scripts),
+    )
+    check(
+        "the page carries no style attribute, no handler and no outside address",
+        not re.search(r"\sstyle=|\sonclick=|https?://", page.text),
+    )
+    policy = page.headers.get("content-security-policy", "")
+    check(
+        "the page is sent under the strict policy, never cached and never indexed",
+        "script-src 'self'" in policy
+        and "require-trusted-types-for 'script'" in policy
+        and page.headers.get("cache-control") == "no-store"
+        and "noindex" in page.headers.get("x-robots-tag", ""),
+    )
+    asset = httpx.get(f"{stack.admin}{scripts[0]}") if scripts else None
+    check(
+        "the script is served as JavaScript with the same headers",
+        asset is not None
+        and asset.status_code == 200
+        and "javascript" in asset.headers.get("content-type", "")
+        and asset.headers.get("cache-control") == "no-store",
+    )
+    sheets = re.findall(r'<link[^>]*rel="stylesheet"[^>]*\bhref="(/[^"]+)"', page.text)
+    css = httpx.get(f"{stack.admin}{sheets[0]}") if sheets else None
+    check("the style sheet is served by the admin origin", css is not None and css.status_code == 200)
+    fonts = re.findall(r"url\((/assets/[^)]+\.woff2)\)", css.text) if css is not None else []
+    check(
+        "the typeface comes from the admin origin itself, not from a third party",
+        bool(fonts)
+        and httpx.get(f"{stack.admin}{fonts[0]}").status_code == 200
+        and "fonts.googleapis" not in (css.text if css is not None else "")
+        and "fonts.gstatic" not in (css.text if css is not None else ""),
+    )
+    deep = httpx.get(f"{stack.admin}/some/screen")
+    check(
+        "an unknown address opens the same screens (a reload keeps working)",
+        deep.status_code == 200 and '<div id="root">' in deep.text,
+    )
+    check(
+        "the API is not reachable under any other address of the origin",
+        httpx.get(f"{stack.admin}/api/other").status_code == 404,
+    )
+
+
 def sign_in_and_sessions(stack: Stack, admin: Staff) -> None:
     wrong = admin.sign_in(password="definitely not the password")  # noqa: S106 (a wrong one, on purpose)
     check("sign-in with a wrong password is refused (401)", wrong.status_code == 401, str(wrong.status_code))
@@ -249,11 +306,17 @@ def registration_and_statuses(stack: Stack, admin: Staff) -> str:
         "an approved child takes a place on the landing page",
         stack.courses()[0]["seats_left"] == seats_before - 1,
     )
-    totals = admin.call("GET", "/api/admin/dashboard").json()["totals"]
+    dashboard = admin.call("GET", "/api/admin/dashboard").json()
+    totals = dashboard["totals"]
     check(
         "the dashboard is computed from real rows",
         totals["applications"] >= 1 and totals["approved_children"] >= 1,
         json.dumps(totals),
+    )
+    check(
+        "the dashboard shows at most the seven newest applications",
+        1 <= len(dashboard["latest_applications"]) <= 7,
+        str(len(dashboard["latest_applications"])),
     )
     audit = admin.call("GET", "/api/admin/audit?action=application_status_changed").json()
     check("the status changes are in the audit log", audit["total"] >= 4, str(audit["total"]))
@@ -271,6 +334,7 @@ def courses_and_limits(stack: Stack, admin: Staff, first_course: str) -> str:
         json={
             "title": "TEST Yaz 2027",
             "start_date": "2027-03-06",
+            "end_date": "2027-04-10",
             "schedule": "bazar, 10:00-13:30",
             "location": "Baki, TEST",
             "age_min": 9,
@@ -283,7 +347,18 @@ def courses_and_limits(stack: Stack, admin: Staff, first_course: str) -> str:
     )
     check("a course is created (201)", created.status_code == 201, str(created.status_code))
     spring: str = created.json()["id"]
+    check("the course keeps its end date", created.json().get("end_date") == "2027-04-10")
+    before_start = admin.call("PATCH", f"/api/admin/courses/{spring}", json={"end_date": "2027-03-01"})
+    check(
+        "an end date before the start is refused (422)",
+        before_start.status_code == 422 and before_start.json().get("code") == "invalid_course",
+        str(before_start.status_code),
+    )
     listed = stack.courses()
+    check(
+        "the landing page's file does not carry the end date (its shape is unchanged)",
+        all("end_date" not in course for course in listed),
+    )
     check(
         "the landing page offers both open courses with their own figures",
         {c["id"] for c in listed} == {first_course, spring}
@@ -408,6 +483,11 @@ def roles(stack: Stack, found_id: str) -> None:
         "a coordinator cannot create a course",
         coordinator.call("POST", "/api/admin/courses", json={}).status_code in (403, 422),
     )
+    check("a viewer cannot list the staff (403)", viewer.call("GET", "/api/admin/users").status_code == 403)
+    check(
+        "a coordinator cannot list the staff (403)",
+        coordinator.call("GET", "/api/admin/users").status_code == 403,
+    )
 
 
 def landing_page_content(stack: Stack, admin: Staff) -> None:
@@ -461,6 +541,21 @@ def landing_page_content(stack: Stack, admin: Staff) -> None:
         and "immutable" not in image.headers.get("cache-control", ""),
     )
     check("it is real WebP", image.content[:4] == b"RIFF" and image.content[8:12] == b"WEBP")
+    on_admin = httpx.get(f"{stack.admin}/media/{media_id}.webp")
+    check(
+        "the same picture is shown on the admin origin, under its strict headers and never cached",
+        on_admin.status_code == 200
+        and on_admin.headers.get("content-type") == "image/webp"
+        and on_admin.headers.get("cache-control") == "no-store"
+        and "default-src 'self'" in on_admin.headers.get("content-security-policy", ""),
+        f"{on_admin.status_code} {on_admin.headers.get('content-type')}",
+    )
+    check(
+        "the admin origin cannot list the pictures or hand out the page's content files",
+        httpx.get(f"{stack.admin}/media/").status_code == 404
+        and httpx.get(f"{stack.admin}/media/x.webp").status_code == 404
+        and "json" not in httpx.get(f"{stack.admin}/content/site.json").headers.get("content-type", ""),
+    )
     in_use = admin.call("DELETE", f"/api/admin/media/{media_id}")
     check(
         "a picture the live page shows cannot be removed (409)",
@@ -475,6 +570,63 @@ def landing_page_content(stack: Stack, admin: Staff) -> None:
         "and its file is gone from the landing page's server",
         httpx.get(f"{stack.public}/media/{media_id}.webp").status_code == 404,
     )
+    check(
+        "and from the admin origin",
+        httpx.get(f"{stack.admin}/media/{media_id}.webp").status_code == 404,
+    )
+    partial_publication(stack, admin)
+
+
+def partial_publication(stack: Stack, admin: Staff) -> None:
+    """The page editor publishes one section at a time: only the places named go live."""
+    phone = "+994 55 000 00 11"
+    admin.call(
+        "PUT",
+        "/api/admin/content",
+        json={"values": {"hero.title_first": "TEST Birinci.", "contact.phone": phone}},
+    )
+    one = admin.call("POST", "/api/admin/content/publications", json={"keys": ["hero.title_first"]})
+    live = httpx.get(f"{stack.public}/content/site.json").json()["content"]
+    check(
+        "publishing chosen places puts only those on the page (the rest of the draft waits)",
+        one.status_code == 201
+        and live.get("hero.title_first") == "TEST Birinci."
+        and "contact.phone" not in live,
+        f"{one.status_code} {sorted(live)}",
+    )
+    unknown = admin.call("POST", "/api/admin/content/publications", json={"keys": ["no.such.place"]})
+    check("a place that does not exist cannot be published (422)", unknown.status_code == 422)
+    empty = admin.call("POST", "/api/admin/content/publications", json={"keys": []})
+    check("an empty list of places is refused (422), not read as 'everything'", empty.status_code == 422)
+    admin.call("POST", "/api/admin/content/publications")
+    live = httpx.get(f"{stack.public}/content/site.json").json()["content"]
+    check("publishing without a list puts the whole draft on the page", live.get("contact.phone") == phone)
+    admin.call(
+        "PUT", "/api/admin/content", json={"values": {"hero.title_first": None, "contact.phone": None}}
+    )
+    admin.call("POST", "/api/admin/content/publications")
+
+
+def staff_list(admin: Staff) -> None:
+    """Who has access to the panel: read-only, admins only, with nothing secret in it."""
+    listed = admin.call("GET", "/api/admin/users")
+    items = listed.json().get("items", []) if listed.status_code == 200 else []
+    check(
+        "an admin sees who has access to the panel",
+        listed.status_code == 200 and any(item["email"] == admin.email for item in items),
+        str(listed.status_code),
+    )
+    shown = listed.text.lower()
+    check(
+        "the list holds no password, no authenticator secret and no session",
+        not any(word in shown for word in ("argon2", "totp", "password", "csrf", admin.secret.lower())),
+    )
+    check(
+        "nothing in the panel can add or change an account (405)",
+        admin.call("POST", "/api/admin/users", json={}).status_code == 405,
+    )
+    audit = admin.call("GET", "/api/admin/audit?action=staff_listed").json()
+    check("the listing is in the audit log", audit["total"] >= 1, str(audit["total"]))
 
 
 def signing_out(admin: Staff) -> None:
@@ -537,6 +689,7 @@ def main() -> int:
         print("Refusing to run against the real project: it creates test accounts, applications and courses.")
         return 2
     stack = Stack(args.project, args.public, args.admin)
+    admin_screens(stack)
     admin = Staff(stack, "admin")
     sign_in_and_sessions(stack, admin)
     first_course = registration_and_statuses(stack, admin)
@@ -544,6 +697,7 @@ def main() -> int:
     found = admin.find("TEST Valideyn Bir")
     roles(stack, found["id"] if found else "")
     landing_page_content(stack, admin)
+    staff_list(admin)
     signing_out(admin)
     network_isolation(stack)
     failed = [name for name, ok in results if not ok]

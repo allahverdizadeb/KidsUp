@@ -14,7 +14,8 @@
                ▲
              panel  :8000  FastAPI, the admin API (/api/admin). Connects as `kidsup_panel`; writes the `content` volume       (no published port, no route out)
                ▲  network `admin_app` (internal, fixed range: the admin nginx and the panel only)
- staff ───► admin  :8081  nginx with the admin security headers; passes on /api/admin/ only; later also serves the screens    (published on 127.0.0.1 only)
+ staff ───► admin  :8081  nginx with the admin security headers: serves the built screens (React), the uploaded pictures at     (published on 127.0.0.1 only)
+                           /media/<id>.webp (the `content` volume, read-only) and passes on /api/admin/ to the panel
 
  bootstrap  one-off, runs before back and panel: creates the accounts, runs the migrations, sets the grants, exits
  retention  once a day: deletes applications that were not approved after RETENTION_DAYS (365). Also where the operator's
@@ -54,9 +55,10 @@ Other commands: `list-admins`, `reset-password`, `reset-second-factor`, `set-rol
 `.env` is git-ignored, **but this folder is synced to OneDrive, so `.env` is copied to the cloud with it.** That is acceptable for a throw-away
 development stack; keep real (production) secrets in a folder that does not sync, or in the hosting platform's secret store.
 
-Open http://localhost:8080 (the public site) and http://localhost:8081 (the admin origin). `docker compose ps -a`: `db`, `back`, `panel`, `front`, `admin` are
-`healthy`, `bootstrap` has `Exited (0)` (that is correct) and `retention` is `Up`. Until the admin screens are built (their design is still to be delivered),
-http://localhost:8081 shows a plain notice and the panel is used through its API (`admin/CLAUDE.md`).
+Open http://localhost:8080 (the public site) and http://localhost:8081 (the admin panel: the sign-in page asks for the e-mail, the password and the code from
+the authenticator app of the account made above). `docker compose ps -a`: `db`, `back`, `panel`, `front`, `admin` are `healthy`, `bootstrap` has
+`Exited (0)` (that is correct) and `retention` is `Up`. The admin image builds the screens itself (a Node stage in `admin/Dockerfile`, `npm ci` from the lockfile); the
+only thing the admin origin reads from the `content` volume is `/media/<id>.webp`.
 
 Verify the security posture of the running stack (every check must pass; the first covers the brochure and certificate being served complete,
 that nginx passes on only `POST /api/applications`, that the published texts and pictures are served as documented, and that every nginx answer, its
@@ -67,8 +69,9 @@ cd front; npm run check:headers                              # defaults to http:
 node admin/scripts/check-security-headers.mjs                # defaults to http://localhost:8081
 ```
 
-**One command for everything live** (a registration from the landing page, it appearing in the panel, a status change saved in the database, a new course shown on the landing page, the
-course limit, a text and a picture published, roles, sign-out, and both header checks above). It starts a **throw-away copy of the stack** (project `kidsup_check`, ports 18080 and
+**One command for everything live** (the admin origin serving its screens from its own origin under the strict policy, a registration from the landing page, it appearing in the panel,
+a status change saved in the database, a new course shown on the landing page, the course limit and the course's end date, a text and a picture published (also one section at a time) and the picture shown on
+the admin origin, the list of staff, roles, sign-out, and both header checks above). It starts a **throw-away copy of the stack** (project `kidsup_check`, ports 18080 and
 18081, its own empty database), runs the checks against it and removes it again, so your real stack and its data are never touched; it creates made-up "TEST" accounts, applications and
 courses in the copy only:
 
@@ -287,4 +290,15 @@ touching its data** (the one application and its child were kept; a dump taken f
 prove from inside the containers which can reach which), the public headers check (78) and the admin one (50). The standards reviews (naming, layering, tests) were started and stopped before they
 reported, so they are still to do.
 
-Still open: CI, base-image digests, the unfixed Debian findings above, the admin screens (design pending), an external penetration test of the admin panel, and everything under "Before exposing it to the internet".
+On 2026-10-26 the admin **screens** (React, from `KidsUp Admin Panel v2.dc.html`) were built into `admin/` and put on the **real stack without touching its data** (migration 0012 `courses.end_date` ran
+through `bootstrap`; the one application, its child and the course were kept, row counts before and after are the same; a dump taken first is in `%LOCALAPPDATA%\KidsUp-backups`). Gates: backend ruff, mypy,
+bandit, pip-audit and 1103 tests at 100% coverage; admin `npm run verify` (353 tests, 97.7% statements, audit 0, build); front 379 tests. `scripts/verify-stack.ps1` on a throw-away copy: 103 end-to-end
+checks, the public headers check (78) and the admin one (50); the same two header checks on the real stack after the rebuild (78 and 50). In a real browser, on a throw-away copy, at desktop width and at 390 px: sign-in
+(the first box with a fault takes the focus), a form submission from the landing page, the application in the panel, approval taking a place (the landing page's file went from 20 to 19 places left),
+a new course with 12 places and the single-active-course switch (the landing page then read capacity 12), a published headline on the landing page, the CSV question, sign-out and a 401 from every
+endpoint afterwards; the console held no CSP or Trusted Types violation. A panel with a one-minute idle time (throw-away copy only) showed that requests a page makes by itself never keep a session alive and
+that a person's, or a change marked as background, always do. Two reviewers (security, standards) went through the screens twice: what did not change the owner's design was fixed; the rest is recorded in `admin/docs/README.md` for the owner
+(ADM-2, ADM-8, ADM-9, ADM-10 and the accepted risks AR-1 to AR-4). The last small fixes (the session is touched only after a request passed its checks, `disable_symlinks` on the picture routes, the idle clock counting
+clicks and input) were checked by tests and by the live runs above, not by a third review. The real database has **no staff account yet**: make the first with `docker compose exec panel python -m app.panel.cli create-admin ...`.
+
+Still open: CI, base-image digests, the unfixed Debian findings above, the owner's decisions on the admin screens (`admin/docs/README.md` ADM-2, ADM-8, ADM-9), an external penetration test of the admin panel, and everything under "Before exposing it to the internet".

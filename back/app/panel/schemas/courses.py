@@ -43,6 +43,7 @@ class CourseCreate(BaseModel):
 
     title: Title
     start_date: StartDate
+    end_date: StartDate | None = None  # optional; when there is one it is not before the start
     schedule: Schedule
     location: Location
     age_min: Age
@@ -54,9 +55,11 @@ class CourseCreate(BaseModel):
     registration_open: StrictBool = False  # a new course is opened on purpose
 
     @model_validator(mode="after")
-    def ages_are_in_order(self) -> "CourseCreate":
+    def ages_and_dates_are_in_order(self) -> "CourseCreate":
         if self.age_min > self.age_max:
             raise ValueError("The youngest age is above the oldest.")
+        if self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError("The course ends before it starts.")
         return self
 
 
@@ -67,6 +70,7 @@ class CourseUpdate(BaseModel):
 
     title: Title | None = None
     start_date: StartDate | None = None
+    end_date: StartDate | None = None
     schedule: Schedule | None = None
     location: Location | None = None
     age_min: Age | None = None
@@ -96,6 +100,7 @@ class CourseRead(BaseModel):
     id: uuid.UUID
     title: str
     start_date: date
+    end_date: date | None
     schedule: str
     location: str
     age_min: int

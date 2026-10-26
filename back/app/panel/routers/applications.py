@@ -35,7 +35,7 @@ CSV_TYPE = "text/csv; charset=utf-8"
 @router.post("/search", response_model=ApplicationPage)
 def search_applications(
     search: ApplicationSearch,
-    principal: Principal = Depends(require(Permission.APPLICATIONS_READ)),
+    principal: Principal = Depends(require(Permission.APPLICATIONS_READ, read_only_post=True)),
     db: Session = Depends(get_db),
 ) -> ApplicationPage:
     return service.search_applications(db, principal, search)

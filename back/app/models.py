@@ -56,11 +56,14 @@ class Course(Base):
         ),
         CheckConstraint("age_min >= 0 AND age_max >= age_min AND age_max <= 25", name="ck_courses_age_range"),
         CheckConstraint("currency IN ('AZN')", name="ck_courses_currency_known"),
+        CheckConstraint("end_date IS NULL OR end_date >= start_date", name="ck_courses_end_not_before_start"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     title: Mapped[str] = mapped_column(String(120))
     start_date: Mapped[date] = mapped_column(Date)
+    # Optional: a course made before the panel showed durations has none until staff set it (migration 0012).
+    end_date: Mapped[date | None] = mapped_column(Date)
     schedule: Mapped[str] = mapped_column(String(120))
     location: Mapped[str] = mapped_column(String(200))
     age_min: Mapped[int] = mapped_column(SmallInteger)

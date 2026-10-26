@@ -26,7 +26,10 @@ logger = logging.getLogger(__name__)
 SESSION_COOKIE = "__Secure-kidsup_admin"
 COOKIE_PATH = "/api/admin"  # the narrowest path that covers the panel's API (SEC-B-06)
 CSRF_HEADER = "X-CSRF-Token"
-# A page that only asks whether there is news sends this on its GET requests: they do not extend the session.
+# A page that refreshes itself (asks whether there is news, loads a list again because there is) sends this:
+# the request does not extend the session, so a forgotten tab cannot keep itself signed in. It counts on a GET
+# and on the one read that has to be a POST (the search: a name or a phone number never goes into an address).
+# Anything else that is sent is somebody working, whatever the header says.
 BACKGROUND_HEADER = "X-Background"
 BACKGROUND_POLL = "poll"
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
@@ -55,17 +58,20 @@ def require_trusted_origin(request: Request) -> None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Forbidden.")
 
 
-def authenticate(
+def open_session(
     request: Request,
-    db: Session = Depends(get_db),
-    clock: Clock = Depends(get_clock),
-    times: sessions.SessionTimes = Depends(get_session_times),
+    db: Session,
+    clock: Clock,
+    times: sessions.SessionTimes,
+    *,
+    may_be_background: bool,
 ) -> Principal:
     token = request.cookies.get(SESSION_COOKIE)
     if not token:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated.")
-    is_poll = request.method == "GET" and request.headers.get(BACKGROUND_HEADER) == BACKGROUND_POLL
-    found = sessions.find_open_session(db, token, clock(), times, keep_alive=not is_poll)
+    is_poll = may_be_background and request.headers.get(BACKGROUND_HEADER) == BACKGROUND_POLL
+    now = clock()
+    found = sessions.find_open_session(db, token, now, times)
     if found is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated.")
     if request.method in UNSAFE_METHODS:
@@ -74,6 +80,9 @@ def authenticate(
         if not hmac.compare_digest(sent.encode(), found.csrf_token.encode()):
             logger.warning("request without the session's CSRF token")
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Forbidden.")
+    # Only a request that passed every check counts as somebody working, and not one the page made by itself.
+    if not is_poll:
+        sessions.touch_session(db, found.session_id, now)
     admin = found.admin
     return Principal(
         admin_id=admin.id,
@@ -86,8 +95,30 @@ def authenticate(
     )
 
 
-def require(permission: Permission) -> Callable[[Principal], Principal]:
-    def check(principal: Principal = Depends(authenticate)) -> Principal:
+def authenticate(
+    request: Request,
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    times: sessions.SessionTimes = Depends(get_session_times),
+) -> Principal:
+    return open_session(request, db, clock, times, may_be_background=request.method == "GET")
+
+
+def authenticate_read_only_post(
+    request: Request,
+    db: Session = Depends(get_db),
+    clock: Clock = Depends(get_clock),
+    times: sessions.SessionTimes = Depends(get_session_times),
+) -> Principal:
+    """The door of a read that has to be a POST: like a GET, it can be a background request."""
+    return open_session(request, db, clock, times, may_be_background=True)
+
+
+def require(permission: Permission, *, read_only_post: bool = False) -> Callable[[Principal], Principal]:
+    """`read_only_post`: a POST that only reads (the search), which a page may refresh quietly."""
+    door = authenticate_read_only_post if read_only_post else authenticate
+
+    def check(principal: Principal = Depends(door)) -> Principal:
         if not has_permission(principal.role, permission):
             logger.warning("permission denied")
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Forbidden.")

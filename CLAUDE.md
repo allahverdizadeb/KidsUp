@@ -7,8 +7,8 @@ This repo has three independent projects. This file only covers what is shared a
 | Folder   | What it is                                       | Status                                                          |
 |----------|--------------------------------------------------|-----------------------------------------------------------------|
 | `front/` | Public landing page, React + TypeScript (Vite)   | Ported from the design (deliberate differences: `front/CLAUDE.md`); shows the texts, prices and open courses that staff publish in the admin panel (identical to the design when nothing is published); 379 tests, ~99.5% coverage |
-| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` (public) and the admin API `/api/admin/…` (sign-in with MFA, applications, courses, dashboard, landing page content, audit log) live; 1053 tests, 100% coverage |
-| `admin/` | Admin panel                                      | API and nginx origin live (`admin/nginx`, port 8081); **the screens are blocked: the design (`KidsUp Admin Panel v2.dc.html`) has not been delivered** |
+| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` (public) and the admin API `/api/admin/…` (sign-in with MFA, applications, courses, dashboard, landing page content, audit log) live; 1103 tests, 100% coverage |
+| `admin/` | Admin panel, React + TypeScript (Vite)           | Live on port 8081: sign-in with MFA, dashboard, registrations (search, status, notes, export, erasure), courses, the landing page's texts and pictures (draft, preview, publish), staff list; ported from `KidsUp Admin Panel v2.dc.html` (deliberate differences: `admin/CLAUDE.md`); 353 tests, ~98% coverage |
 
 Each project has `docs/` (standards) and `.claude/` (skills + agents); the repo root has `.claude/` (cross-project
 skills + agents), `docs/docker.md`, `SECURITY.md` and `db/` (the database image). Run everything in Docker with `docker compose up --build` (see `docs/docker.md`;
@@ -70,7 +70,7 @@ Cross-project conventions (language, naming, git, deploy, security baseline) →
 - **User-facing text is Azerbaijani.** Code, identifiers, comments, commits: English. Commits follow Conventional Commits.
 - **The API contract is owned by `back/`.** `front/` and `admin/` consume it and never invent fields.
 - **No secrets in the repo.** Each project has `.env.example`; real `.env` files are git-ignored.
-- **Don't build admin screens** until the user supplies the design (`KidsUp Admin Panel v2.dc.html` and `support.js`, to be exported into `admin/design-source/`). Do not guess the layout. The admin API and the admin origin (nginx) are built; only the screens wait.
+- **The admin screens follow the design** (`admin/design-source/KidsUp Admin Panel v2.dc.html`, read-only). Do not change their look or add screens without the owner; the differences already decided are listed in `admin/CLAUDE.md`.
 - **No online payment and no checkout** (the owner's instruction): prices are shown, never collected. Do not add a payment or checkout flow.
 - **Never delete or lose existing parent and child data.** Schema changes are Alembic migrations that keep every row (`back/docs/api-and-database-standards.md`); data is removed only by retention, by an erasure request, or by the owner.
 - Keep each project independently installable, runnable and deployable.
@@ -84,8 +84,8 @@ Cross-project conventions (language, naming, git, deploy, security baseline) →
 Open owner decisions: use `#D6006E` for small pink text (brand pink fails WCAG AA contrast, see
 `front/docs/styling-and-accessibility-standards.md` A11Y-1); notification channel for new applications; a text-based export of
 the brochure PDF (it is two images, A11Y-4); the owner's signature on the accepted risks in
-`back/docs/security-standards.md` section 5 (seventeen) and `front/docs/security-standards.md` section 5 (one); the contact and response times in `SECURITY.md`;
-the export of the admin design (`KidsUp Admin Panel v2.dc.html`); who gets which staff role (`viewer`, `coordinator`, `admin`) and who holds the panel key (`PANEL_SECRET_KEY`);
+`back/docs/security-standards.md` section 5 (seventeen), `front/docs/security-standards.md` section 5 (one) and `admin/docs/README.md` "Accepted risks and exceptions" (four); the contact and response times in `SECURITY.md`;
+whether the admin design may keep what falls short of WCAG: the brand pink behind white button text (ADM-2, same as A11Y-1), the coloured dot as the only sign of a page section's state (ADM-8), the colours below 3:1 for non-text and the small captions (ADM-9); who gets which staff role (`viewer`, `coordinator`, `admin`) and who holds the panel key (`PANEL_SECRET_KEY`);
 whether the privacy notice needs a sentence about staff's statuses and notes (`front/docs/privacy-notice-review.md` row 14).
 
 The privacy notice and the parental consent were approved by legal counsel in the wording now in `front/src/content/privacyNotice.ts` (reported by the owner on 2026-10-19; notice version `2026-10-19`). What the approval leaves to the owner is in `front/docs/privacy-notice-review.md`.

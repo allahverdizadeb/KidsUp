@@ -62,12 +62,11 @@ def open_session(db: Session, admin: AdminUser, now: datetime, times: SessionTim
     return token, csrf_token
 
 
-def find_open_session(
-    db: Session, token: str, now: datetime, times: SessionTimes, *, keep_alive: bool
-) -> OpenSession | None:
+def find_open_session(db: Session, token: str, now: datetime, times: SessionTimes) -> OpenSession | None:
     """The session behind a cookie, or None if it is unknown, revoked, idle too long, over, or switched off.
 
-    `keep_alive` is False for a page that merely polls for news: that must not keep a forgotten tab signed in.
+    It only looks: that somebody is working in the session is recorded by `touch_session`, once the request
+    has passed every check (a request that is refused must not keep a forgotten session alive).
     """
     row = db.execute(
         select(AdminSession, AdminUser)
@@ -84,10 +83,13 @@ def find_open_session(
         or not admin.is_active
     ):
         return None
-    if keep_alive:
-        session.last_seen_at = now
-        db.commit()
     return OpenSession(session_id=session.id, csrf_token=session.csrf_token, admin=admin)
+
+
+def touch_session(db: Session, session_id: uuid.UUID, now: datetime) -> None:
+    """Somebody is working in this session: its idle time starts again."""
+    db.execute(update(AdminSession).where(AdminSession.id == session_id).values(last_seen_at=now))
+    db.commit()
 
 
 def revoke_session(db: Session, session_id: uuid.UUID, now: datetime) -> None:

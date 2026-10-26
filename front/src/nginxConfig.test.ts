@@ -214,6 +214,7 @@ describe('nginx configuration', () => {
       expect(body).toContain('add_header Cache-Control "public, max-age=86400" always;');
       expect(body).not.toContain('immutable');
       expect(body).toContain('root /usr/share/nginx/content;');
+      expect(body).toContain('disable_symlinks on from=$document_root;'); // a link planted in the volume leads nowhere
       expect(body).toContain('try_files $uri =404;');
     });
 

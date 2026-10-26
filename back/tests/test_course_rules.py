@@ -352,6 +352,7 @@ def test_a_course_without_applications_can_be_deleted():
         ({"age_min": 9, "age_max": 8}, "ck_courses_age_range"),
         ({"age_max": 26}, "ck_courses_age_range"),
         ({"currency": "USD"}, "ck_courses_currency_known"),
+        ({"end_date": date(2026, 12, 4)}, "ck_courses_end_not_before_start"),  # the start is 2026-12-05
     ],
     ids=[
         "blank title",
@@ -362,6 +363,7 @@ def test_a_course_without_applications_can_be_deleted():
         "ages reversed",
         "adult age",
         "other currency",
+        "ends before it starts",
     ],
 )
 def test_the_database_keeps_a_course_sensible(changes, constraint):
@@ -369,6 +371,13 @@ def test_the_database_keeps_a_course_sensible(changes, constraint):
         db.add(make_course(**changes))
         with pytest.raises(IntegrityError, match=constraint):
             db.commit()
+
+
+def test_a_course_may_end_on_the_day_it_starts_or_never_be_given_an_end():
+    with SessionLocal() as db:
+        db.add_all([make_course(end_date=date(2026, 12, 5)), make_course(end_date=None)])
+        db.commit()
+        assert db.scalar(select(func.count()).select_from(Course).where(Course.end_date.is_not(None))) == 1
 
 
 def test_a_course_starts_closed_unless_it_is_opened():

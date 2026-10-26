@@ -74,7 +74,11 @@ for (const [method, path] of [
   ['POST', '/api/admin/content/publications'],
 ]) {
   const answer = await get(path, { method, headers: json, body: method === 'DELETE' ? undefined : '{}' });
-  check(`${method} ${path} without a session is refused`, [401, 403].includes(answer.status), String(answer.status));
+  check(
+    `${method} ${path} without a session is refused`,
+    [401, 403].includes(answer.status),
+    String(answer.status),
+  );
   checkAnswer(`${method} ${path}`, answer);
 }
 
@@ -100,7 +104,11 @@ const oversized = await get('/api/admin/sessions', {
 check('a body over 64 KiB is refused (413)', oversized.status === 413, String(oversized.status));
 checkAnswer('oversized body (nginx 413)', oversized);
 const other = await get('/api/health');
-check('nothing outside /api/admin/ is passed on (/api/health -> 404)', other.status === 404, String(other.status));
+check(
+  'nothing outside /api/admin/ is passed on (/api/health -> 404)',
+  other.status === 404,
+  String(other.status),
+);
 checkAnswer('/api/health (nginx 404)', other);
 const docs = await get('/api/admin/openapi.json');
 check('the API schema is not exposed (/api/admin/openapi.json)', docs.status === 404, String(docs.status));
@@ -111,7 +119,11 @@ const dotfile = await get('/.env');
 check('dotfiles are refused (/.env)', dotfile.status === 403, String(dotfile.status));
 checkAnswer('refused dotfile (nginx 403)', dotfile, 'page');
 const longAddress = await get(`/${'a'.repeat(9000)}`);
-check('an over-long request address is refused (414)', longAddress.status === 414, String(longAddress.status));
+check(
+  'an over-long request address is refused (414)',
+  longAddress.status === 414,
+  String(longAddress.status),
+);
 checkAnswer('over-long request address (nginx 414)', longAddress, 'page');
 
 for (const { name, ok, detail } of results)

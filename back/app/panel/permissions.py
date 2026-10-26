@@ -20,6 +20,7 @@ class Permission(StrEnum):
     COURSES_WRITE = "courses:write"
     CONTENT_MANAGE = "content:manage"  # the landing page: texts, images, publishing
     AUDIT_READ = "audit:read"
+    USERS_READ = "users:read"  # who has access to the panel (names, e-mail addresses, roles); admins only
 
 
 VIEWER = frozenset({Permission.DASHBOARD_READ, Permission.APPLICATIONS_READ, Permission.COURSES_READ})

@@ -304,9 +304,12 @@ def test_everything_the_panel_does_works_with_only_the_rights_of_its_database_ac
     assert browser.get("/api/admin/dashboard").status_code == 200
     course = browser.get("/api/admin/courses").json()["items"][0]
     assert browser.patch(f"/api/admin/courses/{course['id']}", json={"capacity": 25}).status_code == 200
+    ends = browser.patch(f"/api/admin/courses/{course['id']}", json={"end_date": "2027-03-06"})
+    assert (ends.status_code, ends.json()["end_date"]) == (200, "2027-03-06")
     assert browser.put("/api/admin/content", json={"values": {"hero.title_first": "Yeni"}}).status_code == 200
     assert browser.post("/api/admin/content/publications").status_code == 201
     assert browser.get("/api/admin/audit").status_code == 200
+    assert browser.get("/api/admin/users").json()["total"] == 1
     assert (
         browser.put(
             "/api/admin/account/password",

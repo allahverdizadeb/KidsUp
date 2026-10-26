@@ -36,6 +36,7 @@ FOREIGN_KEY_VIOLATION = "23503"
 EDITABLE_FIELDS = (
     "title",
     "start_date",
+    "end_date",
     "schedule",
     "location",
     "age_min",
@@ -65,6 +66,7 @@ def to_read(course: Course, taken: int, accepting: bool, applications: StatusCou
         id=course.id,
         title=course.title,
         start_date=course.start_date,
+        end_date=course.end_date,
         schedule=course.schedule,
         location=course.location,
         age_min=course.age_min,
@@ -140,12 +142,16 @@ def update_course(db: Session, principal: Principal, course_id: uuid.UUID, data:
     changes: dict[str, JsonValue] = {}
     for field, value in data.model_dump(exclude_unset=True).items():
         before = getattr(course, field)
-        if value is not None and value != before:
+        clears_end_date = field == "end_date" and value is None  # the one value that may be taken back
+        if (value is not None or clears_end_date) and value != before:
             changes[field] = [jsonable(before), jsonable(value)]
             setattr(course, field, value)
     if course.age_min > course.age_max:
         db.rollback()
         raise InvalidCourseError(field="age_max")
+    if course.end_date is not None and course.end_date < course.start_date:
+        db.rollback()
+        raise InvalidCourseError(field="end_date")
     if changes:
         audit.record(
             db,

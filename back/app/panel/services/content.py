@@ -6,6 +6,7 @@ Publishing copies the whole draft into `site_publications`, which keeps the hist
 """
 
 import logging
+from collections.abc import Sequence
 
 from pydantic import JsonValue
 from sqlalchemy import delete, select
@@ -152,22 +153,52 @@ def write_site_file(db: Session, files: PublicFiles) -> None:
     write_if_changed(files.path(SITE_FILE), site_document(latest_publication(db)))
 
 
-def publish(db: Session, principal: Principal, files: PublicFiles) -> PublicationRead:
-    """Make the draft the live page. Nothing is published if the file cannot be written.
+def content_to_publish(
+    db: Session, draft: dict[str, JsonValue], files: PublicFiles, keys: Sequence[str] | None
+) -> tuple[dict[str, JsonValue], list[str] | None]:
+    """What the live page will hold: the whole draft, or the live page with only those places from the draft.
 
-    The file is written and the publication committed while one hold of the lock lasts: the refresh loop,
-    which writes the file from the newest *committed* publication, cannot slip in between and lay the old
-    page over the new one. If the commit fails after the file was written, the file is put back as the
-    database has it.
+    A place whose draft is empty (the default) is taken off the live page, so it shows the default again.
+    Only the places being published are checked; the others stay as they were.
     """
-    draft = draft_values(db)
-    require_known_pictures(db, draft, files)
-    publication = SitePublication(content=draft, published_by=principal.admin_id)
-    db.add(publication)
-    db.flush()
-    detail: dict[str, JsonValue] = {"version": publication.id, "places": len(draft)}
-    audit.record(db, AuditEvent(principal.actor, AuditAction.CONTENT_PUBLISHED, "content", None, detail))
+    if keys is None:
+        require_known_pictures(db, draft, files)
+        return draft, None
+    selected = sorted(set(keys))
+    for key in selected:
+        if REGISTRY.field(key) is None:
+            raise UnknownContentKeyError(key=key[:80])
+    require_known_pictures(db, {key: draft[key] for key in selected if key in draft}, files)
+    previous = latest_publication(db)
+    content = dict(as_mapping(previous.content)) if previous else {}
+    for key in selected:
+        if key in draft:
+            content[key] = draft[key]
+        else:
+            content.pop(key, None)
+    return content, selected
+
+
+def publish(
+    db: Session, principal: Principal, files: PublicFiles, keys: Sequence[str] | None = None
+) -> PublicationRead:
+    """Make the draft the live page, or only the places in `keys`. Nothing is published if the file fails.
+
+    One hold of the lock lasts from reading the live page to the commit: the refresh loop, which writes the
+    file from the newest *committed* publication, cannot slip in between and lay the old page over the new
+    one, and two people publishing different places at once cannot both start from the same live page (the
+    second would publish a page without what the first just put on it). If the commit fails after the file
+    was written, the file is put back as the database has it.
+    """
     with files.lock:
+        content, selected = content_to_publish(db, draft_values(db), files, keys)
+        publication = SitePublication(content=content, published_by=principal.admin_id)
+        db.add(publication)
+        db.flush()
+        detail: dict[str, JsonValue] = {"version": publication.id, "places": len(content)}
+        if selected is not None:
+            detail["keys"] = [*selected]
+        audit.record(db, AuditEvent(principal.actor, AuditAction.CONTENT_PUBLISHED, "content", None, detail))
         try:
             write_if_changed(files.path(SITE_FILE), site_document(publication))
         except OSError:

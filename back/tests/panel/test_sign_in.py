@@ -508,6 +508,72 @@ def test_a_page_that_only_polls_for_news_does_not_keep_the_session_alive(panel, 
     assert panel.get(CURRENT_SESSION_URL).status_code == 401
 
 
+SEARCH_URL = "/api/admin/applications/search"
+
+
+def test_a_search_a_page_runs_by_itself_does_not_keep_the_session_alive(panel, staff, clock):
+    headers = signed_in(panel, staff, clock)
+
+    clock.advance(minutes=10)
+    quiet = panel.post(SEARCH_URL, json={}, headers={**headers, "X-Background": "poll"})
+    assert quiet.status_code == 200
+    clock.advance(minutes=6)  # 16 minutes since the person last did anything
+
+    assert panel.get(CURRENT_SESSION_URL).status_code == 401
+
+
+def test_a_search_the_person_runs_keeps_the_session_alive(panel, staff, clock):
+    headers = signed_in(panel, staff, clock)
+
+    clock.advance(minutes=10)
+    assert panel.post(SEARCH_URL, json={}, headers=headers).status_code == 200
+    clock.advance(minutes=10)  # 20 minutes in all, but only 10 since the search
+
+    assert panel.get(CURRENT_SESSION_URL).status_code == 200
+
+
+def test_a_background_search_still_needs_the_csrf_token_and_a_trusted_origin(panel, staff, clock):
+    headers = signed_in(panel, staff, clock)
+    background = {"X-Background": "poll"}
+
+    no_token = panel.post(SEARCH_URL, json={}, headers={"Origin": ORIGIN, **background})
+    foreign = panel.post(
+        SEARCH_URL, json={}, headers={**headers, "Origin": "https://evil.example", **background}
+    )
+
+    assert (no_token.status_code, foreign.status_code) == (403, 403)
+
+
+def test_a_request_that_is_refused_does_not_keep_the_session_alive(panel, staff, clock):
+    """Only a request that passed the origin and CSRF checks is somebody working: a refused one is not."""
+    headers = signed_in(panel, staff, clock)
+    without_token = {"Origin": ORIGIN}
+    foreign_page = {**headers, "Origin": "https://evil.example"}
+
+    clock.advance(minutes=10)
+    assert panel.post(SEARCH_URL, json={}, headers=without_token).status_code == 403
+    assert panel.post(SEARCH_URL, json={}, headers=foreign_page).status_code == 403
+    clock.advance(minutes=6)  # 16 minutes since the person last did anything
+
+    assert panel.get(CURRENT_SESSION_URL).status_code == 401
+
+
+def test_a_change_marked_as_a_poll_still_counts_as_somebody_working(panel, staff, clock):
+    headers = signed_in(panel, staff, clock)
+    missing = "00000000-0000-0000-0000-000000000000"
+
+    clock.advance(minutes=10)
+    answer = panel.patch(
+        f"/api/admin/applications/{missing}",
+        json={"status": "contacted"},
+        headers={**headers, "X-Background": "poll"},
+    )
+    assert answer.status_code == 404  # it got in, and was looked for
+    clock.advance(minutes=10)  # 20 minutes in all, but only 10 since the change
+
+    assert panel.get(CURRENT_SESSION_URL).status_code == 200
+
+
 def test_the_session_has_an_absolute_end_however_busy_it_was(panel_settings, clock, staff):
     settings = make_settings(**{**panel_settings.model_dump(), "panel_session_max_hours": 1})
     client = TestClient(create_panel_app(settings, clock), base_url=BASE_URL, client=(OFFICE, 50000))

@@ -194,6 +194,38 @@ def test_the_functions_that_run_with_the_owners_rights_name_pg_temp_last_and_go_
     }
 
 
+COUNT_END_DATE_COLUMNS = (
+    "SELECT count(*) FROM information_schema.columns "
+    "WHERE table_name = 'courses' AND column_name = 'end_date'"
+)
+
+
+def test_the_end_date_of_a_course_keeps_every_course_and_goes_away_on_undoing(scratch_database):
+    config = alembic_config(scratch_database)
+    command.upgrade(config, "0011")
+    with connect(scratch_database) as conn:
+        assert conn.execute(COUNT_END_DATE_COLUMNS).fetchone() == (0,)
+        courses = conn.execute("SELECT id FROM courses").fetchall()
+    assert len(courses) == 1
+    course_id = courses[0][0]
+
+    command.upgrade(config, "head")
+    with connect(scratch_database) as conn:
+        # The course is the one it was, with no end date (the owner gives one in the panel).
+        assert conn.execute("SELECT end_date FROM courses WHERE id = %s", (course_id,)).fetchone() == (None,)
+        conn.execute("UPDATE courses SET end_date = '2027-03-06' WHERE id = %s", (course_id,))
+    with connect(scratch_database) as conn, pytest.raises(psycopg.errors.CheckViolation):
+        conn.execute("UPDATE courses SET end_date = '2026-12-04' WHERE id = %s", (course_id,))
+
+    command.downgrade(config, "0011")
+    with connect(scratch_database) as conn:
+        assert conn.execute("SELECT id FROM courses").fetchall() == [(course_id,)]  # the course stays
+        assert conn.execute(COUNT_END_DATE_COLUMNS).fetchone() == (0,)
+        assert conn.execute(
+            "SELECT count(*) FROM pg_constraint WHERE conname = 'ck_courses_end_not_before_start'"
+        ).fetchone() == (0,)
+
+
 def test_the_first_course_is_the_programme_the_landing_page_advertises(scratch_database):
     command.upgrade(alembic_config(scratch_database), "head")
 

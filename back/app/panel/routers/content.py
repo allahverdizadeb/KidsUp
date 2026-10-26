@@ -8,7 +8,14 @@ from app.db import get_db
 from app.panel.errors import InvalidImageError
 from app.panel.permissions import Permission
 from app.panel.principal import Principal
-from app.panel.schemas.content import ContentRead, ContentUpdate, MediaPage, MediaRead, PublicationRead
+from app.panel.schemas.content import (
+    ContentRead,
+    ContentUpdate,
+    MediaPage,
+    MediaRead,
+    PublicationRead,
+    PublishRequest,
+)
 from app.panel.security import require
 from app.panel.services import content as service
 from app.panel.services import media
@@ -39,11 +46,13 @@ def save_content(
 
 @router.post("/content/publications", status_code=status.HTTP_201_CREATED, response_model=PublicationRead)
 def publish_content(
+    body: PublishRequest | None = None,
     principal: Principal = Depends(require(Permission.CONTENT_MANAGE)),
     db: Session = Depends(get_db),
     files: PublicFiles = Depends(get_public_files),
 ) -> PublicationRead:
-    return service.publish(db, principal, files)
+    """Publish the whole draft, or (with `keys`) only those places, leaving the rest of it unpublished."""
+    return service.publish(db, principal, files, None if body is None else body.keys)
 
 
 @router.get("/media", response_model=MediaPage)

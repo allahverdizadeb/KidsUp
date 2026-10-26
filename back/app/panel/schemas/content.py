@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from pydantic import BaseModel, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from app.panel.content_registry import FieldKind
 from app.panel.schemas.common import UtcDateTime
@@ -56,6 +56,16 @@ class ContentUpdate(BaseModel):
     """Values to save as the draft, by place. A null puts a place back to its default."""
 
     values: Annotated[dict[str, JsonValue], Field(max_length=200)]
+
+
+class PublishRequest(BaseModel):
+    """The places to publish: only these go live, the rest of the draft waits. Without a body, all goes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    keys: Annotated[
+        list[Annotated[str, Field(min_length=1, max_length=80)]], Field(min_length=1, max_length=200)
+    ]
 
 
 class MediaRead(BaseModel):
