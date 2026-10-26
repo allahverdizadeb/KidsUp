@@ -12,6 +12,7 @@ from that app: an account whose second factor was never set up would lock its ow
 import argparse
 import getpass
 import logging
+import re
 import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -79,7 +80,8 @@ def confirm_second_factor(email: str, tools: Toolbox) -> str | None:
     print("Add this account to an authenticator app (scan it, or type the secret in):")
     print(f"  secret: {secret}")  # shown once, on the operator's terminal
     print(f"  address: {totp.provisioning_uri(secret, email)}")  # what a QR code holds
-    code = tools.ask("Code shown by the app: ").strip()
+    # An app shows a code as "123 456": the digits are what counts, so a space or a dash is not a mistake.
+    code = re.sub(r"[^0-9]", "", tools.ask("Code shown by the app: "))
     if totp.matching_step(secret, code, tools.clock(), None) is None:
         logger.error("the code is wrong; nothing was changed")
         return None

@@ -41,6 +41,7 @@ class Terminal:
         self.capsys, self.clock, self.shown = capsys, clock, ""
         self.passwords: list[str] = []
         self.code: str | None = None
+        self.layout = "{code}"
         monkeypatch.setattr("getpass.getpass", lambda _prompt: self.passwords.pop(0))
         monkeypatch.setattr("builtins.input", self.code_for_the_secret_shown)
 
@@ -50,10 +51,17 @@ class Terminal:
         self.shown += self.capsys.readouterr().out
         secret = re.search(r"secret: (\w+)", self.shown)
         assert secret is not None
-        return pyotp.TOTP(secret.group(1)).at(self.clock())
+        code = pyotp.TOTP(secret.group(1)).at(self.clock())
+        return self.layout.format(code=code, first=code[:3], second=code[3:])  # as a person may type it
 
-    def run(self, *argv: str, passwords: tuple[str, ...] = (), code: str | None = None) -> int:
-        self.passwords, self.code, self.shown = list(passwords), code, ""
+    def run(
+        self,
+        *argv: str,
+        passwords: tuple[str, ...] = (),
+        code: str | None = None,
+        layout: str = "{code}",
+    ) -> int:
+        self.passwords, self.code, self.shown, self.layout = list(passwords), code, "", layout
         status = cli.main(list(argv), self.clock)
         self.shown += self.capsys.readouterr().out
         return status
@@ -105,6 +113,27 @@ def test_nothing_is_created_when_the_two_passwords_differ(terminal, caplog):
 
 def test_nothing_is_created_when_the_code_is_wrong(terminal, caplog):
     status = terminal.run(*create_command(), passwords=(NEW_PASSWORD, NEW_PASSWORD), code="000000")
+
+    assert status == 1
+    assert admin_row("new.person@example.test") is None
+    assert "code is wrong" in caplog.text
+
+
+@pytest.mark.parametrize(
+    "layout",
+    ["{first} {second}", "{first}-{second}", "  {code}  ", "{first} {second}"],
+    ids=["a space, as the app shows it", "a dash", "spaces around it", "a non-breaking space"],
+)
+def test_the_code_may_be_typed_as_the_authenticator_app_shows_it(terminal, layout):
+    status = terminal.run(*create_command(), passwords=(NEW_PASSWORD, NEW_PASSWORD), layout=layout)
+
+    assert status == 0
+    assert admin_row("new.person@example.test") is not None
+
+
+@pytest.mark.parametrize("typed", ["abc 123 xyz", "12345", "1234567", "", "one two three"])
+def test_dropping_the_spaces_of_a_code_does_not_make_a_wrong_one_pass(terminal, caplog, typed):
+    status = terminal.run(*create_command(), passwords=(NEW_PASSWORD, NEW_PASSWORD), code=typed)
 
     assert status == 1
     assert admin_row("new.person@example.test") is None

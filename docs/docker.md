@@ -43,7 +43,9 @@ docker compose up --build            # add -d to run in the background
 ```
 
 Then create the first member of staff (there is no sign-up and no default account; it asks for the password twice, never as an argument, and shows a
-one-time-code secret once, to scan or type into an authenticator app; the account exists only after you type a code from that app):
+one-time-code secret once, to scan or type into an authenticator app; the account exists only after you type a code from that app, as the app shows it, with or without the space
+in the middle. If the last line says `the code is wrong; nothing was changed`, **no account was made**: delete the entry in the app and run the command again (every run makes a new secret). The usual reasons are
+a phone whose time is not set automatically, a secret typed wrongly, or an entry left in the app from an earlier run):
 
 ```powershell
 docker compose exec panel python -m app.panel.cli create-admin --email <e-mail> --name "<name>" --role admin
@@ -292,7 +294,7 @@ reported, so they are still to do.
 
 On 2026-10-26 the admin **screens** (React, from `KidsUp Admin Panel v2.dc.html`) were built into `admin/` and put on the **real stack without touching its data** (migration 0012 `courses.end_date` ran
 through `bootstrap`; the one application, its child and the course were kept, row counts before and after are the same; a dump taken first is in `%LOCALAPPDATA%\KidsUp-backups`). Gates: backend ruff, mypy,
-bandit, pip-audit and 1103 tests at 100% coverage; admin `npm run verify` (353 tests, 97.7% statements, audit 0, build); front 379 tests. `scripts/verify-stack.ps1` on a throw-away copy: 103 end-to-end
+bandit, pip-audit and 1112 tests at 100% coverage; admin `npm run verify` (353 tests, 97.7% statements, audit 0, build); front 379 tests. `scripts/verify-stack.ps1` on a throw-away copy: 103 end-to-end
 checks, the public headers check (78) and the admin one (50); the same two header checks on the real stack after the rebuild (78 and 50). In a real browser, on a throw-away copy, at desktop width and at 390 px: sign-in
 (the first box with a fault takes the focus), a form submission from the landing page, the application in the panel, approval taking a place (the landing page's file went from 20 to 19 places left),
 a new course with 12 places and the single-active-course switch (the landing page then read capacity 12), a published headline on the landing page, the CSV question, sign-out and a 401 from every

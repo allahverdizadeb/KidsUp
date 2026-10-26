@@ -7,7 +7,7 @@ This repo has three independent projects. This file only covers what is shared a
 | Folder   | What it is                                       | Status                                                          |
 |----------|--------------------------------------------------|-----------------------------------------------------------------|
 | `front/` | Public landing page, React + TypeScript (Vite)   | Ported from the design (deliberate differences: `front/CLAUDE.md`); shows the texts, prices and open courses that staff publish in the admin panel (identical to the design when nothing is published); 379 tests, ~99.5% coverage |
-| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` (public) and the admin API `/api/admin/…` (sign-in with MFA, applications, courses, dashboard, landing page content, audit log) live; 1103 tests, 100% coverage |
+| `back/`  | REST API, Python + FastAPI + PostgreSQL          | `POST /api/applications` (public) and the admin API `/api/admin/…` (sign-in with MFA, applications, courses, dashboard, landing page content, audit log) live; 1112 tests, 100% coverage |
 | `admin/` | Admin panel, React + TypeScript (Vite)           | Live on port 8081: sign-in with MFA, dashboard, registrations (search, status, notes, export, erasure), courses, the landing page's texts and pictures (draft, preview, publish), staff list; ported from `KidsUp Admin Panel v2.dc.html` (deliberate differences: `admin/CLAUDE.md`); 353 tests, ~98% coverage |
 
 Each project has `docs/` (standards) and `.claude/` (skills + agents); the repo root has `.claude/` (cross-project
